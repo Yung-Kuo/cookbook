@@ -15,15 +15,28 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+/* body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-}
+} */
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+}
+
+h4 {
+  font-size: 1em;
+  line-height: 1.1;
+}
+
+h5 {
+  font-size: 0.75em;
+}
+
+h6 {
+  font-size: 0.5em;
 }

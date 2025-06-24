@@ -38,3 +38,15 @@ class RecipeIngredient(models.Model):
 
     def __str__(self):
         return f"{self.ingredient.name}: {self.quantity} {self.unit} for {self.recipe.title}"
+
+class RecipeInstruction(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    text = models.TextField()
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ('recipe', 'order')
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Step {self.order} for {self.recipe.title}: {self.text[:50]}..."

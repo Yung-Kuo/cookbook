@@ -18,7 +18,14 @@ function RecipeCreateForm({ onClose }) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    instructions: "",
+    // instructions: "",
+    recipe_instructions: [
+      {
+        id: crypto.randomUUID(),
+        text: "",
+        order: 1,
+      },
+    ],
     prep_time: "", // Changed from null to empty string
     cook_time: "", // Changed from null to empty string
     servings: "", // Changed from null to empty string
@@ -135,7 +142,62 @@ function RecipeCreateForm({ onClose }) {
   };
 
   // ----------------------------------------------------
-  // 8. Handle form submission (for later)
+  // 8. Handle adding a new row for RecipeInstruction
+  // ----------------------------------------------------
+  const addInstruction = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      recipe_instructions: [
+        ...prevData.recipe_instructions,
+        {
+          // id: ++nextIngredientId,
+          id: crypto.randomUUID(),
+          text: "",
+          order: prevData.recipe_instructions.length + 1,
+        },
+      ],
+    }));
+  };
+  // ----------------------------------------------------
+  // 9. Handle changes to existing RecipeInstruction rows
+  // ----------------------------------------------------
+  const handleInstructionChange = (e, id) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      recipe_instructions: prevData.recipe_instructions.map((instruction) =>
+        instruction.id === id ? { ...instruction, [name]: value } : instruction,
+      ),
+    }));
+  };
+  // ----------------------------------------------------
+  // 10. Handle removing a RecipeInstruction row
+  // ----------------------------------------------------
+  const removeInstruction = (id) => {
+    console.log("remove id: ", id);
+    const delete_instruction = formData.recipe_instructions.filter(
+      (instruction) => instruction.id == id,
+    );
+    console.log("delete order: ", delete_instruction[0].order);
+    setFormData((prevData) => ({
+      ...prevData,
+      recipe_instructions: prevData.recipe_instructions.filter(
+        (instruction) => instruction.id !== id,
+      ),
+    }));
+
+    setFormData((prevData) => ({
+      ...prevData,
+      recipe_instructions: prevData.recipe_instructions.map((instruction) =>
+        instruction.order > delete_instruction[0].order
+          ? { ...instruction, order: instruction.order - 1 }
+          : instruction,
+      ),
+    }));
+  };
+
+  // ----------------------------------------------------
+  // 10. Handle form submission
   // ----------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -146,6 +208,10 @@ function RecipeCreateForm({ onClose }) {
       prep_time: formData.prep_time === "" ? null : Number(formData.prep_time),
       cook_time: formData.cook_time === "" ? null : Number(formData.cook_time),
       servings: formData.servings === "" ? null : Number(formData.servings),
+      recipe_instructions: formData.recipe_instructions.map((ins) => ({
+        ...ins,
+        text: ins.text.trim(),
+      })),
       recipe_ingredients: formData.recipe_ingredients
         .filter((ing) => ing.ingredient && ing.quantity && ing.unit)
         .map((ing) => ({
@@ -159,10 +225,19 @@ function RecipeCreateForm({ onClose }) {
       "Form data before submission:",
       JSON.stringify(submissionData, null, 2),
     );
+    // Check if any recipe instruction text is empty
+    const hasEmptyInstruction = submissionData.recipe_instructions.some(
+      (ins) => !ins.text || ins.text.trim() === "",
+    );
+    console.log("hasEmptyInstruction: ", hasEmptyInstruction);
+    if (hasEmptyInstruction) {
+      console.error("All instruction steps must have non-empty text.");
+      return;
+    }
 
     // Validate required fields
-    if (!submissionData.title || !submissionData.instructions) {
-      console.error("Missing required fields: title or instructions");
+    if (!submissionData.title) {
+      console.error("Missing title");
       return;
     }
 
@@ -249,15 +324,32 @@ function RecipeCreateForm({ onClose }) {
         >
           Instructions
         </label>
-        <textarea
-          id="instructions"
-          name="instructions"
-          value={formData.instructions}
-          onChange={handleChange}
-          rows="5"
-          className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-          required
-        ></textarea>
+        {formData.recipe_instructions.map((recipe_instruction) => (
+          <div key={recipe_instruction.id} className="flex items-center gap-4">
+            <h4 className="flex gap-2">
+              Step <span>{recipe_instruction.order}</span>
+            </h4>
+            <textarea
+              id={`instruction-${recipe_instruction.id}`}
+              name="text"
+              value={recipe_instruction.text}
+              onChange={(e) =>
+                handleInstructionChange(e, recipe_instruction.id)
+              }
+              rows="1"
+              className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+              required
+            />
+            <DeleteButton
+              onClick={() => removeInstruction(recipe_instruction.id)}
+            />
+          </div>
+        ))}
+        <AddButton
+          onClick={addInstruction}
+          parentClassName="mt-2 h-10 w-10"
+          className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
+        />
       </div>
 
       {/* Ingredient List */}
@@ -270,7 +362,7 @@ function RecipeCreateForm({ onClose }) {
             <div key={recipe_ingredient.id} className="flex items-center gap-4">
               <div className="grid grow grid-cols-3 justify-between gap-4">
                 <select
-                  id="ingredient"
+                  id={`ingredient-${recipe_ingredient.id}`}
                   name="ingredient"
                   value={recipe_ingredient.ingredient}
                   onChange={(e) =>

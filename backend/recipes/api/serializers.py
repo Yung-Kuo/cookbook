@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Recipe, Category, Ingredient, RecipeIngredient
+from ..models import Recipe, Category, Ingredient, RecipeIngredient, RecipeInstruction
 
 # --- 1. Base Serializers for Category and Ingredient (simple CRUD) ---
 
@@ -18,21 +18,19 @@ class IngredientSerializer(serializers.ModelSerializer):
 # --- 2. Serializer for RecipeIngredient (nested, for display AND write within Recipe) ---
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    # For reading/displaying: get the ingredient's name from the related Ingredient object
     name = serializers.CharField(source='ingredient.name', read_only=True)
 
-    # For writing/input: expect the ID of an existing Ingredient
-    # We rename it 'ingredient_id' for clarity in input, but 'source' maps it to the 'ingredient' ForeignKey
-    # It's not strictly necessary to rename to ingredient_id, just 'ingredient' (pointing to FK) is fine.
-    # Let's keep it simple and just use 'ingredient' for the FK, as discussed previously, it's cleaner.
     ingredient = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-
 
     class Meta:
         model = RecipeIngredient
-        # Fields for both reading (display) and writing (input)
         fields = ['id', 'name', 'quantity', 'unit', 'ingredient']
-        read_only_fields = ['id', 'name'] # 'id' and 'name' are output only
+        read_only_fields = ['id', 'name']
+
+class RecipeInstructionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecipeInstruction
+        fields = ['id', 'text', 'order']
 
 # --- 3. Main Recipe Serializers ---
 
@@ -43,15 +41,19 @@ class RecipeSerializer(serializers.ModelSerializer):
     # Nested serializer for RecipeIngredient to show full ingredient details for the recipe
     # recipe_ingredients = RecipeIngredientSerializer(many=True, read_only=True)
     recipe_ingredients = serializers.SerializerMethodField(method_name='get_recipe_ingredients')
+    recipe_instructions = serializers.SerializerMethodField(method_name='get_recipe_instructions')
 
     def get_recipe_ingredients(self, obj):
         # recipe_ingredients = obj.recipeingredient_set.all()
         return RecipeIngredientSerializer(obj.recipeingredient_set.all(), many=True).data
+    
+    def get_recipe_instructions(self, obj):
+        return RecipeInstructionSerializer(obj.recipeinstruction_set.all(), many=True).data
 
     class Meta:
         model = Recipe
         fields = [
-            'id', 'title', 'description', 'instructions',
+            'id', 'title', 'description', 'recipe_instructions', 
             'prep_time', 'cook_time', 'servings',
             'category', 'recipe_ingredients',
             'created_at', 'updated_at'
@@ -66,12 +68,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     # Expect a list of RecipeIngredient data for input
     # This expects a list of dictionaries like [{"ingredient": 1, "quantity": 200, "unit": "g"}]
     recipe_ingredients = RecipeIngredientSerializer(many=True, required=False)
+    recipe_instructions = RecipeInstructionSerializer(many=True, required=True)
 
 
     class Meta:
         model = Recipe
         fields = [
-            'id', 'title', 'description', 'instructions',
+            'id', 'title', 'description', 'recipe_instructions',
             'prep_time', 'cook_time', 'servings',
             'category', 'recipe_ingredients' # Note: created_at, updated_at are not in fields for write
         ]
@@ -80,15 +83,17 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Pop the nested data first
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', [])
+        recipe_instructions_data = validated_data.pop('recipe_instructions', [])
         
         # Create the Recipe instance
         recipe = Recipe.objects.create(**validated_data)
 
         # Create RecipeIngredient instances
         for ingredient_data in recipe_ingredients_data:
-            # The 'ingredient' key in ingredient_data will already be an Ingredient instance
-            # because PrimaryKeyRelatedField handled the lookup for us.
             RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
+
+        for instruction_data in recipe_instructions_data:
+            RecipeInstruction.objects.create(recipe=recipe, **instruction_data)
 
         return recipe
 
@@ -102,7 +107,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         # Handle nested RecipeIngredient updates
         if recipe_ingredients_data is not None:
-            # Option 1: Clear all existing and re-create (simpler for now, good for full replacement)
+            # Option 1: C lear all existing and re-create (simpler for now, good for full replacement)
             instance.recipeingredient_set.all().delete()
             for ingredient_data in recipe_ingredients_data:
                 RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
