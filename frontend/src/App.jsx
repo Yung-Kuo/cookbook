@@ -30,41 +30,42 @@ function App() {
     fetchRecipes(setRecipes);
   }, []);
 
-  const [showRecipe, setShowRecipe] = useState(null);
+  // const [showRecipe, setShowRecipe] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
   //
   const [showNewRecipe, setShowNewRecipe] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-neutral-800 p-5 text-4xl">
+    <div className="grid h-screen w-screen grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
       {/* Mask popup */}
       {/* <MaskPopup /> */}
       {/* New recipe popup */}
       <NewRecipePopup
         show={showNewRecipe}
         onClose={() => setShowNewRecipe(false)}
+        onRecipeCreated={(newRecipe) => setRecipes([...recipes, newRecipe])}
       />
       {/* AddRecipe button */}
       <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       {/* left panel */}
-      <div className="flex h-full w-2/5 flex-col overflow-scroll">
+      <div className="flex h-full w-full flex-col overflow-scroll lg:w-2/5 lg:p-5">
         {recipes.map((recipe) => (
           <div
             key={recipe.id}
-            className={`flex cursor-pointer items-center gap-4 border-b-2 p-2 transition-all ${showRecipe === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
+            className={`flex cursor-pointer items-center gap-4 border-b-2 py-2 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
           >
             <span
-              className={`rounded-full bg-red-300 transition-all ${showRecipe === recipe.id ? "h-5 w-5 opacity-100" : "h-0 w-0 opacity-0"}`}
+              className={`rounded-full bg-red-300 transition-all ${selectedRecipe?.id === recipe.id ? "h-5 w-5 opacity-100" : "h-0 w-0 opacity-0"}`}
             ></span>
             <h2
               onClick={() => {
-                if (showRecipe === recipe.id) {
-                  setShowRecipe(null);
+                if (selectedRecipe?.id === recipe.id) {
+                  // setShowRecipe(null);
                   setSelectedRecipe(null);
                   return;
                 }
-                setShowRecipe(recipe.id);
+                // setShowRecipe(recipe.id);
                 setSelectedRecipe(recipe);
               }}
             >
@@ -74,7 +75,13 @@ function App() {
         ))}
       </div>
       {/* right panel */}
-      {selectedRecipe && <Recipe selectedRecipe={selectedRecipe} />}
+      {selectedRecipe && (
+        <Recipe
+          selectedRecipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+          className="h-full w-full lg:w-3/5"
+        />
+      )}
     </div>
   );
 }

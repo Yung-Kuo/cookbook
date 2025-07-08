@@ -1,6 +1,7 @@
 import { useMemo } from "react";
+import CloseIcon from "../../Icons/CloseIcon";
 
-function Recipe({ selectedRecipe }) {
+function Recipe({ selectedRecipe, onClose, className }) {
   // Calculate dates once and memoize them to avoid recalculation on every render
   const { createdDate, updatedDate, isUpdated } = useMemo(() => {
     if (!selectedRecipe) {
@@ -11,6 +12,7 @@ function Recipe({ selectedRecipe }) {
     const updatedDate = selectedRecipe.updated_at
       ? new Date(selectedRecipe.updated_at)
       : null;
+
     const isUpdated =
       updatedDate && updatedDate.getTime() !== createdDate.getTime();
 
@@ -19,11 +21,19 @@ function Recipe({ selectedRecipe }) {
 
   return (
     <div
-      className={`h-full w-3/5 overflow-scroll bg-neutral-900 p-5`}
+      className={`${className} overflow-scroll bg-neutral-900 p-5`}
       //   ${selectedRecipe ? "opacity-100" : "opacity-0"}
     >
-      <div className="flex flex-col gap-5">
-        <h1 className="">{selectedRecipe.title}</h1>
+      {/* Close Button */}
+      <button
+        className="absolute top-5 right-5 z-20 grid h-10 w-10 grid-cols-1 grid-rows-1 rounded-full backdrop-blur-xs"
+        onMouseDown={onClose}
+      >
+        <div className="col-start-1 row-start-1 h-full w-full rounded-full bg-neutral-200 opacity-10" />
+        <CloseIcon className="col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
+      </button>
+      <div className="flex flex-col gap-5 text-2xl">
+        <h1 className="text-6xl lg:text-8xl">{selectedRecipe.title}</h1>
         {/* category */}
         {selectedRecipe.category && (
           <div className="flex justify-end">
@@ -46,11 +56,15 @@ function Recipe({ selectedRecipe }) {
         {selectedRecipe.recipe_ingredients && (
           <div className="border-t border-neutral-500 py-10">
             {/* <h2 className="text-6xl">Ingredients</h2> */}
-            <div className="flex w-min min-w-2/3 flex-col gap-4">
+            <div className="flex w-full flex-col gap-4 lg:w-max lg:min-w-2/3">
               {selectedRecipe.recipe_ingredients.map((ingredient) => (
-                <div key={ingredient.id} className="flex justify-between">
-                  <h4 className="w-1/3">{ingredient.name}</h4>
-                  <h4 className="flex w-1/3 gap-2">
+                <div
+                  key={ingredient.id}
+                  className="flex h-max justify-between gap-2"
+                >
+                  <h4 className="w-max">{ingredient.name}</h4>
+                  <div className="flex grow items-center border-b border-dotted border-neutral-500" />
+                  <h4 className="flex w-1/3 items-center gap-2">
                     {ingredient.quantity}
                     <span className="text-neutral-500">{ingredient.unit}</span>
                   </h4>
@@ -63,7 +77,7 @@ function Recipe({ selectedRecipe }) {
         {selectedRecipe.recipe_instructions && (
           <div className="flex flex-col gap-4 border-t border-neutral-500 py-10">
             {selectedRecipe.recipe_instructions.map((instruction) => (
-              <div className="flex">
+              <div key={instruction.id} className="flex">
                 <h4 className="flex w-1/6 text-neutral-500">
                   {instruction.order}
                 </h4>
@@ -73,6 +87,14 @@ function Recipe({ selectedRecipe }) {
           </div>
         )}
 
+        {/* prep time */}
+        {selectedRecipe.prep_time && (
+          <h4 className="flex gap-2 text-neutral-500">
+            Prep Time:
+            <span className="text-neutral-100">{selectedRecipe.prep_time}</span>
+            minutes
+          </h4>
+        )}
         {/* cook time */}
         {selectedRecipe.cook_time && (
           <h4 className="flex gap-2 text-neutral-500">
@@ -81,11 +103,12 @@ function Recipe({ selectedRecipe }) {
             minutes
           </h4>
         )}
+
         {/* createdDate & updatedDate */}
         <div className="mt-20 flex flex-col items-end">
           {/* created */}
           {createdDate && (
-            <h6 className="flex gap-2 text-xl text-neutral-500">
+            <h6 className="flex gap-2 text-neutral-500">
               Created at:
               <span className="text-neutral-100">
                 {createdDate.toLocaleDateString("en-US", {
@@ -100,9 +123,9 @@ function Recipe({ selectedRecipe }) {
           )}
           {/* updated */}
           {updatedDate && isUpdated && (
-            <h6 className="flex gap-2 text-xl text-neutral-500">
+            <h6 className="flex gap-2 text-neutral-500">
               Last updated:
-              <span className="text-xl text-neutral-100">
+              <span className="text-neutral-100">
                 {updatedDate.toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",

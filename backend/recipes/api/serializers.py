@@ -111,29 +111,5 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             instance.recipeingredient_set.all().delete()
             for ingredient_data in recipe_ingredients_data:
                 RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
-            
-            # Option 2: More sophisticated update (add/remove/modify existing).
-            # This is more complex and typically requires matching by ingredient ID.
-            # Example (conceptual, not full code):
-            # existing_ids = set(instance.recipeingredient_set.values_list('ingredient__id', flat=True))
-            # incoming_ids = set([data['ingredient'].id for data in recipe_ingredients_data])
-            #
-            # # Delete removed ingredients
-            # for ri in instance.recipeingredient_set.all():
-            #     if ri.ingredient.id not in incoming_ids:
-            #         ri.delete()
-            #
-            # # Create/update new/modified ingredients
-            # for ingredient_data in recipe_ingredients_data:
-            #     ingredient_obj = ingredient_data['ingredient']
-            #     if ingredient_obj.id in existing_ids:
-            #         # Update existing RecipeIngredient
-            #         ri = instance.recipeingredient_set.get(ingredient=ingredient_obj)
-            #         ri.quantity = ingredient_data.get('quantity', ri.quantity)
-            #         ri.unit = ingredient_data.get('unit', ri.unit)
-            #         ri.save()
-            #     else:
-            #         # Create new RecipeIngredient
-            #         RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
 
         return instance

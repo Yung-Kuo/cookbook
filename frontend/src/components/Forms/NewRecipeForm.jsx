@@ -5,12 +5,14 @@ import { fetchCategories } from "../../api/categories";
 import { fetchIngredients } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
+import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
+
 // Assuming you have API functions to fetch categories and ingredients
 // import { fetchCategories, fetchIngredients } from "../api";
 
 let nextIngredientId = 0;
 
-function RecipeCreateForm({ onClose }) {
+function RecipeCreateForm({ onClose, onRecipeCreated }) {
   // ----------------------------------------------------
   // 1. Component State to hold form data
   //    Matches the structure expected by RecipeWriteSerializer
@@ -40,6 +42,33 @@ function RecipeCreateForm({ onClose }) {
     ], // Array to hold nested ingredient data
   });
 
+  const clearForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      // instructions: "",
+      recipe_instructions: [
+        {
+          id: crypto.randomUUID(),
+          text: "",
+          order: 1,
+        },
+      ],
+      prep_time: "", // Changed from null to empty string
+      cook_time: "", // Changed from null to empty string
+      servings: "", // Changed from null to empty string
+      category: "", // Will hold the ID of the selected category
+      recipe_ingredients: [
+        {
+          id: crypto.randomUUID(),
+          ingredient: "", // This should be an ingredient ID
+          quantity: "", // Changed from measurement to quantity
+          unit: "",
+        },
+      ], // Array to hold nested ingredient data
+    });
+  };
+
   // ----------------------------------------------------
   // 2. State for dropdown data (Categories, Ingredients)
   //    These will be fetched from your API
@@ -47,17 +76,18 @@ function RecipeCreateForm({ onClose }) {
   const [categories, setCategories] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const units = [
-    "g",
-    "kg",
-    "ml",
-    "l",
-    "tsp",
-    "tbsp",
-    "cup",
-    "stalk",
-    "piece",
-    "unit",
-    "to taste",
+    { id: 0, name: "g" },
+    { id: 1, name: "kg" },
+    { id: 2, name: "ml" },
+    { id: 3, name: "l" },
+    { id: 4, name: "tsp" },
+    { id: 5, name: "tbsp" },
+    { id: 6, name: "cup" },
+    { id: 7, name: "clove" },
+    { id: 8, name: "stalk" },
+    { id: 9, name: "piece" },
+    { id: 10, name: "unit" },
+    { id: 11, name: "to taste" },
   ];
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
   const [dropdownError, setDropdownError] = useState(null);
@@ -96,6 +126,16 @@ function RecipeCreateForm({ onClose }) {
   };
 
   // ----------------------------------------------------
+  // Handle category changes
+  // ----------------------------------------------------
+  const handleCategoryChange = (value) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      category: value,
+    }));
+  };
+
+  // ----------------------------------------------------
   // 5. Handle adding a new row for RecipeIngredient
   // ----------------------------------------------------
   const addIngredient = () => {
@@ -117,9 +157,8 @@ function RecipeCreateForm({ onClose }) {
   // ----------------------------------------------------
   // 6. Handle changes to existing RecipeIngredient rows
   // ----------------------------------------------------
-  const handleIngredientChange = (e, id) => {
-    const { name, value } = e.target;
-    console.log("handleIngredientChange: ", name, value);
+  const handleIngredientChange = (value, name, id) => {
+    // const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       recipe_ingredients: prevData.recipe_ingredients.map((ingredient) =>
@@ -132,7 +171,6 @@ function RecipeCreateForm({ onClose }) {
   // 7. Handle removing a RecipeIngredient row
   // ----------------------------------------------------
   const removeIngredient = (id) => {
-    console.log("remove id: ", id);
     setFormData((prevData) => ({
       ...prevData,
       recipe_ingredients: prevData.recipe_ingredients.filter(
@@ -174,11 +212,9 @@ function RecipeCreateForm({ onClose }) {
   // 10. Handle removing a RecipeInstruction row
   // ----------------------------------------------------
   const removeInstruction = (id) => {
-    console.log("remove id: ", id);
     const delete_instruction = formData.recipe_instructions.filter(
       (instruction) => instruction.id == id,
     );
-    console.log("delete order: ", delete_instruction[0].order);
     setFormData((prevData) => ({
       ...prevData,
       recipe_instructions: prevData.recipe_instructions.filter(
@@ -215,9 +251,11 @@ function RecipeCreateForm({ onClose }) {
       recipe_ingredients: formData.recipe_ingredients
         .filter((ing) => ing.ingredient && ing.quantity && ing.unit)
         .map((ing) => ({
-          ...ing,
+          ingredient: ing.ingredient.id,
           quantity: Number(ing.quantity),
+          unit: ing.unit.name,
         })),
+      category: formData.category.id,
     };
 
     // Log the exact data being sent
@@ -229,7 +267,6 @@ function RecipeCreateForm({ onClose }) {
     const hasEmptyInstruction = submissionData.recipe_instructions.some(
       (ins) => !ins.text || ins.text.trim() === "",
     );
-    console.log("hasEmptyInstruction: ", hasEmptyInstruction);
     if (hasEmptyInstruction) {
       console.error("All instruction steps must have non-empty text.");
       return;
@@ -251,10 +288,14 @@ function RecipeCreateForm({ onClose }) {
 
     try {
       const { data, error } = await createRecipe(submissionData);
+      if (data) {
+        onRecipeCreated(data);
+        clearForm();
+      }
       if (error) {
         console.error("Error creating recipe:", error);
       } else {
-        // onClose();
+        onClose();
       }
     } catch (err) {
       console.error("Error creating recipe:", err);
@@ -275,35 +316,34 @@ function RecipeCreateForm({ onClose }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full flex-col gap-10 overflow-y-auto rounded-lg p-10 text-neutral-100 shadow-xl"
+      className="flex h-full w-full flex-col gap-4 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-10 lg:p-10 lg:py-10 lg:text-4xl"
     >
-      <h2 className="mb-6 text-5xl font-bold">Create New Recipe</h2>
+      <h2 className="mb-6 text-3xl font-bold lg:text-5xl">Create New Recipe</h2>
 
       {/* Basic Recipe Details */}
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex w-full gap-4">
         <label
           htmlFor="title"
-          className="text-4xl font-medium text-neutral-500"
+          className="font-medium whitespace-nowrap text-neutral-500"
         >
           Title :
         </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          className="grow border-b-2 border-neutral-500 text-4xl text-neutral-100 focus:outline-none"
-          required
-        />
+        <div className="grow">
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            className="w-full border-b-2 border-neutral-500 text-neutral-100 focus:outline-none"
+            required
+          />
+        </div>
       </div>
 
       {/* Description */}
       <div>
-        <label
-          htmlFor="description"
-          className="text-4xl font-medium text-neutral-500"
-        >
+        <label htmlFor="description" className="font-medium text-neutral-500">
           Description
         </label>
         <textarea
@@ -318,10 +358,7 @@ function RecipeCreateForm({ onClose }) {
 
       {/* Instructions */}
       <div>
-        <label
-          htmlFor="instructions"
-          className="text-4xl font-medium text-neutral-500"
-        >
+        <label htmlFor="instructions" className="font-medium text-neutral-500">
           Instructions
         </label>
         {formData.recipe_instructions.map((recipe_instruction) => (
@@ -354,56 +391,55 @@ function RecipeCreateForm({ onClose }) {
 
       {/* Ingredient List */}
       <div>
-        <h3 className="text-4xl font-medium text-neutral-500">
-          Ingredient List
-        </h3>
+        <h3 className="font-medium text-neutral-500">Ingredient List</h3>
         <div className="mt-2 flex flex-col gap-2">
           {formData.recipe_ingredients.map((recipe_ingredient) => (
             <div key={recipe_ingredient.id} className="flex items-center gap-4">
               <div className="grid grow grid-cols-3 justify-between gap-4">
-                <select
-                  id={`ingredient-${recipe_ingredient.id}`}
-                  name="ingredient"
-                  value={recipe_ingredient.ingredient}
-                  onChange={(e) =>
-                    handleIngredientChange(e, recipe_ingredient.id)
-                  }
-                  className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-                >
-                  <option value="">Select an Ingredient</option>
-                  {ingredients.map((ing) => (
-                    <option key={ing.id} value={ing.id}>
-                      {ing.name}
-                    </option>
-                  ))}
-                </select>
-                {/* <input
-                  placeholder="ingredient"
-                  className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-                /> */}
+                <div>
+                  <ComboboxCreate
+                    id={`ingredient-${recipe_ingredient.id}`}
+                    name="ingredient"
+                    options={ingredients}
+                    value={recipe_ingredient.ingredient}
+                    onChange={(value) =>
+                      handleIngredientChange(
+                        value,
+                        "ingredient",
+                        recipe_ingredient.id,
+                      )
+                    }
+                    className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+                  />
+                </div>
                 <input
                   onChange={(e) =>
-                    handleIngredientChange(e, recipe_ingredient.id)
+                    handleIngredientChange(
+                      e.target.value,
+                      "quantity",
+                      recipe_ingredient.id,
+                    )
                   }
                   name="quantity"
                   placeholder="quantity"
                   className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
                 />
-                <select
-                  id={`unit-${recipe_ingredient.id}`}
-                  name="unit"
-                  onChange={(e) =>
-                    handleIngredientChange(e, recipe_ingredient.id)
-                  }
-                  className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600"
-                >
-                  <option value="">Select an unit</option>
-                  {units.map((unit) => (
-                    <option key={unit} value={unit}>
-                      {unit}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <ComboboxCreate
+                    id={`unit-${recipe_ingredient.id}`}
+                    name="unit"
+                    options={units}
+                    value={recipe_ingredient.unit}
+                    onChange={(value) =>
+                      handleIngredientChange(
+                        value,
+                        "unit",
+                        recipe_ingredient.id,
+                      )
+                    }
+                    className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <DeleteButton
@@ -422,35 +458,25 @@ function RecipeCreateForm({ onClose }) {
 
       {/* Category Dropdown */}
       <div>
-        <label
-          htmlFor="category"
-          className="text-4xl font-medium text-neutral-500"
-        >
+        <label htmlFor="category" className="font-medium text-neutral-500">
           Category
         </label>
-        <select
-          id="category"
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-        >
-          <option value="">Select a Category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+        {/*  */}
+        <div className="mt-2">
+          <ComboboxCreate
+            id="category"
+            options={categories}
+            value={formData.category}
+            onChange={handleCategoryChange}
+            className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+          />
+        </div>
       </div>
 
       {/* prep time, cook time, servivngs */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
-          <label
-            htmlFor="prep_time"
-            className="text-4xl font-medium text-neutral-500"
-          >
+          <label htmlFor="prep_time" className="font-medium text-neutral-500">
             Prep Time (mins)
           </label>
           <input
@@ -463,10 +489,7 @@ function RecipeCreateForm({ onClose }) {
           />
         </div>
         <div>
-          <label
-            htmlFor="cook_time"
-            className="text-4xl font-medium text-neutral-500"
-          >
+          <label htmlFor="cook_time" className="font-medium text-neutral-500">
             Cook Time (mins)
           </label>
           <input
@@ -479,10 +502,7 @@ function RecipeCreateForm({ onClose }) {
           />
         </div>
         <div>
-          <label
-            htmlFor="servings"
-            className="text-4xl font-medium text-neutral-500"
-          >
+          <label htmlFor="servings" className="font-medium text-neutral-500">
             Servings
           </label>
           <input
@@ -497,7 +517,7 @@ function RecipeCreateForm({ onClose }) {
       </div>
 
       {/* Form Submission Buttons */}
-      <div className="flex justify-end gap-4 text-lg font-medium">
+      <div className="flex justify-end gap-4 py-4 text-lg font-medium">
         <button
           type="button"
           onClick={onClose}

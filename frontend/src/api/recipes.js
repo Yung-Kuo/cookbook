@@ -22,6 +22,7 @@ export const createRecipe = async (recipeData) => {
       },
       body: JSON.stringify(recipeData),
     });
+    console.log("response: ", response);
 
     const responseData = await response.json();
 
