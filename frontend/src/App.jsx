@@ -79,7 +79,7 @@ function App() {
         <Recipe
           selectedRecipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
-          className="h-full w-full lg:w-3/5"
+          className="z-20 h-full w-full lg:w-3/5"
         />
       )}
     </div>

@@ -32,44 +32,56 @@ function Recipe({ selectedRecipe, onClose, className }) {
         <div className="col-start-1 row-start-1 h-full w-full rounded-full bg-neutral-200 opacity-10" />
         <CloseIcon className="col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
       </button>
-      <div className="flex flex-col gap-5 text-2xl">
+      <div className="flex flex-col gap-5 text-xl lg:text-2xl">
         <h1 className="text-6xl lg:text-8xl">{selectedRecipe.title}</h1>
         {/* category */}
         {selectedRecipe.category && (
           <div className="flex justify-end">
             <div className="rounded-full bg-neutral-700 px-4 py-1">
-              <h6 className="text-xl">{selectedRecipe.category.name}</h6>
+              <h6>{selectedRecipe.category.name}</h6>
             </div>
           </div>
         )}
         {/* description */}
         {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}
         {/* servings */}
-        {selectedRecipe.servings && (
+        {/* {selectedRecipe.servings && (
           <div className="flex justify-end">
             <h4 className="mt-20 text-neutral-500">
               {selectedRecipe.servings} servings
             </h4>
           </div>
-        )}
+        )} */}
         {/* ingredients */}
         {selectedRecipe.recipe_ingredients && (
-          <div className="border-t border-neutral-500 py-10">
-            {/* <h2 className="text-6xl">Ingredients</h2> */}
-            <div className="flex w-full flex-col gap-4 lg:w-max lg:min-w-2/3">
-              {selectedRecipe.recipe_ingredients.map((ingredient) => (
-                <div
-                  key={ingredient.id}
-                  className="flex h-max justify-between gap-2"
-                >
-                  <h4 className="w-max">{ingredient.name}</h4>
-                  <div className="flex grow items-center border-b border-dotted border-neutral-500" />
-                  <h4 className="flex w-1/3 items-center gap-2">
-                    {ingredient.quantity}
-                    <span className="text-neutral-500">{ingredient.unit}</span>
-                  </h4>
-                </div>
-              ))}
+          <div className="mt-20 flex flex-col gap-2">
+            <div className="flex justify-between">
+              <h2 className="text-3xl lg:text-4xl">Ingredients</h2>
+              {/* servings */}
+              {selectedRecipe.servings && (
+                <h4 className="flex items-end text-neutral-500">
+                  {selectedRecipe.servings} servings
+                </h4>
+              )}
+            </div>
+            <div className="border-t border-neutral-500 py-10">
+              <div className="flex w-full flex-col gap-4 md:w-max md:min-w-2/3">
+                {selectedRecipe.recipe_ingredients.map((ingredient) => (
+                  <div
+                    key={ingredient.id}
+                    className="flex h-max justify-between gap-2"
+                  >
+                    <h4 className="w-max">{ingredient.name}</h4>
+                    <div className="flex grow items-center border-b border-dotted border-neutral-500" />
+                    <h4 className="flex w-1/3 items-center gap-2">
+                      {ingredient.quantity}
+                      <span className="text-neutral-500">
+                        {ingredient.unit}
+                      </span>
+                    </h4>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -86,7 +98,6 @@ function Recipe({ selectedRecipe, onClose, className }) {
             ))}
           </div>
         )}
-
         {/* prep time */}
         {selectedRecipe.prep_time && (
           <h4 className="flex gap-2 text-neutral-500">
@@ -103,7 +114,6 @@ function Recipe({ selectedRecipe, onClose, className }) {
             minutes
           </h4>
         )}
-
         {/* createdDate & updatedDate */}
         <div className="mt-20 flex flex-col items-end">
           {/* created */}

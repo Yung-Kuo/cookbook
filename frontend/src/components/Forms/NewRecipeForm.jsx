@@ -1,8 +1,8 @@
 // src/components/RecipeCreateForm.jsx
 import React, { useState, useEffect } from "react";
 import { createRecipe } from "../../api/recipes";
-import { fetchCategories } from "../../api/categories";
-import { fetchIngredients } from "../../api/ingredients";
+import { fetchCategories, createCategory } from "../../api/categories";
+import { fetchIngredients, createIngredient } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
 import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
@@ -129,6 +129,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
   // Handle category changes
   // ----------------------------------------------------
   const handleCategoryChange = (value) => {
+    console.log("handleCategoryChange: ", value);
     setFormData((prevData) => ({
       ...prevData,
       category: value,
@@ -158,7 +159,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
   // 6. Handle changes to existing RecipeIngredient rows
   // ----------------------------------------------------
   const handleIngredientChange = (value, name, id) => {
-    // const { name, value } = e.target;
+    console.log("handleIngredientChange: ", value);
     setFormData((prevData) => ({
       ...prevData,
       recipe_ingredients: prevData.recipe_ingredients.map((ingredient) =>
@@ -238,7 +239,46 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Convert empty strings to null for numeric fields
+    // 1. Handle category creation
+    let category = formData.category;
+    if (!category.id) {
+      try {
+        category = await createCategory({ name: category.name });
+      } catch (error) {
+        console.error("Failed to create category:", error);
+        return;
+      }
+    }
+
+    // 2. Handle ingredient creation
+    let recipe_ingredients = [...formData.recipe_ingredients];
+    const ingredientsToCreate = recipe_ingredients.filter(
+      (ri) => !ri.ingredient.id,
+    );
+    if (ingredientsToCreate.length > 0) {
+      try {
+        const createdIngredients = await Promise.all(
+          ingredientsToCreate.map((ri) =>
+            createIngredient({ name: ri.ingredient.name }),
+          ),
+        );
+        const nameToIngredient = {};
+        createdIngredients.forEach((ingredient) => {
+          nameToIngredient[ingredient.name] = ingredient;
+        });
+        recipe_ingredients = recipe_ingredients.map((ri) => {
+          if (!ri.ingredient.id && nameToIngredient[ri.ingredient.name]) {
+            return { ...ri, ingredient: nameToIngredient[ri.ingredient.name] };
+          }
+          return ri;
+        });
+      } catch (error) {
+        console.error("Failed to create one or more ingredients:", error);
+        return;
+      }
+    }
+
+    // 3. Build submissionData using local variables
     const submissionData = {
       ...formData,
       prep_time: formData.prep_time === "" ? null : Number(formData.prep_time),
@@ -248,14 +288,14 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
         ...ins,
         text: ins.text.trim(),
       })),
-      recipe_ingredients: formData.recipe_ingredients
+      recipe_ingredients: recipe_ingredients
         .filter((ing) => ing.ingredient && ing.quantity && ing.unit)
         .map((ing) => ({
           ingredient: ing.ingredient.id,
           quantity: Number(ing.quantity),
           unit: ing.unit.name,
         })),
-      category: formData.category.id,
+      category: category.id,
     };
 
     // Log the exact data being sent
