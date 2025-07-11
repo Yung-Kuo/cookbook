@@ -469,6 +469,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                     id={`unit-${recipe_ingredient.id}`}
                     name="unit"
                     options={units}
+                    noCreate
                     value={recipe_ingredient.unit}
                     onChange={(value) =>
                       handleIngredientChange(

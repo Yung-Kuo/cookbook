@@ -7,7 +7,14 @@ import {
 } from "@headlessui/react";
 import { useState } from "react";
 
-function ComboboxCreate({ name, className, options, value, onChange }) {
+function ComboboxCreate({
+  name,
+  className,
+  options,
+  value,
+  onChange,
+  noCreate = false,
+}) {
   // const [selectedOption, setSelectedOption] = useState("");
   const [query, setQuery] = useState("");
 
@@ -33,7 +40,8 @@ function ComboboxCreate({ name, className, options, value, onChange }) {
 
       <div className="relative w-full">
         <ComboboxOptions className="absolute z-20 mt-2 max-h-72 w-full overflow-hidden overflow-y-auto rounded-md border-2 border-sky-600 bg-neutral-900 empty:invisible">
-          {query.length > 0 &&
+          {!noCreate &&
+            query.length > 0 &&
             !filteredOptions.some(
               (option) =>
                 option.name.toLowerCase() === query.trim().toLowerCase(),
