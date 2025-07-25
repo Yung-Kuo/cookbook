@@ -1,0 +1,41 @@
+# cookbook/compose.yaml
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db # <--- ADDED: Backend depends on the db service
+    # volumes:
+    #   - sqlite_data:/app # <--- REMOVE THIS LINE (from SQLite setup)
+
+  # ADD THIS NEW 'db' SERVICE
+  db:
+    image: postgres:16-alpine # Using a lightweight PostgreSQL image
+    environment:
+      POSTGRES_DB: mydatabase # <--- Matches DATABASE_URL dbname
+      POSTGRES_USER: myuser # <--- Matches DATABASE_URL username
+      POSTGRES_PASSWORD: mypassword # <--- Matches DATABASE_URL password (CHANGE FOR PRODUCTION!)
+    volumes:
+      - db_data:/var/lib/postgresql/data # <--- Persist PostgreSQL data
+    # Optional: Restart policy for resilience
+    restart: on-failure
+    # Optional: Expose DB port to host for external tools (e.g., pgAdmin)
+    ports:
+      - "5432:5432"
+
+  # frontend: # <--- Keep or remove if you uncommented it for testing only backend
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:80"
+  #   depends_on:
+  #     - backend
+  # # ... (rest of frontend config)
+
+volumes:
+  # sqlite_data: # <--- REMOVE THIS VOLUME DEFINITION
+  db_data: # <--- ADD THIS NEW VOLUME DEFINITION
