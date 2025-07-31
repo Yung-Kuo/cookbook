@@ -16,6 +16,8 @@ dist
 
 # Environment variables
 .env
+.env.development
+.env.production
 
 # Package lock
 package-lock.json
@@ -35,3 +37,4 @@ yarn.lock
 *.njsproj
 *.sln
 *.sw?
+.vercel
