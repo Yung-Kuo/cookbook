@@ -244,6 +244,9 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
     if (!category.id) {
       try {
         category = await createCategory({ name: category.name });
+        if (category) {
+          setCategories([...categories, category]);
+        }
       } catch (error) {
         console.error("Failed to create category:", error);
         return;

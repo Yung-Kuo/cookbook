@@ -29,11 +29,13 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 # ALLOWED_HOSTS = []
 
-# DEBUG = bool(os.environ.get("DEBUG", False))
+DEBUG = bool(os.environ.get("DEBUG", False))
+print(f"DEBUG (settings.py): Final DEBUG setting: {DEBUG}")
+print(f"DEBUG (settings.py): OS environment 'DEBUG' variable: {os.environ.get('DEBUG')}")
  
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(",")
 
