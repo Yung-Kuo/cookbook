@@ -98,7 +98,7 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    'https://cookbook-fawn-three.vercel.app/'
+    'https://cookbook-fawn-three.vercel.app'
 ]
 # CORS_ALLOW_ALL_ORIGINS = True
 
@@ -170,8 +170,8 @@ USE_TZ = True
 
 # STATIC_URL = 'static/'
 STATIC_URL = '/static/'
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_ROOT = '/app/staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_ROOT = '/app/staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
