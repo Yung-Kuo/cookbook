@@ -445,7 +445,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
 
         <AddButton
           onClick={addInstruction}
-          parentClassName="h-10 w-10"
+          parentClassName="h-8 w-8 lg:h-10 lg:w-10"
           className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
         />
       </div>
@@ -520,7 +520,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
         <div className="flex items-center justify-between">
           <AddButton
             onClick={addIngredient}
-            parentClassName="h-6 w-6 lg:h-10 lg:w-10"
+            parentClassName="h-8 w-8 lg:h-10 lg:w-10"
             className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
           />
 
