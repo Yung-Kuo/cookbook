@@ -9,7 +9,7 @@ function AddButton({
     <div onClick={onClick} className={`rounded-full ${parentClassName}`}>
       <button
         type="button"
-        className={`z-10 flex cursor-pointer appearance-none items-center justify-center rounded-full transition-all focus:outline-none active:scale-90 ${className}`}
+        className={`z-10 flex h-full w-full cursor-pointer appearance-none items-center justify-center rounded-full transition-all focus:outline-none active:scale-90 ${className}`}
         aria-label="Add new recipe"
         title="Click to add a new recipe"
       >

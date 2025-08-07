@@ -517,11 +517,38 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
           ))}
         </div>
 
-        <AddButton
-          onClick={addIngredient}
-          parentClassName="h-10 w-10"
-          className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
-        />
+        <div className="flex items-center justify-between">
+          <AddButton
+            onClick={addIngredient}
+            parentClassName="h-6 w-6 lg:h-10 lg:w-10"
+            className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
+          />
+
+          {/* servings */}
+          <div className="flex items-center gap-4">
+            <label htmlFor="servings" className="font-medium text-neutral-500">
+              Servings
+            </label>
+            <input
+              type="text"
+              id="servings"
+              name="servings"
+              value={formData.servings}
+              onChange={(e) => {
+                // Only allow numbers and prevent non-numeric input
+                const value = e.target.value;
+                // Allow empty string for controlled input, otherwise only digits
+                if (value === "" || /^\d+$/.test(value)) {
+                  handleChange(e);
+                }
+              }}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              min="1"
+              className="w-20 rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Category Dropdown */}
@@ -542,7 +569,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
       </div>
 
       {/* prep time, cook time, servivngs */}
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <div>
           <label htmlFor="prep_time" className="font-medium text-neutral-500">
             Prep Time (mins)
@@ -575,29 +602,6 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
             id="cook_time"
             name="cook_time"
             value={formData.cook_time}
-            onChange={(e) => {
-              // Only allow numbers and prevent non-numeric input
-              const value = e.target.value;
-              // Allow empty string for controlled input, otherwise only digits
-              if (value === "" || /^\d+$/.test(value)) {
-                handleChange(e);
-              }
-            }}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            min="1"
-            className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label htmlFor="servings" className="font-medium text-neutral-500">
-            Servings
-          </label>
-          <input
-            type="text"
-            id="servings"
-            name="servings"
-            value={formData.servings}
             onChange={(e) => {
               // Only allow numbers and prevent non-numeric input
               const value = e.target.value;
