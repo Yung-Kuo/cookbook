@@ -359,11 +359,11 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-4 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-10 lg:p-10 lg:py-10 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-8 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-10 lg:p-10 lg:py-10 lg:text-4xl"
     >
       <h2 className="mb-6 text-3xl font-bold lg:text-5xl">Create New Recipe</h2>
 
-      {/* Basic Recipe Details */}
+      {/* Recipe title */}
       <div className="mb-6 flex w-full gap-4">
         <label
           htmlFor="title"
@@ -389,57 +389,78 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
         <label htmlFor="description" className="font-medium text-neutral-500">
           Description
         </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows="3"
-          className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-        ></textarea>
+        <div className="grid grid-cols-1 grid-rows-1">
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows="3"
+            className="z-10 col-start-1 row-start-1 mt-2 w-full resize-none rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+          ></textarea>
+          <span className="invisible col-start-1 row-start-1 mt-2 border-2 border-transparent p-2 text-2xl whitespace-pre-wrap">
+            {formData.description}{" "}
+          </span>
+        </div>
       </div>
 
       {/* Instructions */}
-      <div>
+      <div className="flex flex-col gap-4">
         <label htmlFor="instructions" className="font-medium text-neutral-500">
           Instructions
         </label>
-        {formData.recipe_instructions.map((recipe_instruction) => (
-          <div key={recipe_instruction.id} className="flex items-center gap-4">
-            <h4 className="flex gap-2">
-              Step <span>{recipe_instruction.order}</span>
-            </h4>
-            <textarea
-              id={`instruction-${recipe_instruction.id}`}
-              name="text"
-              value={recipe_instruction.text}
-              onChange={(e) =>
-                handleInstructionChange(e, recipe_instruction.id)
-              }
-              rows="1"
-              className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-              required
-            />
-            <DeleteButton
-              onClick={() => removeInstruction(recipe_instruction.id)}
-            />
-          </div>
-        ))}
+        <div className="flex flex-col gap-4">
+          {formData.recipe_instructions.map((recipe_instruction) => (
+            <div
+              key={recipe_instruction.id}
+              className="flex items-center gap-4"
+            >
+              <h4 className="flex gap-2">
+                <span className="hidden lg:flex">Step</span>{" "}
+                <span>{recipe_instruction.order}</span>
+              </h4>
+              <div className="grid w-full grid-cols-1 grid-rows-1">
+                <textarea
+                  id={`instruction-${recipe_instruction.id}`}
+                  name="text"
+                  value={recipe_instruction.text}
+                  onChange={(e) =>
+                    handleInstructionChange(e, recipe_instruction.id)
+                  }
+                  rows="1"
+                  className="z-10 col-start-1 row-start-1 w-full resize-none rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+                  required
+                />
+                <span className="invisible col-start-1 row-start-1 mt-2 border-2 border-transparent p-2 text-2xl whitespace-pre-wrap">
+                  {recipe_instruction.text}{" "}
+                </span>
+              </div>
+
+              <DeleteButton
+                onClick={() => removeInstruction(recipe_instruction.id)}
+              />
+            </div>
+          ))}
+        </div>
+
         <AddButton
           onClick={addInstruction}
-          parentClassName="mt-2 h-10 w-10"
+          parentClassName="h-10 w-10"
           className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
         />
       </div>
 
       {/* Ingredient List */}
-      <div>
+      <div className="flex flex-col gap-4">
         <h3 className="font-medium text-neutral-500">Ingredient List</h3>
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="flex flex-col">
           {formData.recipe_ingredients.map((recipe_ingredient) => (
-            <div key={recipe_ingredient.id} className="flex items-center gap-4">
-              <div className="grid grow grid-cols-3 justify-between gap-4">
-                <div>
+            <div
+              key={recipe_ingredient.id}
+              className="flex items-center gap-4 border-dotted border-neutral-600 not-first:border-t-2 not-first:pt-2 not-last:pb-2 lg:border-none lg:pt-0 lg:pb-0"
+            >
+              <div className="grid grow grid-cols-2 grid-rows-2 justify-between gap-2 lg:grid-cols-3 lg:grid-rows-1 lg:gap-2">
+                <div className="col-span-2 col-start-1 row-start-1 lg:col-span-1">
                   <ComboboxCreate
                     id={`ingredient-${recipe_ingredient.id}`}
                     name="ingredient"
@@ -455,18 +476,21 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                     className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
                   />
                 </div>
-                <input
-                  onChange={(e) =>
-                    handleIngredientChange(
-                      e.target.value,
-                      "quantity",
-                      recipe_ingredient.id,
-                    )
-                  }
-                  name="quantity"
-                  placeholder="quantity"
-                  className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-                />
+                <div>
+                  <input
+                    onChange={(e) =>
+                      handleIngredientChange(
+                        e.target.value,
+                        "quantity",
+                        recipe_ingredient.id,
+                      )
+                    }
+                    name="quantity"
+                    placeholder="quantity"
+                    className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 placeholder-neutral-600 focus:border-sky-600 focus:outline-none"
+                  />
+                </div>
+
                 <div>
                   <ComboboxCreate
                     id={`unit-${recipe_ingredient.id}`}
@@ -495,7 +519,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
 
         <AddButton
           onClick={addIngredient}
-          parentClassName="mt-2 h-10 w-10"
+          parentClassName="h-10 w-10"
           className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
         />
       </div>
@@ -518,7 +542,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
       </div>
 
       {/* prep time, cook time, servivngs */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <div>
           <label htmlFor="prep_time" className="font-medium text-neutral-500">
             Prep Time (mins)
@@ -554,7 +578,17 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
             id="servings"
             name="servings"
             value={formData.servings}
-            onChange={handleChange}
+            onChange={(e) => {
+              // Only allow numbers and prevent non-numeric input
+              const value = e.target.value;
+              // Allow empty string for controlled input, otherwise only digits
+              if (value === "" || /^\d+$/.test(value)) {
+                handleChange(e);
+              }
+            }}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            min="1"
             className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
         </div>

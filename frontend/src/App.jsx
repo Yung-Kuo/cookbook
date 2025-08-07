@@ -53,11 +53,15 @@ function App() {
         {recipes.map((recipe) => (
           <div
             key={recipe.id}
-            className={`flex cursor-pointer items-center gap-4 border-b-2 py-2 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
+            className={`flex cursor-pointer items-center border-b-2 py-2 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
           >
-            <span
-              className={`rounded-full bg-red-300 transition-all ${selectedRecipe?.id === recipe.id ? "h-5 w-5 opacity-100" : "h-0 w-0 opacity-0"}`}
-            ></span>
+            <div
+              className={`flex h-full items-center justify-center transition-all ${selectedRecipe?.id === recipe.id ? "px-4" : "px-2"}`}
+            >
+              <span
+                className={`rounded-full bg-red-300 transition-all ${selectedRecipe?.id === recipe.id ? "h-5 w-5 opacity-100" : "h-0 w-0 opacity-0"}`}
+              />
+            </div>
             <h2
               onClick={() => {
                 if (selectedRecipe?.id === recipe.id) {
