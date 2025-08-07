@@ -560,6 +560,9 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                 handleChange(e);
               }
             }}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            min="1"
             className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
         </div>
@@ -580,6 +583,9 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                 handleChange(e);
               }
             }}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            min="1"
             className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
         </div>
