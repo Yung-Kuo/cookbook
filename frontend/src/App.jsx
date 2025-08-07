@@ -53,7 +53,7 @@ function App() {
         {recipes.map((recipe) => (
           <div
             key={recipe.id}
-            className={`flex cursor-pointer items-center border-b-2 py-2 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
+            className={`flex w-full cursor-pointer items-center border-b-2 py-2 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
           >
             <div
               className={`flex h-full items-center justify-center transition-all ${selectedRecipe?.id === recipe.id ? "px-4" : "px-2"}`}
@@ -72,6 +72,7 @@ function App() {
                 // setShowRecipe(recipe.id);
                 setSelectedRecipe(recipe);
               }}
+              className="w-[calc(100%-2rem)] break-words whitespace-pre-wrap"
             >
               {recipe.title}
             </h2>

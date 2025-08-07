@@ -33,7 +33,9 @@ function Recipe({ selectedRecipe, onClose, className }) {
         <CloseIcon className="col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
       </button>
       <div className="flex flex-col gap-5 text-xl lg:text-2xl">
-        <h1 className="text-6xl lg:text-8xl">{selectedRecipe.title}</h1>
+        <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl">
+          {selectedRecipe.title}
+        </h1>
         {/* category */}
         {selectedRecipe.category && (
           <div className="flex justify-end">
