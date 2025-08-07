@@ -431,7 +431,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                   className="z-10 col-start-1 row-start-1 w-full resize-none rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
                   required
                 />
-                <span className="invisible col-start-1 row-start-1 mt-2 border-2 border-transparent p-2 text-2xl whitespace-pre-wrap">
+                <span className="invisible col-start-1 row-start-1 border-2 border-transparent p-2 text-2xl whitespace-pre-wrap">
                   {recipe_instruction.text}{" "}
                 </span>
               </div>
@@ -548,11 +548,18 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
             Prep Time (mins)
           </label>
           <input
-            type="number"
+            type="text"
             id="prep_time"
             name="prep_time"
             value={formData.prep_time}
-            onChange={handleChange}
+            onChange={(e) => {
+              // Only allow numbers and prevent non-numeric input
+              const value = e.target.value;
+              // Allow empty string for controlled input, otherwise only digits
+              if (value === "" || /^\d+$/.test(value)) {
+                handleChange(e);
+              }
+            }}
             className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
         </div>
@@ -561,11 +568,18 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
             Cook Time (mins)
           </label>
           <input
-            type="number"
+            type="text"
             id="cook_time"
             name="cook_time"
             value={formData.cook_time}
-            onChange={handleChange}
+            onChange={(e) => {
+              // Only allow numbers and prevent non-numeric input
+              const value = e.target.value;
+              // Allow empty string for controlled input, otherwise only digits
+              if (value === "" || /^\d+$/.test(value)) {
+                handleChange(e);
+              }
+            }}
             className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
         </div>
@@ -574,7 +588,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
             Servings
           </label>
           <input
-            type="number"
+            type="text"
             id="servings"
             name="servings"
             value={formData.servings}
