@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet";
 import { fetchRecipes } from "./api/recipes";
 import Recipe from "./components/UI/Main/Recipe";
 import AddRecipeButton from "./components/UI/Buttons/AddRecipeButton";
@@ -38,6 +39,13 @@ function App() {
 
   return (
     <div className="grid h-screen w-screen grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
+      <Helmet>
+        <title>Cookbook</title>
+        <meta
+          name="description"
+          content="Welcome to my Cookbook. Built with React & Django."
+        />
+      </Helmet>
       {/* Mask popup */}
       {/* <MaskPopup /> */}
       {/* New recipe popup */}
