@@ -21,7 +21,7 @@ function Recipe({ selectedRecipe, onClose, className }) {
 
   return (
     <div
-      className={`${className} overflow-scroll bg-neutral-900 p-5`}
+      className={`${className} overflow-scroll bg-neutral-900 p-5 pb-40`}
       //   ${selectedRecipe ? "opacity-100" : "opacity-0"}
     >
       {/* Close Button */}

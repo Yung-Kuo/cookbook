@@ -58,7 +58,7 @@ function App() {
       <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       {/* left panel */}
       <div
-        className={`flex h-full w-full flex-col lg:w-2/5 lg:p-5 ${showNewRecipe ? "overflow-hidden" : "overflow-scroll"}`}
+        className={`flex h-full w-full flex-col lg:w-2/5 lg:p-5 ${showNewRecipe || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
       >
         {recipes.map((recipe) => (
           <div
