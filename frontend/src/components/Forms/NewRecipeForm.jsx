@@ -415,7 +415,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
               key={recipe_instruction.id}
               className="flex items-center gap-4"
             >
-              <h4 className="flex gap-2">
+              <h4 className="flex gap-2 text-neutral-500">
                 <span className="hidden lg:flex">Step</span>{" "}
                 <span>{recipe_instruction.order}</span>
               </h4>
