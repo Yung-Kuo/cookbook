@@ -45,7 +45,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     try:
         DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+            'default': dj_database_url.config(DATABASE_URL, conn_max_age=600)
         }
         print(f"DEBUG: Using PostgreSQL with DATABASE_URL: {DATABASE_URL}")
     except Exception as e:
