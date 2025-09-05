@@ -2,6 +2,7 @@
 export const fetchRecipes = async (setRecipes) => {
   try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/recipes/`);
+    console.log("response: ", response);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
