@@ -24,9 +24,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-_q82^(9c8894zru$iv&ia&*l&9tol$@qb_q@h@4*qn=g2hvvnk'
 SECRET_KEY = os.environ.get("SECRET_KEY")
-
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
@@ -38,14 +36,17 @@ print(f"DEBUG (settings.py): Final DEBUG setting: {DEBUG}")
 print(f"DEBUG (settings.py): OS environment 'DEBUG' variable: {os.environ.get('DEBUG')}")
  
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(",")
+# ALLOWED_HOSTS = ["localhost,127.0.0.1","cookbook-zel0.onrender.com"]
 
-print(f"DEBUG: os.environ.get('DATABASE_URL') -> {os.environ.get('DATABASE_URL')}")
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
+print(f"DEBUG: os.environ.get('DATABASE_URL') -> {DATABASE_URL}")
+
 if DATABASE_URL:
     try:
         DATABASES = {
-            'default': dj_database_url.config(DATABASE_URL, conn_max_age=600)
+            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
         }
         print(f"DEBUG: Using PostgreSQL with DATABASE_URL: {DATABASE_URL}")
     except Exception as e:
@@ -96,11 +97,11 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'https://cookbook-fawn-three.vercel.app'
-]
-# CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:5173',
+#     'https://cookbook-fawn-three.vercel.app'
+# ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
