@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import CloseIcon from "../../Icons/CloseIcon";
+import { CloseButton } from "../Buttons/CloseButton";
 
 function Recipe({ selectedRecipe, onClose, className }) {
   // Calculate dates once and memoize them to avoid recalculation on every render
@@ -25,13 +25,7 @@ function Recipe({ selectedRecipe, onClose, className }) {
       //   ${selectedRecipe ? "opacity-100" : "opacity-0"}
     >
       {/* Close Button */}
-      <button
-        className="absolute top-5 right-5 z-20 grid h-10 w-10 grid-cols-1 grid-rows-1 rounded-full backdrop-blur-xs"
-        onMouseDown={onClose}
-      >
-        <div className="col-start-1 row-start-1 h-full w-full rounded-full bg-neutral-200 opacity-10" />
-        <CloseIcon className="col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
-      </button>
+      <CloseButton onClose={onClose} />
       <div className="flex flex-col gap-5 text-xl lg:text-2xl">
         <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl">
           {selectedRecipe.title}
@@ -46,14 +40,6 @@ function Recipe({ selectedRecipe, onClose, className }) {
         )}
         {/* description */}
         {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}
-        {/* servings */}
-        {/* {selectedRecipe.servings && (
-          <div className="flex justify-end">
-            <h4 className="mt-20 text-neutral-500">
-              {selectedRecipe.servings} servings
-            </h4>
-          </div>
-        )} */}
         {/* ingredients */}
         {selectedRecipe.recipe_ingredients && (
           <div className="mt-20 flex flex-col gap-2">
