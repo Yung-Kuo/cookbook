@@ -4,6 +4,7 @@ function AddButton({
   parentClassName,
   className = "bg-red-300 hover:bg-red-400 text-neutral-900",
   onClick,
+  title = "Add a new item",
 }) {
   return (
     <div onClick={onClick} className={`rounded-full ${parentClassName}`}>
@@ -11,7 +12,7 @@ function AddButton({
         type="button"
         className={`z-10 flex h-full w-full cursor-pointer appearance-none items-center justify-center rounded-full transition-all focus:outline-none active:scale-90 ${className}`}
         aria-label="Add new recipe"
-        title="Click to add a new recipe"
+        title={title}
       >
         <AddIcon className="box-border h-full w-full rounded-full" />
       </button>
