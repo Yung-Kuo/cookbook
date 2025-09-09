@@ -97,11 +97,10 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:5173',
-#     'https://cookbook-fawn-three.vercel.app'
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'https://cookbook-fawn-three.vercel.app'
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
