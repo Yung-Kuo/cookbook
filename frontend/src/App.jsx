@@ -58,12 +58,12 @@ function App() {
       <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       {/* left panel */}
       <div
-        className={`flex h-full w-full flex-col lg:w-2/5 lg:p-5 ${showNewRecipe || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
+        className={`flex h-full w-full flex-col lg:w-2/5 lg:pl-5 ${showNewRecipe || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
       >
         {recipes.map((recipe) => (
           <div
             key={recipe.id}
-            className={`flex w-full cursor-pointer items-center border-b-2 py-2 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
+            className={`flex w-full cursor-pointer items-center border-b-2 py-2 pr-5 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
           >
             <div
               className={`flex h-full items-center justify-center transition-all ${selectedRecipe?.id === recipe.id ? "px-4" : "px-2"}`}
