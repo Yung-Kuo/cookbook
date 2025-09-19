@@ -630,7 +630,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
         <button
           type="button"
           onClick={handleSubmit}
-          className="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-neutral-100 transition-all hover:bg-sky-700 focus:outline-none active:scale-95"
+          className="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-neutral-100 transition-all hover:bg-sky-500 focus:outline-none hover:text-white active:scale-95"
         >
           Create Recipe
         </button>
