@@ -26,7 +26,7 @@ function Recipe({ selectedRecipe, onClose, className }) {
     >
       {/* Close Button */}
       <CloseButton onClose={onClose} />
-      <div className="flex flex-col gap-20 text-xl lg:text-2xl">
+      <div className="flex flex-col gap-24 text-xl lg:text-2xl">
         <div className="flex flex-col gap-5">
           <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl">
             {selectedRecipe.title}
@@ -93,22 +93,29 @@ function Recipe({ selectedRecipe, onClose, className }) {
           )}
         </div>
 
-        {/* prep time */}
-        {selectedRecipe.prep_time && (
-          <h4 className="flex gap-2 text-neutral-500">
-            Prep Time:
-            <span className="text-neutral-100">{selectedRecipe.prep_time}</span>
-            minutes
-          </h4>
-        )}
-        {/* cook time */}
-        {selectedRecipe.cook_time && (
-          <h4 className="flex gap-2 text-neutral-500">
-            Cook Time:
-            <span className="text-neutral-100">{selectedRecipe.cook_time}</span>
-            minutes
-          </h4>
-        )}
+        <div className="flex flex-col gap-5">
+          {/* prep time */}
+          {selectedRecipe.prep_time && (
+            <h4 className="flex gap-2 text-neutral-500">
+              Prep Time:
+              <span className="text-neutral-100">
+                {selectedRecipe.prep_time}
+              </span>
+              minutes
+            </h4>
+          )}
+          {/* cook time */}
+          {selectedRecipe.cook_time && (
+            <h4 className="flex gap-2 text-neutral-500">
+              Cook Time:
+              <span className="text-neutral-100">
+                {selectedRecipe.cook_time}
+              </span>
+              minutes
+            </h4>
+          )}
+        </div>
+
         {/* createdDate & updatedDate */}
         <div className="mt-20 flex flex-col items-end">
           {/* created */}
