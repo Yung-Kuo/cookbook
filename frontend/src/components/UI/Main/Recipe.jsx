@@ -26,24 +26,27 @@ function Recipe({ selectedRecipe, onClose, className }) {
     >
       {/* Close Button */}
       <CloseButton onClose={onClose} />
-      <div className="flex flex-col gap-5 text-xl lg:text-2xl">
-        <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl">
-          {selectedRecipe.title}
-        </h1>
-        {/* category */}
-        {selectedRecipe.category && (
-          <div className="flex justify-end">
-            <div className="rounded-full bg-neutral-700 px-4 py-1">
-              <h6>{selectedRecipe.category.name}</h6>
+      <div className="flex flex-col gap-20 text-xl lg:text-2xl">
+        <div className="flex flex-col gap-5">
+          <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl">
+            {selectedRecipe.title}
+          </h1>
+          {/* category */}
+          {selectedRecipe.category && (
+            <div className="flex justify-end">
+              <div className="rounded-full bg-neutral-700 px-4 py-1">
+                <h6>{selectedRecipe.category.name}</h6>
+              </div>
             </div>
-          </div>
-        )}
-        {/* description */}
-        {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}
+          )}
+          {/* description */}
+          {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}
+        </div>
+
         {/* ingredients */}
         {selectedRecipe.recipe_ingredients && (
-          <div className="mt-20 flex flex-col gap-2">
-            <div className="flex justify-between">
+          <div>
+            <div className="mb-2 flex justify-between">
               <h2 className="text-3xl lg:text-4xl">Ingredients</h2>
               {/* servings */}
               {selectedRecipe.servings && (
@@ -74,18 +77,22 @@ function Recipe({ selectedRecipe, onClose, className }) {
           </div>
         )}
         {/* instructions */}
-        {selectedRecipe.recipe_instructions && (
-          <div className="flex flex-col gap-4 border-t border-neutral-500 py-10">
-            {selectedRecipe.recipe_instructions.map((instruction) => (
-              <div key={instruction.id} className="flex">
-                <h4 className="flex w-1/6 text-neutral-500">
-                  {instruction.order}
-                </h4>
-                <h4 className="w-5/6">{instruction.text}</h4>
-              </div>
-            ))}
-          </div>
-        )}
+        <div>
+          <h2 className="mb-2 text-3xl lg:text-4xl">Instructions</h2>
+          {selectedRecipe.recipe_instructions && (
+            <div className="flex flex-col gap-4 border-t border-neutral-500 py-10">
+              {selectedRecipe.recipe_instructions.map((instruction) => (
+                <div key={instruction.id} className="flex">
+                  <h4 className="flex w-1/6 text-neutral-500">
+                    {instruction.order}
+                  </h4>
+                  <h4 className="w-5/6">{instruction.text}</h4>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* prep time */}
         {selectedRecipe.prep_time && (
           <h4 className="flex gap-2 text-neutral-500">
