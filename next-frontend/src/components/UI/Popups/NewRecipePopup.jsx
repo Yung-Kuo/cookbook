@@ -1,0 +1,38 @@
+"use client";
+
+import NewRecipeForm from "../../Forms/NewRecipeForm";
+import { CloseButton } from "../Buttons/CloseButton";
+
+function NewRecipePopup({ show, onClose, onRecipeCreated }) {
+  //   const [show, setShow] = useState([true]);
+  return (
+    <div
+      className={`fixed top-0 left-0 z-30 flex h-screen w-screen items-center justify-center overflow-hidden ${show ? "flex" : "hidden"}`}
+    >
+      {/* mask */}
+      <div
+        onClick={onClose}
+        className="fixed top-0 left-0 z-30 h-full w-full bg-neutral-600/60 backdrop-blur-xs"
+      ></div>
+      {/* Recipe Form */}
+      <div className="z-40 h-full w-full bg-neutral-800 md:h-5/6 md:max-h-[88rem] md:w-4/5 md:max-w-[72rem] md:rounded-md">
+        {/* Close Button */}
+        <div className="relative">
+          <CloseButton onClose={onClose} />
+          {/* <button
+            className="absolute top-5 right-5 z-50 grid h-10 w-10 grid-cols-1 grid-rows-1 rounded-full backdrop-blur-xs"
+            onMouseDown={onClose}
+          >
+            <div className="col-start-1 row-start-1 h-full w-full rounded-full bg-neutral-200 opacity-10" />
+            <CloseIcon className="col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
+          </button> */}
+        </div>
+
+        {/* Form */}
+        <NewRecipeForm onClose={onClose} onRecipeCreated={onRecipeCreated} />
+      </div>
+    </div>
+  );
+}
+
+export default NewRecipePopup;
