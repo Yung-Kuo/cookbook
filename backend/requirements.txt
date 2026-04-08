@@ -30,3 +30,4 @@ virtualenv==20.30.0
 django-allauth
 dj-rest-auth
 PyJWT[crypto]
+requests
