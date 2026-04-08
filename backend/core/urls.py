@@ -4,13 +4,17 @@ from django.urls import path, include
 from django.conf import settings # Make sure this is imported
 from django.conf.urls.static import static # Make sure this is imported
 
+from core.api.social_views import GoogleLogin, GitHubLogin
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.api.urls')),
 
-    # YOUR PATTERNS
+    path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/google/', GoogleLogin.as_view(), name='google_login'),
+    path('api/auth/github/', GitHubLogin.as_view(), name='github_login'),
+
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    # Optional UI:
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]

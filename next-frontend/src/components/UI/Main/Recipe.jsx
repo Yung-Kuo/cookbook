@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { CloseButton } from "../Buttons/CloseButton";
 
-function Recipe({ selectedRecipe, onClose, className }) {
+function Recipe({ selectedRecipe, onClose, onEdit, className }) {
   // Calculate dates once and memoize them to avoid recalculation on every render
   const { createdDate, updatedDate, isUpdated } = useMemo(() => {
     if (!selectedRecipe) {
@@ -23,16 +24,31 @@ function Recipe({ selectedRecipe, onClose, className }) {
 
   return (
     <div
-      className={`${className} overflow-scroll bg-neutral-900 p-5 pb-40`}
+      className={`${className} absolute top-0 right-0 z-40 overflow-scroll bg-neutral-900 p-5 pb-40 lg:pb-5 lg:pt-16`}
       //   ${selectedRecipe ? "opacity-100" : "opacity-0"}
     >
-      {/* Close Button */}
-      <CloseButton onClose={onClose} />
+      <div className="fixed top-18 right-5 z-50 flex gap-5">
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="cursor-pointer rounded-full  bg-red-300 px-4 text-lg font-bold text-neutral-800 transition-all hover:bg-red-400 focus:outline-none active:scale-95 lg:text-xl"
+          >
+            Edit
+          </button>
+        )}
+        <CloseButton onClose={onClose} />
+      </div>
+
       <div className="flex flex-col gap-24 text-xl lg:text-2xl">
         <div className="flex flex-col gap-5">
-          <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl">
-            {selectedRecipe.title}
-          </h1>
+          <Link
+            href={`/users/${selectedRecipe.owner || "_"}/recipes/${selectedRecipe.id}`}
+          >
+            <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl hover:text-red-300 transition-colors">
+              {selectedRecipe.title}
+            </h1>
+          </Link>
           {/* category */}
           {selectedRecipe.category && (
             <div className="flex justify-end">
@@ -119,7 +135,7 @@ function Recipe({ selectedRecipe, onClose, className }) {
         </div>
 
         {/* createdDate & updatedDate */}
-        <div className="mt-20 flex flex-col items-end">
+        <div className="flex flex-col items-end">
           {/* created */}
           {createdDate && (
             <h6 className="flex gap-2 text-neutral-500">

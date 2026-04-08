@@ -27,3 +27,6 @@ setuptools==79.0.0
 sqlparse==0.5.3
 uritemplate==4.1.1
 virtualenv==20.30.0
+django-allauth
+dj-rest-auth
+PyJWT[crypto]

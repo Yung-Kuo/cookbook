@@ -1,66 +1,128 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createRecipe } from "../../api/recipes";
+import { createRecipe, updateRecipe } from "../../api/recipes";
 import { fetchCategories, createCategory } from "../../api/categories";
 import { fetchIngredients, createIngredient } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
 import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
 
-function RecipeCreateForm({ onClose, onRecipeCreated }) {
-  // ----------------------------------------------------
-  // 1. Component State to hold form data
-  //    Matches the structure expected by RecipeWriteSerializer
-  // ----------------------------------------------------
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    recipe_instructions: [
-      {
-        id: crypto.randomUUID(),
-        text: "",
-        order: 1,
-      },
-    ],
-    prep_time: "",
-    cook_time: "",
-    servings: "",
-    category: "",
-    recipe_ingredients: [
-      {
-        id: crypto.randomUUID(),
-        ingredient: "",
-        quantity: "",
-        unit: "",
-      },
-    ],
-  });
+const UNITS = [
+  { id: 0, name: "g" },
+  { id: 1, name: "kg" },
+  { id: 2, name: "ml" },
+  { id: 3, name: "l" },
+  { id: 4, name: "tsp" },
+  { id: 5, name: "tbsp" },
+  { id: 6, name: "cup" },
+  { id: 7, name: "clove" },
+  { id: 8, name: "stalk" },
+  { id: 9, name: "piece" },
+  { id: 10, name: "unit" },
+  { id: 11, name: "to taste" },
+];
 
-  const clearForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      recipe_instructions: [
+function scalarToFormString(v) {
+  if (v === null || v === undefined) return "";
+  return String(v);
+}
+
+/** Map API recipe (read serializer) to local form state */
+function recipeToFormData(recipe) {
+  const instructions = recipe.recipe_instructions?.length
+    ? [...recipe.recipe_instructions]
+        .sort((a, b) => a.order - b.order)
+        .map((ins) => ({
+          id: ins.id ?? crypto.randomUUID(),
+          text: ins.text ?? "",
+          order: ins.order,
+        }))
+    : [
         {
-          id: crypto.randomUUID(),
+          id: "instruction-1",
           text: "",
           order: 1,
         },
-      ],
-      prep_time: "",
-      cook_time: "",
-      servings: "",
-      category: "",
-      recipe_ingredients: [
+      ];
+
+  const recipeIngredients = recipe.recipe_ingredients?.length
+    ? recipe.recipe_ingredients.map((ri) => ({
+        id: ri.id ?? crypto.randomUUID(),
+        ingredient:
+          ri.ingredient != null
+            ? { id: ri.ingredient, name: ri.name }
+            : "",
+        quantity:
+          ri.quantity !== null && ri.quantity !== undefined
+            ? String(ri.quantity)
+            : "",
+        unit: ri.unit
+          ? UNITS.find((u) => u.name === ri.unit) ?? {
+              id: -1,
+              name: ri.unit,
+            }
+          : "",
+      }))
+    : [
         {
-          id: crypto.randomUUID(),
+          id: "ingredient-1",
           ingredient: "",
           quantity: "",
           unit: "",
         },
-      ],
-    });
+      ];
+
+  return {
+    title: recipe.title ?? "",
+    description: recipe.description ?? "",
+    recipe_instructions: instructions,
+    prep_time: scalarToFormString(recipe.prep_time),
+    cook_time: scalarToFormString(recipe.cook_time),
+    servings: scalarToFormString(recipe.servings),
+    category: recipe.category ?? "",
+    recipe_ingredients: recipeIngredients,
+  };
+}
+
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  recipe_instructions: [
+    {
+      id: "instruction-1",
+      text: "",
+      order: 1,
+    },
+  ],
+  prep_time: "",
+  cook_time: "",
+  servings: "",
+  category: "",
+  recipe_ingredients: [
+    {
+      id: "ingredient-1",
+      ingredient: "",
+      quantity: "",
+      unit: "",
+    },
+  ],
+};
+
+function RecipeCreateForm({
+  onClose,
+  onRecipeCreated,
+  existingRecipe,
+  onRecipeUpdated,
+}) {
+  // ----------------------------------------------------
+  // 1. Component State to hold form data
+  //    Matches the structure expected by RecipeWriteSerializer
+  // ----------------------------------------------------
+  const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM }));
+
+  const clearForm = () => {
+    setFormData({ ...EMPTY_FORM });
   };
 
   // ----------------------------------------------------
@@ -68,20 +130,6 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
   // ----------------------------------------------------
   const [categories, setCategories] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  const units = [
-    { id: 0, name: "g" },
-    { id: 1, name: "kg" },
-    { id: 2, name: "ml" },
-    { id: 3, name: "l" },
-    { id: 4, name: "tsp" },
-    { id: 5, name: "tbsp" },
-    { id: 6, name: "cup" },
-    { id: 7, name: "clove" },
-    { id: 8, name: "stalk" },
-    { id: 9, name: "piece" },
-    { id: 10, name: "unit" },
-    { id: 11, name: "to taste" },
-  ];
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
   const [dropdownError, setDropdownError] = useState(null);
 
@@ -106,6 +154,14 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
 
     loadDropdownData();
   }, []);
+
+  useEffect(() => {
+    if (existingRecipe) {
+      setFormData(recipeToFormData(existingRecipe));
+    } else {
+      clearForm();
+    }
+  }, [existingRecipe]);
 
   // ----------------------------------------------------
   // 4. Handle input changes (for text/number fields)
@@ -237,7 +293,11 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
           nameToIngredient[ingredient.name] = ingredient;
         });
         recipe_ingredients = recipe_ingredients.map((ri) => {
-          if (ri.ingredient && !ri.ingredient.id && nameToIngredient[ri.ingredient.name]) {
+          if (
+            ri.ingredient &&
+            !ri.ingredient.id &&
+            nameToIngredient[ri.ingredient.name]
+          ) {
             return { ...ri, ingredient: nameToIngredient[ri.ingredient.name] };
           }
           return ri;
@@ -289,27 +349,47 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
     }
 
     try {
-      const { data, error } = await createRecipe(submissionData);
-      if (data) {
-        onRecipeCreated(data);
-        clearForm();
-      }
-      if (error) {
-        console.error("Error creating recipe:", error);
+      if (existingRecipe) {
+        const { data, error } = await updateRecipe(
+          existingRecipe.id,
+          submissionData,
+        );
+        if (data) {
+          onRecipeUpdated?.(data);
+          clearForm();
+        }
+        if (error) {
+          console.error("Error updating recipe:", error);
+        } else {
+          onClose();
+        }
       } else {
-        onClose();
+        const { data, error } = await createRecipe(submissionData);
+        if (data) {
+          onRecipeCreated(data);
+          clearForm();
+        }
+        if (error) {
+          console.error("Error creating recipe:", error);
+        } else {
+          onClose();
+        }
       }
     } catch (err) {
-      console.error("Error creating recipe:", err);
+      console.error("Error submitting recipe:", err);
     }
   };
+
+  const isEditing = Boolean(existingRecipe);
 
   return (
     <form
       onSubmit={handleSubmit}
       className="flex h-full w-full flex-col gap-8 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-10 lg:p-10 lg:py-10 lg:text-4xl"
     >
-      <h2 className="mb-6 text-3xl font-bold lg:text-5xl">Create New Recipe</h2>
+      <h2 className="mb-6 text-3xl font-bold lg:text-5xl">
+        {isEditing ? "Edit Recipe" : "Create New Recipe"}
+      </h2>
 
       {/* Recipe title */}
       <div className="mb-6 flex w-full gap-4">
@@ -425,6 +505,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                 </div>
                 <div>
                   <input
+                    value={recipe_ingredient.quantity}
                     onChange={(e) =>
                       handleIngredientChange(
                         e.target.value,
@@ -441,7 +522,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
                 <div>
                   <ComboboxCreate
                     name="unit"
-                    options={units}
+                    options={UNITS}
                     noCreate
                     value={recipe_ingredient.unit}
                     onChange={(value) =>
@@ -502,7 +583,6 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
         </label>
         <div className="mt-2">
           <ComboboxCreate
-            name="category"
             options={categories}
             value={formData.category}
             onChange={handleCategoryChange}
@@ -571,7 +651,7 @@ function RecipeCreateForm({ onClose, onRecipeCreated }) {
           onClick={handleSubmit}
           className="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-neutral-100 transition-all hover:bg-sky-500 focus:outline-none hover:text-white active:scale-95"
         >
-          Create Recipe
+          {isEditing ? "Edit Recipe" : "Create Recipe"}
         </button>
       </div>
     </form>

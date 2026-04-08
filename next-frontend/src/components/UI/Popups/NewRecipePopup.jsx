@@ -3,7 +3,13 @@
 import NewRecipeForm from "../../Forms/NewRecipeForm";
 import { CloseButton } from "../Buttons/CloseButton";
 
-function NewRecipePopup({ show, onClose, onRecipeCreated }) {
+function NewRecipePopup({
+  show,
+  onClose,
+  onRecipeCreated,
+  existingRecipe,
+  onRecipeUpdated,
+}) {
   //   const [show, setShow] = useState([true]);
   return (
     <div
@@ -18,18 +24,18 @@ function NewRecipePopup({ show, onClose, onRecipeCreated }) {
       <div className="z-40 h-full w-full bg-neutral-800 md:h-5/6 md:max-h-[88rem] md:w-4/5 md:max-w-[72rem] md:rounded-md">
         {/* Close Button */}
         <div className="relative">
-          <CloseButton onClose={onClose} />
-          {/* <button
-            className="absolute top-5 right-5 z-50 grid h-10 w-10 grid-cols-1 grid-rows-1 rounded-full backdrop-blur-xs"
-            onMouseDown={onClose}
-          >
-            <div className="col-start-1 row-start-1 h-full w-full rounded-full bg-neutral-200 opacity-10" />
-            <CloseIcon className="col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
-          </button> */}
+          <div className="absolute top-5 right-5 z-50">
+            <CloseButton onClose={onClose} />
+          </div>
         </div>
 
         {/* Form */}
-        <NewRecipeForm onClose={onClose} onRecipeCreated={onRecipeCreated} />
+        <NewRecipeForm
+          onClose={onClose}
+          onRecipeCreated={onRecipeCreated}
+          existingRecipe={existingRecipe}
+          onRecipeUpdated={onRecipeUpdated}
+        />
       </div>
     </div>
   );

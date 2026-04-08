@@ -36,15 +36,12 @@ class RecipeInstructionSerializer(serializers.ModelSerializer):
 
 # Serializer for Reading/Displaying Recipes (GET requests)
 class RecipeSerializer(serializers.ModelSerializer):
-    # Nested serializer for Category to show full category details
     category = CategorySerializer(read_only=True)
-    # Nested serializer for RecipeIngredient to show full ingredient details for the recipe
-    # recipe_ingredients = RecipeIngredientSerializer(many=True, read_only=True)
     recipe_ingredients = serializers.SerializerMethodField(method_name='get_recipe_ingredients')
     recipe_instructions = serializers.SerializerMethodField(method_name='get_recipe_instructions')
+    owner = serializers.CharField(source='owner.username', read_only=True, default=None)
 
     def get_recipe_ingredients(self, obj):
-        # recipe_ingredients = obj.recipeingredient_set.all()
         return RecipeIngredientSerializer(obj.recipeingredient_set.all(), many=True).data
     
     def get_recipe_instructions(self, obj):
@@ -56,9 +53,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'recipe_instructions', 
             'prep_time', 'cook_time', 'servings',
             'category', 'recipe_ingredients',
+            'owner', 'is_public',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at'] # updated_at is auto_now=True, handled by Django
+        read_only_fields = ['id', 'owner', 'created_at']
 
 # Serializer for Creating and Updating Recipes (POST, PUT, PATCH requests)
 class RecipeWriteSerializer(serializers.ModelSerializer):
@@ -76,9 +74,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'recipe_instructions',
             'prep_time', 'cook_time', 'servings',
-            'category', 'recipe_ingredients' # Note: created_at, updated_at are not in fields for write
+            'category', 'recipe_ingredients', 'is_public',
         ]
-        # read_only_fields = ['id'] # ID is read-only for updates, not sent for creation
 
     def create(self, validated_data):
         # Pop the nested data first
@@ -100,16 +97,24 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Pop the nested data first
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', None)
+        recipe_instructions_data = validated_data.pop('recipe_instructions', None)
 
         # Update main Recipe fields using the parent's update method
-        # This handles title, description, instructions, times, servings, and category
         instance = super().update(instance, validated_data)
 
         # Handle nested RecipeIngredient updates
         if recipe_ingredients_data is not None:
-            # Option 1: C lear all existing and re-create (simpler for now, good for full replacement)
             instance.recipeingredient_set.all().delete()
             for ingredient_data in recipe_ingredients_data:
                 RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
+
+        if recipe_instructions_data is not None:
+            instance.recipeinstruction_set.all().delete()
+            for instruction_data in recipe_instructions_data:
+                # Ignore client-supplied pk so rows are always recreated after delete
+                instruction_data = {
+                    k: v for k, v in instruction_data.items() if k != "id"
+                }
+                RecipeInstruction.objects.create(recipe=instance, **instruction_data)
 
         return instance

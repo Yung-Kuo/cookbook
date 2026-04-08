@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 class Category(models.Model):
@@ -21,6 +22,8 @@ class Recipe(models.Model):
     cook_time = models.IntegerField(help_text="Cooking time in minutes", null=True, blank=True, default=None)
     servings = models.IntegerField(null=True, blank=True, default=None)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='recipes')
+    is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
