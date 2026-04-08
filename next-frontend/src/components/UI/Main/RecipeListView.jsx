@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Recipe from "@/components/UI/Main/Recipe";
+import RecipeListItem from "@/components/UI/Main/RecipeListItem";
 import AddRecipeButton from "@/components/UI/Buttons/AddRecipeButton";
 import NewRecipePopup from "@/components/UI/Popups/NewRecipePopup";
 
@@ -43,24 +44,20 @@ export default function RecipeListView({ fetchFn }) {
       >
         {recipes.map((recipe) => (
           <div
-            key={recipe.id}
-            onClick={() => {
-              if (selectedRecipe?.id === recipe.id) {
-                setSelectedRecipe(null);
-                return;
-              }
-              setSelectedRecipe(recipe);
-            }}
-            className={`flex w-full hover:bg-neutral-600 bg-neutral-700 break-words whitespace-pre-wrap cursor-pointer items-center border-b-2 py-2 pr-5 transition-all ${selectedRecipe?.id === recipe.id ? "box-border border-white text-red-300" : "border-transparent"}`}
+            className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "pr-0" : "pr-5"}`}
           >
-            <div
-              className={`flex h-full items-center justify-center transition-all ${selectedRecipe?.id === recipe.id ? "px-4" : "px-2"}`}
-            >
-              <span
-                className={`rounded-full bg-red-300 transition-all ${selectedRecipe?.id === recipe.id ? "h-5 w-5 opacity-100" : "h-0 w-0 opacity-0"}`}
-              />
-            </div>
-            <h2 className="w-[calc(100%-2rem)] ">{recipe.title}</h2>
+            <RecipeListItem
+              key={recipe.id}
+              recipe={recipe}
+              isSelected={selectedRecipe?.id === recipe.id}
+              onSelect={() => {
+                if (selectedRecipe?.id === recipe.id) {
+                  setSelectedRecipe(null);
+                  return;
+                }
+                setSelectedRecipe(recipe);
+              }}
+            />
           </div>
         ))}
       </div>
