@@ -44,6 +44,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const handledRef = useRef(false);
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -60,6 +61,8 @@ function LoginContent() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
+      if (redirectedRef.current) return;
+      redirectedRef.current = true;
       router.push(getPostLoginDestination(searchParams));
       return;
     }
@@ -85,7 +88,11 @@ function LoginContent() {
     }
 
     socialLogin(state, code)
-      .then(() => router.push(getPostLoginDestination(searchParams)))
+      .then(() => {
+        if (redirectedRef.current) return;
+        redirectedRef.current = true;
+        router.push(getPostLoginDestination(searchParams));
+      })
       .catch((err) => {
         console.error("OAuth login failed:", err);
         if (typeof window !== "undefined") {
