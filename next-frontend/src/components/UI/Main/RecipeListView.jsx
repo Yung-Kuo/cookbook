@@ -19,7 +19,9 @@ export default function RecipeListView({ fetchFn }) {
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    fetchTags().then(setTags).catch(() => {});
+    fetchTags()
+      .then(setTags)
+      .catch(() => {});
   }, []);
 
   const doFetch = useCallback(
@@ -82,7 +84,7 @@ export default function RecipeListView({ fetchFn }) {
         className={`flex h-full w-full flex-col lg:w-2/5 ${showNewRecipe || recipeToEdit || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
       >
         {/* Search & Filter Bar */}
-        <div className="sticky top-0 z-10 flex flex-col gap-2 bg-neutral-800 px-4 py-3">
+        <div className="sticky top-0 z-10 flex flex-col gap-2 bg-neutral-800 px-6 py-3">
           <input
             type="text"
             placeholder="Search recipes..."
@@ -104,11 +106,11 @@ export default function RecipeListView({ fetchFn }) {
           </select>
         </div>
 
-        <div className="flex flex-col gap-2 py-2">
+        <div className="flex flex-col gap-2 py-2 w-full">
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
-              className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "pr-0 pl-4" : "pr-8 pl-4"}`}
+              className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "pr-0 pl-4" : "px-6"}`}
             >
               <RecipeListItem
                 recipe={recipe}

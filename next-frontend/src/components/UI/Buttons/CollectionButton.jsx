@@ -7,6 +7,7 @@ import {
   addRecipeToCollection,
   removeRecipeFromCollection,
 } from "@/api/collections";
+import RoundedButton from "./RoundedButton";
 
 /**
  * Dropdown to add/remove recipe from collections. Button label: "+ collection"
@@ -91,13 +92,13 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
 
   return (
     <div className="relative" ref={wrapRef}>
-      <button
+      <RoundedButton
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="cursor-pointer rounded-full border border-neutral-600 bg-neutral-800 px-3 py-1.5 text-sm font-medium text-neutral-200 transition-all hover:border-sky-500 hover:text-sky-200"
+        className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 hover:text-sky-200"
       >
         + collection
-      </button>
+      </RoundedButton>
       {open && (
         <div className="absolute left-0 z-50 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl lg:left-auto lg:right-0">
           <p className="mb-2 text-xs font-medium text-neutral-500">

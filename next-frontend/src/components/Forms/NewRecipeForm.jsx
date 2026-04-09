@@ -510,14 +510,14 @@ function RecipeCreateForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-8 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-10 lg:p-10 lg:py-10 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-6 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:py-10 lg:text-4xl"
     >
-      <h2 className="mb-6 text-3xl font-bold lg:text-5xl">
+      <h2 className="text-3xl font-bold lg:text-5xl">
         {isEditing ? "Edit Recipe" : "Create New Recipe"}
       </h2>
 
       {/* Recipe title */}
-      <div className="mb-6 flex w-full gap-4">
+      <div className="flex w-full gap-4">
         <label
           htmlFor="title"
           className="font-medium whitespace-nowrap text-neutral-500"
@@ -552,7 +552,7 @@ function RecipeCreateForm({
           onChange={addPhotoFiles}
           className="hidden"
         />
-        <div className="mt-2 flex flex-wrap gap-3">
+        <div className="mt-2 flex flex-wrap gap-4">
           {photoItems.map((item) => {
             const src = item.preview || item.image_url;
             return (
@@ -779,23 +779,61 @@ function RecipeCreateForm({
 
       {/* Visibility */}
       <div className="flex flex-wrap items-center gap-4">
-        <span className="font-medium text-neutral-500">Visibility</span>
-        <label className="flex cursor-pointer items-center gap-3">
-          <input
-            type="checkbox"
-            name="is_public"
-            checked={formData.is_public}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, is_public: e.target.checked }))
-            }
-            className="h-6 w-6 rounded border-neutral-500 bg-neutral-900 text-sky-600 focus:ring-sky-600"
-          />
-          <span className="text-neutral-300">
-            {formData.is_public
-              ? "Public — visible to everyone"
-              : "Private — only you can see this recipe"}
-          </span>
-        </label>
+        <span id="visibility-heading" className="font-medium text-neutral-500">
+          Visibility
+        </span>
+        <div
+          className="flex flex-wrap items-center gap-6"
+          role="radiogroup"
+          aria-labelledby="visibility-heading"
+        >
+          <label className="flex cursor-pointer items-center gap-3 rounded-md focus-within:outline-none">
+            <input
+              type="radio"
+              name="visibility"
+              value="public"
+              checked={formData.is_public}
+              onChange={() =>
+                setFormData((prev) => ({ ...prev, is_public: true }))
+              }
+              className="peer sr-only"
+            />
+            <span
+              aria-hidden="true"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-checked:[&>.radio-dot]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950"
+            >
+              <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
+            </span>
+            <div className="text-2xl">
+              <span className="text-neutral-300">Public </span>
+              <span className="text-neutral-500">(visible to everyone)</span>
+            </div>
+          </label>
+          <label className="flex cursor-pointer items-center gap-3 rounded-md focus-within:outline-none">
+            <input
+              type="radio"
+              name="visibility"
+              value="private"
+              checked={!formData.is_public}
+              onChange={() =>
+                setFormData((prev) => ({ ...prev, is_public: false }))
+              }
+              className="peer sr-only"
+            />
+            <span
+              aria-hidden="true"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-checked:[&>.radio-dot]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950"
+            >
+              <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
+            </span>
+            <div className="text-2xl">
+              <span className="text-neutral-300">Private </span>
+              <span className="text-neutral-500">
+                (only you can see this recipe)
+              </span>
+            </div>
+          </label>
+        </div>
       </div>
 
       {/* prep time, cook time */}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -20,14 +21,10 @@ export default function Navbar() {
       : `/login?next=${encodeURIComponent(returnTarget)}`;
 
   const personalHref =
-    isAuthenticated && user?.pk != null
-      ? `/users/${user.pk}`
-      : loginHref;
+    isAuthenticated && user?.pk != null ? `/users/${user.pk}` : loginHref;
 
   const likedHref =
-    isAuthenticated && user?.pk != null
-      ? `/users/${user.pk}/liked`
-      : loginHref;
+    isAuthenticated && user?.pk != null ? `/users/${user.pk}/liked` : loginHref;
 
   const collectionsHref =
     isAuthenticated && user?.pk != null
@@ -61,8 +58,7 @@ export default function Navbar() {
             } else if (base && href === `${base}/collections`) {
               isActive = pathname.startsWith(`${base}/collections`);
             } else {
-              isActive =
-                pathname === href || pathname.startsWith(`${href}/`);
+              isActive = pathname === href || pathname.startsWith(`${href}/`);
             }
             return (
               <Link
@@ -84,20 +80,20 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <span className=" text-neutral-400">{user?.username}</span>
-              <button
+              <RoundedButton
+                className="cursor-pointer !text-lg !font-bold bg-neutral-700 text-neutral-100 hover:bg-neutral-600"
                 onClick={logout}
-                className="cursor-pointer rounded-full bg-neutral-700 px-4 py-1  text-neutral-200 transition-all hover:bg-neutral-600"
               >
                 Logout
-              </button>
+              </RoundedButton>
             </>
           ) : (
-            <Link
+            <RoundedButton
               href={loginHref}
-              className="rounded-full bg-red-300 px-4 py-1 text-neutral-900 transition-all hover:bg-red-200"
+              className="cursor-pointer text-lg font-bold bg-red-300 text-neutral-800 hover:bg-red-400"
             >
               Login
-            </Link>
+            </RoundedButton>
           )}
         </div>
       </div>

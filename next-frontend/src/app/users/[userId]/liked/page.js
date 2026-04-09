@@ -1,8 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import RecipeListView from "@/components/UI/Main/RecipeListView";
+import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 import { fetchLikedRecipes } from "@/api/recipes";
 import { useAuth } from "@/context/AuthContext";
 
@@ -23,12 +23,12 @@ export default function LikedPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-xl text-neutral-200">
         <p>Log in to see recipes you have liked.</p>
-        <Link
+        <RoundedButton
           href="/login"
-          className="rounded-full bg-red-300 px-5 py-2 text-neutral-900"
+          className="cursor-pointer bg-red-300 text-neutral-800 hover:bg-red-400"
         >
           Login
-        </Link>
+        </RoundedButton>
       </div>
     );
   }
@@ -37,12 +37,12 @@ export default function LikedPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
         <p>This page only shows your own liked recipes.</p>
-        <Link
+        <RoundedButton
           href={`/users/${user.pk}/liked`}
-          className="rounded-full bg-sky-600 px-5 py-2 text-neutral-100 transition-all hover:bg-sky-500"
+          className="cursor-pointer bg-sky-600 text-neutral-100 hover:bg-sky-500"
         >
           Go to my liked recipes
-        </Link>
+        </RoundedButton>
       </div>
     );
   }

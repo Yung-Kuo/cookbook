@@ -5,6 +5,8 @@ import Link from "next/link";
 import { CloseButton } from "../Buttons/CloseButton";
 import LikeButton from "../Buttons/LikeButton";
 import CollectionButton from "../Buttons/CollectionButton";
+import RoundedButton from "../Buttons/RoundedButton";
+import Tag from "../Tag";
 import { useAuth } from "@/context/AuthContext";
 
 function Recipe({
@@ -17,9 +19,7 @@ function Recipe({
   const { user, isAuthenticated } = useAuth();
 
   const isOwnRecipe =
-    isAuthenticated &&
-    user?.pk != null &&
-    selectedRecipe?.owner_id === user.pk;
+    isAuthenticated && user?.pk != null && selectedRecipe?.owner_id === user.pk;
 
   const { createdDate, updatedDate, isUpdated } = useMemo(() => {
     if (!selectedRecipe) {
@@ -45,13 +45,13 @@ function Recipe({
     >
       <div className="fixed top-18 right-5 z-20 flex flex-wrap items-center justify-end gap-3">
         {onEdit && (
-          <button
+          <RoundedButton
             type="button"
             onClick={onEdit}
-            className="cursor-pointer rounded-full  bg-red-300 px-4 text-lg font-bold text-neutral-800 transition-all hover:bg-red-400 focus:outline-none active:scale-95 lg:text-xl"
+            className="cursor-pointer bg-red-300 text-neutral-800 hover:bg-red-400 focus:outline-none active:scale-95 !text-lg !font-bold"
           >
             Edit
-          </button>
+          </RoundedButton>
         )}
         {onClose && <CloseButton onClose={onClose} />}
       </div>
@@ -75,9 +75,7 @@ function Recipe({
                   <div
                     key={img.id}
                     className={`h-24 w-36 flex-shrink-0 overflow-hidden rounded-md border-2 ${
-                      img.is_cover
-                        ? "border-amber-500"
-                        : "border-transparent"
+                      img.is_cover ? "border-amber-500" : "border-transparent"
                     }`}
                   >
                     {img.image_url && (
@@ -110,7 +108,7 @@ function Recipe({
                 <CollectionButton recipeId={selectedRecipe.id} />
               )}
               {selectedRecipe.is_public === false && (
-                <span className="rounded-full bg-neutral-700 px-3 py-1 text-sm text-neutral-300">
+                <span className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-neutral-700 px-4 text-base text-neutral-300">
                   Private
                 </span>
               )}
@@ -119,12 +117,7 @@ function Recipe({
           {selectedRecipe.tags?.length > 0 && (
             <div className="flex flex-wrap justify-end gap-2">
               {selectedRecipe.tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="rounded-full bg-neutral-700 px-4 py-1"
-                >
-                  <h6>{tag.name}</h6>
-                </div>
+                <Tag key={tag.id}>{tag.name}</Tag>
               ))}
             </div>
           )}

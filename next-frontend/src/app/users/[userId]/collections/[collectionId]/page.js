@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchCollectionById } from "@/api/collections";
+import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 import { useAuth } from "@/context/AuthContext";
 
 export default function CollectionDetailPage() {
@@ -54,9 +55,12 @@ export default function CollectionDetailPage() {
   if (!isAuthenticated) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
-        <Link href="/login" className="rounded-full bg-red-300 px-5 py-2 text-neutral-900">
+        <RoundedButton
+          href="/login"
+          className="cursor-pointer bg-red-300 text-neutral-800 hover:bg-red-400"
+        >
           Login
-        </Link>
+        </RoundedButton>
       </div>
     );
   }
@@ -64,12 +68,12 @@ export default function CollectionDetailPage() {
   if (user?.pk !== Number(uid)) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
-        <Link
+        <RoundedButton
           href={`/users/${user.pk}/collections`}
-          className="rounded-full bg-sky-600 px-5 py-2 text-neutral-100"
+          className="cursor-pointer bg-sky-600 text-neutral-100 hover:bg-sky-500"
         >
           My collections
-        </Link>
+        </RoundedButton>
       </div>
     );
   }
@@ -86,12 +90,12 @@ export default function CollectionDetailPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
         <p>{error || "Collection not found"}</p>
-        <Link
+        <RoundedButton
           href={`/users/${uid}/collections`}
-          className="rounded-full bg-neutral-700 px-5 py-2"
+          className="cursor-pointer bg-neutral-700 text-neutral-100 hover:bg-neutral-600"
         >
           Back to collections
-        </Link>
+        </RoundedButton>
       </div>
     );
   }

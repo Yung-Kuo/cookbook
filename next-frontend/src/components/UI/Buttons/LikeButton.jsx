@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toggleLike } from "@/api/likes";
+import RoundedButton from "./RoundedButton";
 
 function HeartIcon({ filled, className = "" }) {
   return (
@@ -40,10 +41,8 @@ export default function LikeButton({
     setOptimistic(null);
   }, [recipe?.id]);
 
-  const likeCount =
-    optimistic?.like_count ?? recipe?.like_count ?? 0;
-  const isLiked =
-    optimistic?.is_liked ?? recipe?.is_liked ?? false;
+  const likeCount = optimistic?.like_count ?? recipe?.like_count ?? 0;
+  const isLiked = optimistic?.is_liked ?? recipe?.is_liked ?? false;
 
   const handleClick = async () => {
     if (!recipe?.id || !isAuthenticated || isOwnRecipe || busy) return;
@@ -69,20 +68,14 @@ export default function LikeButton({
     }
   };
 
+  const disabled = !isAuthenticated || isOwnRecipe || busy;
+
   return (
-    <button
+    <RoundedButton
       type="button"
       onClick={handleClick}
-      disabled={!isAuthenticated || isOwnRecipe || busy}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 transition-all ${
-        isLiked
-          ? "border-red-400 bg-red-950/40 text-red-300"
-          : "border-neutral-600 text-neutral-300 hover:border-red-400/50"
-      } ${
-        !isAuthenticated || isOwnRecipe
-          ? "cursor-default opacity-80"
-          : "cursor-pointer"
-      }`}
+      disabled={disabled}
+      className={`cursor-pointer border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 bg-red-950/40 text-red-300 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""}`.trim()}
       title={
         !isAuthenticated
           ? "Log in to like recipes"
@@ -93,8 +86,8 @@ export default function LikeButton({
               : "Like this recipe"
       }
     >
-      <HeartIcon filled={isLiked} className="h-6 w-6 shrink-0" />
-      <span className="text-lg font-semibold tabular-nums">{likeCount}</span>
-    </button>
+      <HeartIcon filled={isLiked} className="h-5 w-5 shrink-0" />
+      <span className="font-bold tabular-nums">{likeCount}</span>
+    </RoundedButton>
   );
 }

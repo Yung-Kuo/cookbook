@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
+import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 import { fetchRecipeById } from "@/api/recipes";
 import Recipe from "@/components/UI/Main/Recipe";
 
@@ -24,12 +24,12 @@ export default function RecipeDetailPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 text-neutral-100">
         <p className="text-2xl">{error}</p>
-        <Link
+        <RoundedButton
           href={`/users/${uid}`}
-          className="rounded-full bg-neutral-700 px-5 py-2 text-sm transition-all hover:bg-neutral-600"
+          className="cursor-pointer bg-neutral-700 text-neutral-100 hover:bg-neutral-600"
         >
           Back to Recipes
-        </Link>
+        </RoundedButton>
       </div>
     );
   }

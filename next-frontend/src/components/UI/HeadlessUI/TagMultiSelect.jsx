@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Tag from "../Tag";
 import ComboboxCreate from "./ComboboxCreatable";
 
 /**
@@ -42,34 +43,28 @@ export default function TagMultiSelect({
 
   return (
     <div className="mt-2 grid grid-cols-3 grid-rows-1 gap-3">
-      <ComboboxCreate
-        key={comboKey}
-        name="Add tag"
-        options={availableOptions}
-        value={null}
-        onChange={handleSelect}
-        className={
-          className ??
-          "w-full row-start-1 col-start-1 rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-        }
-      />
+      <div className="col-start-1 row-start-1 min-w-0">
+        <ComboboxCreate
+          key={comboKey}
+          name="Add tag"
+          options={availableOptions}
+          value={null}
+          onChange={handleSelect}
+          className={
+            className ??
+            "grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+          }
+        />
+      </div>
       <div className="row-start-1 col-start-2 col-span-2 flex items-center ">
         <div className="flex min-h-10 flex-wrap gap-2">
           {value.map((tag) => (
-            <span
+            <Tag
               key={tag.id ?? `new-${tag.name}`}
-              className="inline-flex items-center justify-center gap-4 rounded-full bg-neutral-700 px-5 pr-4 py-1 text-xl text-neutral-100"
+              onRemove={() => removeTag(tag)}
             >
               {tag.name}
-              <button
-                type="button"
-                onClick={() => removeTag(tag)}
-                className="cursor-pointer text-2xl rounded-full text-neutral-400 hover:text-red-300"
-                aria-label={`Remove ${tag.name}`}
-              >
-                ×
-              </button>
-            </span>
+            </Tag>
           ))}
         </div>
       </div>
