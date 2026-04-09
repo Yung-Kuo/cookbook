@@ -40,11 +40,11 @@ export default function RecipeListView({ fetchFn }) {
       <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       {/* left panel */}
       <div
-        className={`flex h-full w-full flex-col gap-2 lg:w-2/5 lg:pl-5 lg:py-5 ${showNewRecipe || recipeToEdit || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
+        className={`flex h-full w-full flex-col gap-2 lg:w-2/5 lg:py-4 ${showNewRecipe || recipeToEdit || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
       >
         {recipes.map((recipe) => (
           <div
-            className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "pr-0" : "pr-5"}`}
+            className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "pr-0 pl-4" : "pr-8 pl-4"}`}
           >
             <RecipeListItem
               key={recipe.id}

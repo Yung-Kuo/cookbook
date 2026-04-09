@@ -24,10 +24,10 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
 
   return (
     <div
-      className={`${className} absolute top-0 right-0 z-40 overflow-scroll bg-neutral-900 p-5 pb-40 lg:pb-5 lg:pt-16`}
+      className={`${className} absolute top-0 right-0 z-10 overflow-scroll bg-neutral-900 p-5 pb-40 lg:pb-5 lg:pt-16`}
       //   ${selectedRecipe ? "opacity-100" : "opacity-0"}
     >
-      <div className="fixed top-18 right-5 z-50 flex gap-5">
+      <div className="fixed top-18 right-5 z-20 flex gap-5">
         {onEdit && (
           <button
             type="button"

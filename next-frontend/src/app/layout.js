@@ -25,7 +25,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <div className="flex h-screen w-screen flex-col overflow-hidden">
+          <div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-800">
             <Navbar />
             <div className="flex-1 overflow-hidden">{children}</div>
           </div>

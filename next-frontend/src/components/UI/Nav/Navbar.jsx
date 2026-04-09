@@ -17,10 +17,11 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="grid grid-cols-1 grid-rows-1 font-bold text-lg h-12 w-full z-60">
+    <nav className="grid grid-cols-1 grid-rows-1 font-bold text-lg h-14 w-full z-30">
+      {/* mask */}
       <div className="bg-neutral-800/40 w-full h-full row-start-1 col-start-1 backdrop-blur-xs" />
-      <div className="flex items-center justify-between w-full h-full px-6 row-start-1 col-start-1 z-10">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between w-full h-full px-8 row-start-1 col-start-1 z-40">
+        <div className="flex items-center gap-8">
           {navLinks.map(({ href, label }) => {
             const isActive =
               href === "/" ? pathname === "/" : pathname.startsWith(href);
