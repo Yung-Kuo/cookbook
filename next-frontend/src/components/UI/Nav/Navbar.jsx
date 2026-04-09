@@ -20,8 +20,8 @@ export default function Navbar() {
       : `/login?next=${encodeURIComponent(returnTarget)}`;
 
   const personalHref =
-    isAuthenticated && user?.username
-      ? `/users/${user.username}`
+    isAuthenticated && user?.pk != null
+      ? `/users/${user.pk}`
       : loginHref;
 
   const navLinks = [

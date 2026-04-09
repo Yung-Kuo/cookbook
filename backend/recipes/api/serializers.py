@@ -57,12 +57,13 @@ class RecipeImageSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'username', 'display_name', 'bio', 'avatar', 'avatar_url', 'created_at']
-        read_only_fields = ['id', 'username', 'created_at']
+        fields = ['id', 'user_id', 'username', 'display_name', 'bio', 'avatar', 'avatar_url', 'created_at']
+        read_only_fields = ['id', 'user_id', 'username', 'created_at']
         extra_kwargs = {
             'avatar': {'write_only': True},
         }
@@ -77,7 +78,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     recipe_ingredients = serializers.SerializerMethodField(method_name='get_recipe_ingredients')
     recipe_instructions = serializers.SerializerMethodField(method_name='get_recipe_instructions')
-    owner = serializers.CharField(source='owner.username', read_only=True, default=None)
+    owner_username = serializers.CharField(source='owner.username', read_only=True, default=None, allow_null=True)
+    owner_id = serializers.IntegerField(source='owner_id', read_only=True, allow_null=True)
     images = RecipeImageSerializer(many=True, read_only=True)
     cover_image_url = serializers.SerializerMethodField()
 
@@ -102,10 +104,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'recipe_instructions',
             'prep_time', 'cook_time', 'servings',
             'tags', 'recipe_ingredients',
-            'owner', 'is_public', 'images', 'cover_image_url',
+            'owner_username', 'owner_id', 'is_public', 'images', 'cover_image_url',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'owner', 'created_at']
+        read_only_fields = ['id', 'owner_username', 'owner_id', 'created_at']
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):

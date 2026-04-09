@@ -6,14 +6,16 @@ import { fetchPersonalRecipes, fetchUserRecipes } from "@/api/recipes";
 import { useAuth } from "@/context/AuthContext";
 
 export default function UserPage() {
-  const { username } = useParams();
+  const { userId } = useParams();
+  const id = Array.isArray(userId) ? userId[0] : userId;
   const { user, isAuthenticated } = useAuth();
 
-  const isOwnProfile = isAuthenticated && user?.username === username;
+  const isOwnProfile =
+    isAuthenticated && user?.pk === Number(id);
 
   const fetchFn = isOwnProfile
     ? fetchPersonalRecipes
-    : (setRecipes, params) => fetchUserRecipes(username, setRecipes, params);
+    : (setRecipes, params) => fetchUserRecipes(id, setRecipes, params);
 
   return <RecipeListView fetchFn={fetchFn} />;
 }

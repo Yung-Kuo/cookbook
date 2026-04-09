@@ -4,7 +4,6 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
 from django.db.models import Q, Max
 from django.shortcuts import get_object_or_404
 from ..models import Recipe, Tag, Ingredient, UserProfile, RecipeImage
@@ -29,12 +28,9 @@ class IngredientViewSet(ModelViewSet):
     serializer_class = IngredientSerializer
 
 
-class UserProfileViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+class UserProfileViewSet(GenericViewSet):
     serializer_class = UserProfileSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    def get_object(self):
-        return self.request.user.profile
 
     @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated], url_path='me')
     def me(self, request):
@@ -44,6 +40,11 @@ class UserProfileViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+        return Response(self.get_serializer(profile).data)
+
+    @action(detail=False, methods=['get'], url_path=r'user-id/(?P<user_id>[0-9]+)')
+    def by_user_id(self, request, user_id=None):
+        profile = get_object_or_404(UserProfile, user_id=int(user_id))
         return Response(self.get_serializer(profile).data)
 
     @action(detail=False, methods=['get'], url_path='user/(?P<username>[^/.]+)')
@@ -56,7 +57,7 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    filterset_fields = ['tags', 'owner__username']
+    filterset_fields = ['tags', 'owner', 'owner__username']
     search_fields = ['title', 'description']
 
     def get_serializer_class(self):
@@ -67,10 +68,21 @@ class RecipeViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         personal = self.request.query_params.get('personal', '').lower() == 'true'
+        owner_id_param = self.request.query_params.get('owner_id', '').strip()
         owner_username = self.request.query_params.get('owner', '').strip()
 
         if personal and user.is_authenticated:
             qs = Recipe.objects.filter(owner=user)
+        elif owner_id_param:
+            try:
+                oid = int(owner_id_param)
+            except (ValueError, TypeError):
+                qs = Recipe.objects.none()
+            else:
+                if user.is_authenticated and user.pk == oid:
+                    qs = Recipe.objects.filter(owner=user)
+                else:
+                    qs = Recipe.objects.filter(owner_id=oid, is_public=True)
         elif owner_username:
             qs = Recipe.objects.filter(owner__username=owner_username, is_public=True)
             if user.is_authenticated and user.username == owner_username:

@@ -76,7 +76,7 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
             </div>
           )}
           <Link
-            href={`/users/${selectedRecipe.owner || "_"}/recipes/${selectedRecipe.id}`}
+            href={`/users/${selectedRecipe.owner_id ?? "_"}/recipes/${selectedRecipe.id}`}
           >
             <h1 className="text-6xl break-words whitespace-pre-wrap lg:text-8xl hover:text-red-300 transition-colors">
               {selectedRecipe.title}

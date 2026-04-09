@@ -7,13 +7,15 @@ import { fetchRecipeById } from "@/api/recipes";
 import Recipe from "@/components/UI/Main/Recipe";
 
 export default function RecipeDetailPage() {
-  const { username, id } = useParams();
+  const { userId, id } = useParams();
+  const uid = Array.isArray(userId) ? userId[0] : userId;
   const [recipe, setRecipe] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!id) return;
-    fetchRecipeById(id)
+    const recipeId = Array.isArray(id) ? id[0] : id;
+    fetchRecipeById(recipeId)
       .then(setRecipe)
       .catch(() => setError("Recipe not found"));
   }, [id]);
@@ -23,7 +25,7 @@ export default function RecipeDetailPage() {
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 text-neutral-100">
         <p className="text-2xl">{error}</p>
         <Link
-          href={`/users/${username}`}
+          href={`/users/${uid}`}
           className="rounded-full bg-neutral-700 px-5 py-2 text-sm transition-all hover:bg-neutral-600"
         >
           Back to Recipes

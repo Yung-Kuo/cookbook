@@ -33,10 +33,10 @@ export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
   }
 };
 
-export const fetchUserRecipes = async (username, setRecipes, params = {}) => {
+export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
   try {
     const query = new URLSearchParams({
-      owner: username,
+      owner_id: String(userId),
       ...params,
     }).toString();
     const response = await fetch(`${API_URL}/recipes/?${query}`);
