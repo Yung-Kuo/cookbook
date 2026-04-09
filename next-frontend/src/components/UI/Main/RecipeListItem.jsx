@@ -20,9 +20,20 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
           className={`rounded-full bg-red-300 transition-all ${isSelected ? "h-4 w-4 opacity-100" : "h-0 w-0 opacity-0"}`}
         />
       </div>
-      <h2 className="flex-1 text-3xl break-words whitespace-pre-wrap min-w-0">
-        {recipe.title}
-      </h2>
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+        <h2 className="min-w-0 flex-1 text-3xl break-words whitespace-pre-wrap">
+          {recipe.title}
+        </h2>
+        <span
+          className="flex shrink-0 items-center gap-1 text-lg text-neutral-400 tabular-nums"
+          title="Hearts"
+        >
+          <span aria-hidden className="text-red-400">
+            ♥
+          </span>
+          {recipe.heart_count ?? 0}
+        </span>
+      </div>
     </div>
   );
 }

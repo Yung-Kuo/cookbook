@@ -86,6 +86,7 @@ function recipeToFormData(recipe) {
     servings: scalarToFormString(recipe.servings),
     tags: recipe.tags?.length ? [...recipe.tags] : [],
     recipe_ingredients: recipeIngredients,
+    is_public: recipe.is_public !== false,
   };
 }
 
@@ -111,6 +112,7 @@ const EMPTY_FORM = {
       unit: "",
     },
   ],
+  is_public: true,
 };
 
 function RecipeCreateForm({
@@ -438,6 +440,7 @@ function RecipeCreateForm({
           unit: ing.unit.name,
         })),
       tags: tagIds,
+      is_public: formData.is_public,
     };
 
     const hasEmptyInstruction = submissionData.recipe_instructions.some(
@@ -772,6 +775,27 @@ function RecipeCreateForm({
           value={formData.tags}
           onChange={handleTagsChange}
         />
+      </div>
+
+      {/* Visibility */}
+      <div className="flex flex-wrap items-center gap-4">
+        <span className="font-medium text-neutral-500">Visibility</span>
+        <label className="flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            name="is_public"
+            checked={formData.is_public}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, is_public: e.target.checked }))
+            }
+            className="h-6 w-6 rounded border-neutral-500 bg-neutral-900 text-sky-600 focus:ring-sky-600"
+          />
+          <span className="text-neutral-300">
+            {formData.is_public
+              ? "Public — visible to everyone"
+              : "Private — only you can see this recipe"}
+          </span>
+        </label>
       </div>
 
       {/* prep time, cook time */}

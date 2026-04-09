@@ -46,6 +46,9 @@ export default function RecipeDetailPage() {
     <Recipe
       selectedRecipe={recipe}
       onClose={null}
+      onRecipeChange={(patch) =>
+        setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))
+      }
       className="h-full w-full"
     />
   );

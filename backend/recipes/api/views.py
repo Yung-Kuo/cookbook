@@ -4,9 +4,27 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from django.db.models import Q, Max
+from django.db.models import (
+    Q,
+    Max,
+    Count,
+    Exists,
+    OuterRef,
+    Value,
+    BooleanField,
+    Prefetch,
+)
 from django.shortcuts import get_object_or_404
-from ..models import Recipe, Tag, Ingredient, UserProfile, RecipeImage
+from ..models import (
+    Recipe,
+    Tag,
+    Ingredient,
+    UserProfile,
+    RecipeImage,
+    Heart,
+    Collection,
+    CollectionRecipe,
+)
 from .serializers import (
     RecipeSerializer,
     RecipeWriteSerializer,
@@ -14,6 +32,8 @@ from .serializers import (
     IngredientSerializer,
     UserProfileSerializer,
     RecipeImageSerializer,
+    CollectionSerializer,
+    CollectionDetailSerializer,
 )
 
 
@@ -65,13 +85,41 @@ class RecipeViewSet(ModelViewSet):
             return RecipeWriteSerializer
         return RecipeSerializer
 
+    def _annotate_hearts(self, qs):
+        user = self.request.user
+        qs = qs.annotate(heart_count=Count('hearts', distinct=True))
+        if user.is_authenticated:
+            qs = qs.annotate(
+                is_hearted=Exists(
+                    Heart.objects.filter(
+                        recipe_id=OuterRef('pk'),
+                        user_id=user.pk,
+                    )
+                )
+            )
+        else:
+            qs = qs.annotate(
+                is_hearted=Value(False, output_field=BooleanField())
+            )
+        return qs
+
     def get_queryset(self):
         user = self.request.user
+        hearted = self.request.query_params.get('hearted', '').lower() == 'true'
         personal = self.request.query_params.get('personal', '').lower() == 'true'
         owner_id_param = self.request.query_params.get('owner_id', '').strip()
         owner_username = self.request.query_params.get('owner', '').strip()
 
-        if personal and user.is_authenticated:
+        if hearted:
+            if not user.is_authenticated:
+                qs = Recipe.objects.none()
+            else:
+                qs = (
+                    Recipe.objects.filter(hearts__user=user)
+                    .filter(Q(is_public=True) | Q(owner=user))
+                    .distinct()
+                )
+        elif personal and user.is_authenticated:
             qs = Recipe.objects.filter(owner=user)
         elif owner_id_param:
             try:
@@ -92,7 +140,26 @@ class RecipeViewSet(ModelViewSet):
         else:
             qs = Recipe.objects.filter(is_public=True)
 
+        qs = self._annotate_hearts(qs)
         return qs.prefetch_related('images', 'tags')
+
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[IsAuthenticated],
+        url_path='heart',
+    )
+    def heart(self, request, pk=None):
+        recipe = self.get_object()
+        heart = Heart.objects.filter(user=request.user, recipe=recipe).first()
+        if heart:
+            heart.delete()
+            hearted = False
+        else:
+            Heart.objects.create(user=request.user, recipe=recipe)
+            hearted = True
+        heart_count = Heart.objects.filter(recipe=recipe).count()
+        return Response({'hearted': hearted, 'heart_count': heart_count})
 
     def perform_create(self, serializer):
         if self.request.user.is_authenticated:
@@ -104,7 +171,7 @@ class RecipeViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        recipe = serializer.instance
+        recipe = self.get_queryset().get(pk=serializer.instance.pk)
         read_serializer = RecipeSerializer(recipe, context={'request': request})
         headers = self.get_success_headers(read_serializer.data)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -121,7 +188,8 @@ class RecipeViewSet(ModelViewSet):
             instance, data=request.data, partial=partial
         )
         serializer.is_valid(raise_exception=True)
-        recipe = serializer.save()
+        serializer.save()
+        recipe = self.get_queryset().get(pk=instance.pk)
         read_serializer = RecipeSerializer(recipe, context={"request": request})
         return Response(read_serializer.data)
 
@@ -208,3 +276,118 @@ class RecipeViewSet(ModelViewSet):
         ri.is_cover = True
         ri.save(update_fields=['is_cover'])
         return Response(RecipeImageSerializer(ri).data)
+
+
+class CollectionViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CollectionSerializer
+
+    def get_queryset(self):
+        qs = Collection.objects.filter(user=self.request.user).annotate(
+            recipe_count=Count('entries')
+        )
+        rid = self.request.query_params.get('recipe_id')
+        if rid:
+            try:
+                rid_int = int(rid)
+                qs = qs.annotate(
+                    contains_recipe=Exists(
+                        CollectionRecipe.objects.filter(
+                            collection_id=OuterRef('pk'),
+                            recipe_id=rid_int,
+                        )
+                    )
+                )
+            except (ValueError, TypeError):
+                pass
+
+        qs = qs.order_by('-created_at')
+        if self.action == 'list':
+            qs = qs.prefetch_related(
+                Prefetch(
+                    'entries',
+                    queryset=CollectionRecipe.objects.select_related(
+                        'recipe', 'recipe__owner'
+                    ).prefetch_related('recipe__images').order_by('-added_at'),
+                )
+            )
+        elif self.action == 'retrieve':
+            qs = qs.prefetch_related(
+                Prefetch(
+                    'entries',
+                    queryset=CollectionRecipe.objects.select_related(
+                        'recipe', 'recipe__owner'
+                    ).prefetch_related(
+                        'recipe__images',
+                        'recipe__tags',
+                        'recipe__recipeingredient_set__ingredient',
+                        'recipe__recipeinstruction_set',
+                    ).order_by('-added_at'),
+                )
+            )
+        return qs
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return CollectionDetailSerializer
+        return CollectionSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='recipes')
+    def add_recipe(self, request, pk=None):
+        collection = self.get_object()
+        recipe_id = request.data.get('recipe_id')
+        if recipe_id is None:
+            return Response(
+                {'detail': 'recipe_id is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            recipe_id = int(recipe_id)
+        except (ValueError, TypeError):
+            return Response(
+                {'detail': 'Invalid recipe_id.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        recipe = get_object_or_404(Recipe, pk=recipe_id)
+        cr, created = CollectionRecipe.objects.get_or_create(
+            collection=collection,
+            recipe=recipe,
+        )
+        code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(
+            {
+                'id': cr.id,
+                'collection_id': collection.id,
+                'recipe_id': recipe.id,
+                'added_at': cr.added_at,
+            },
+            status=code,
+        )
+
+    @action(
+        detail=True,
+        methods=['delete'],
+        url_path=r'recipes/(?P<recipe_id>[^/.]+)',
+    )
+    def remove_recipe(self, request, pk=None, recipe_id=None):
+        collection = self.get_object()
+        try:
+            rid = int(recipe_id)
+        except (ValueError, TypeError):
+            return Response(
+                {'detail': 'Invalid recipe id.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        deleted, _ = CollectionRecipe.objects.filter(
+            collection=collection,
+            recipe_id=rid,
+        ).delete()
+        if not deleted:
+            return Response(
+                {'detail': 'Recipe not in this collection.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)

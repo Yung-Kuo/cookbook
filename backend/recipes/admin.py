@@ -6,6 +6,9 @@ from .models import (
     RecipeImage,
     RecipeIngredient,
     RecipeInstruction,
+    Heart,
+    Collection,
+    CollectionRecipe,
 )
 
 # Register your models here.
@@ -15,3 +18,6 @@ admin.site.register(RecipeIngredient)
 admin.site.register(RecipeInstruction)
 admin.site.register(Recipe)
 admin.site.register(RecipeImage)
+admin.site.register(Heart)
+admin.site.register(Collection)
+admin.site.register(CollectionRecipe)

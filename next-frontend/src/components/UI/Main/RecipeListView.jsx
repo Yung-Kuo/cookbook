@@ -50,6 +50,16 @@ export default function RecipeListView({ fetchFn }) {
     setRecipeToEdit(null);
   };
 
+  const handleRecipeChange = useCallback((patch) => {
+    if (!patch?.id) return;
+    setRecipes((prev) =>
+      prev.map((r) => (r.id === patch.id ? { ...r, ...patch } : r)),
+    );
+    setSelectedRecipe((prev) =>
+      prev?.id === patch.id ? { ...prev, ...patch } : prev,
+    );
+  }, []);
+
   const handleRecipeUpdated = (updated) => {
     setRecipes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     setSelectedRecipe((prev) => (prev?.id === updated.id ? updated : prev));
@@ -121,6 +131,7 @@ export default function RecipeListView({ fetchFn }) {
           selectedRecipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
           onEdit={() => setRecipeToEdit(selectedRecipe)}
+          onRecipeChange={handleRecipeChange}
           className="z-20 h-full w-full lg:w-3/5"
         />
       )}

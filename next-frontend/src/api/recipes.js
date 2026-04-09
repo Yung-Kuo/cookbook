@@ -6,7 +6,9 @@ export const fetchRecipes = async (setRecipes, params = {}) => {
   try {
     const query = new URLSearchParams(params).toString();
     const url = query ? `${API_URL}/recipes/?${query}` : `${API_URL}/recipes/`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: { ...getAuthHeaders() },
+    });
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -39,7 +41,9 @@ export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
       owner_id: String(userId),
       ...params,
     }).toString();
-    const response = await fetch(`${API_URL}/recipes/?${query}`);
+    const response = await fetch(`${API_URL}/recipes/?${query}`, {
+      headers: { ...getAuthHeaders() },
+    });
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -50,9 +54,30 @@ export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
   }
 };
 
+export const fetchHeartedRecipes = async (setRecipes, params = {}) => {
+  try {
+    const query = new URLSearchParams({
+      hearted: "true",
+      ...params,
+    }).toString();
+    const response = await fetch(`${API_URL}/recipes/?${query}`, {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    setRecipes(data);
+  } catch (error) {
+    console.error("Error fetching hearted recipes:", error);
+  }
+};
+
 export const fetchRecipeById = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/recipes/${id}/`);
+    const response = await fetch(`${API_URL}/recipes/${id}/`, {
+      headers: { ...getAuthHeaders() },
+    });
     if (!response.ok) {
       throw new Error("Failed to fetch recipe");
     }

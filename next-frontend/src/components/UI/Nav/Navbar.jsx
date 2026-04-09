@@ -24,9 +24,21 @@ export default function Navbar() {
       ? `/users/${user.pk}`
       : loginHref;
 
+  const heartedHref =
+    isAuthenticated && user?.pk != null
+      ? `/users/${user.pk}/hearted`
+      : loginHref;
+
+  const collectionsHref =
+    isAuthenticated && user?.pk != null
+      ? `/users/${user.pk}/collections`
+      : loginHref;
+
   const navLinks = [
     { href: "/", label: "Public" },
     { href: personalHref, label: "Personal" },
+    { href: heartedHref, label: "Hearted" },
+    { href: collectionsHref, label: "Collections" },
   ];
 
   return (
@@ -36,11 +48,25 @@ export default function Navbar() {
       <div className="flex items-center justify-between w-full h-full px-8 row-start-1 col-start-1 z-40">
         <div className="flex items-center gap-8">
           {navLinks.map(({ href, label }) => {
-            const isActive =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+            const uid = user?.pk;
+            const base = uid != null ? `/users/${uid}` : null;
+            let isActive = false;
+            if (href === "/") {
+              isActive = pathname === "/";
+            } else if (base && href === base) {
+              const norm = pathname.replace(/\/$/, "") || "/";
+              isActive = norm === base;
+            } else if (base && href === `${base}/hearted`) {
+              isActive = pathname.startsWith(`${base}/hearted`);
+            } else if (base && href === `${base}/collections`) {
+              isActive = pathname.startsWith(`${base}/collections`);
+            } else {
+              isActive =
+                pathname === href || pathname.startsWith(`${href}/`);
+            }
             return (
               <Link
-                key={href}
+                key={label}
                 href={href}
                 className={`transition-colors ${
                   isActive
