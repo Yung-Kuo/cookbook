@@ -5,6 +5,9 @@ import Recipe from "@/components/UI/Main/Recipe";
 import RecipeListItem from "@/components/UI/Main/RecipeListItem";
 import AddRecipeButton from "@/components/UI/Buttons/AddRecipeButton";
 import NewRecipePopup from "@/components/UI/Popups/NewRecipePopup";
+import ComboboxCreate from "@/components/UI/HeadlessUI/ComboboxCreatable";
+import Tag from "@/components/UI/Tag";
+import { useTagPicker } from "@/hooks/useTagPicker";
 import { fetchTags } from "@/api/tags";
 
 export default function RecipeListView({ fetchFn }) {
@@ -14,9 +17,15 @@ export default function RecipeListView({ fetchFn }) {
   const [recipeToEdit, setRecipeToEdit] = useState(null);
 
   const [search, setSearch] = useState("");
-  const [tagFilter, setTagFilter] = useState("");
+  const [selectedFilterTags, setSelectedFilterTags] = useState([]);
   const [tags, setTags] = useState([]);
   const debounceRef = useRef(null);
+
+  const { comboKey, handleSelect, removeTag, availableOptions } = useTagPicker(
+    tags,
+    selectedFilterTags,
+    setSelectedFilterTags,
+  );
 
   useEffect(() => {
     fetchTags()
@@ -25,25 +34,31 @@ export default function RecipeListView({ fetchFn }) {
   }, []);
 
   const doFetch = useCallback(
-    (searchVal, tagVal) => {
+    (searchVal, tagIds) => {
       const params = {};
       if (searchVal) params.search = searchVal;
-      if (tagVal) params.tags = tagVal;
+      if (tagIds?.length) params.tags = tagIds;
       fetchFn(setRecipes, params);
     },
     [fetchFn],
   );
 
   useEffect(() => {
-    doFetch(search, tagFilter);
-  }, [tagFilter, doFetch]);
+    doFetch(
+      search,
+      selectedFilterTags.map((t) => t.id).filter((id) => id != null),
+    );
+  }, [selectedFilterTags, doFetch]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearch(val);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      doFetch(val, tagFilter);
+      doFetch(
+        val,
+        selectedFilterTags.map((t) => t.id).filter((id) => id != null),
+      );
     }, 350);
   };
 
@@ -85,27 +100,39 @@ export default function RecipeListView({ fetchFn }) {
       >
         {/* Search & Filter Bar */}
         <div className="sticky top-0 z-10 flex flex-col gap-2 bg-neutral-800 px-6 py-3">
-          <input
-            type="text"
-            placeholder="Search recipes..."
-            value={search}
-            onChange={handleSearchChange}
-            className="w-full rounded-md bg-neutral-900 px-3 py-2 text-lg text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
-          />
-          <select
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-            className="w-full rounded-md bg-neutral-900 px-3 py-2 text-lg text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-600"
-          >
-            <option value="">All tags</option>
-            {tags.map((tag) => (
-              <option key={tag.id} value={tag.id}>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              placeholder="Search recipe titles"
+              value={search}
+              onChange={handleSearchChange}
+              className="h-10 w-full min-w-0 rounded-md border-2 border-transparent bg-neutral-900 px-3 text-lg text-neutral-100 placeholder-neutral-500 focus:border-sky-600 focus:outline-none"
+            />
+            <div className="">
+              <ComboboxCreate
+                key={comboKey}
+                name="Search tags"
+                options={availableOptions}
+                value={null}
+                onChange={handleSelect}
+                noCreate
+                className="h-10 w-full min-w-0 rounded-md border-2 border-transparent bg-neutral-900 px-3 text-lg text-neutral-100 placeholder-neutral-500 focus:border-sky-600 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex min-h-10 min-w-0 flex-wrap gap-2 rounded-md bg-neutral-900/50 px-2 py-2">
+            {selectedFilterTags.map((tag) => (
+              <Tag
+                key={tag.id ?? `new-${tag.name}`}
+                onRemove={() => removeTag(tag)}
+              >
                 {tag.name}
-              </option>
+              </Tag>
             ))}
-          </select>
+          </div>
         </div>
 
+        {/* recipe list */}
         <div className="flex flex-col gap-2 py-2 w-full">
           {recipes.map((recipe) => (
             <div

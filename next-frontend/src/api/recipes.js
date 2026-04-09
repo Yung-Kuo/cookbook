@@ -2,9 +2,27 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { getAuthHeaders } from "@/api/auth";
 
+/** Builds query string; repeats `tags` for each id (django-filter). */
+export function recipeListQueryString(params = {}) {
+  const { tags, ...rest } = params;
+  const sp = new URLSearchParams();
+  for (const [key, value] of Object.entries(rest)) {
+    if (value == null || value === "") continue;
+    sp.set(key, String(value));
+  }
+  if (Array.isArray(tags)) {
+    tags.forEach((id) => {
+      if (id != null && id !== "") sp.append("tags", String(id));
+    });
+  } else if (tags != null && tags !== "") {
+    sp.append("tags", String(tags));
+  }
+  return sp.toString();
+}
+
 export const fetchRecipes = async (setRecipes, params = {}) => {
   try {
-    const query = new URLSearchParams(params).toString();
+    const query = recipeListQueryString(params);
     const url = query ? `${API_URL}/recipes/?${query}` : `${API_URL}/recipes/`;
     const response = await fetch(url, {
       headers: { ...getAuthHeaders() },
@@ -21,7 +39,7 @@ export const fetchRecipes = async (setRecipes, params = {}) => {
 
 export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
   try {
-    const query = new URLSearchParams({ personal: "true", ...params }).toString();
+    const query = recipeListQueryString({ personal: "true", ...params });
     const response = await fetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });
@@ -37,10 +55,10 @@ export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
 
 export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
   try {
-    const query = new URLSearchParams({
+    const query = recipeListQueryString({
       owner_id: String(userId),
       ...params,
-    }).toString();
+    });
     const response = await fetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });
@@ -56,10 +74,10 @@ export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
 
 export const fetchLikedRecipes = async (setRecipes, params = {}) => {
   try {
-    const query = new URLSearchParams({
+    const query = recipeListQueryString({
       liked: "true",
       ...params,
-    }).toString();
+    });
     const response = await fetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });

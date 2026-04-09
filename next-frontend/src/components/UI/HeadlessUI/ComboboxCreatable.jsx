@@ -41,7 +41,7 @@ function ComboboxCreate({
       </div>
 
       <div className="relative w-full">
-        <ComboboxOptions className="absolute z-20 mt-2 max-h-72 w-full overflow-hidden overflow-y-auto rounded-md border-2 border-sky-600 bg-neutral-900 empty:invisible">
+        <ComboboxOptions className="absolute text-2xl z-20 mt-2 max-h-72 w-full overflow-hidden overflow-y-auto rounded-md border-2 border-sky-600 bg-neutral-900 empty:invisible">
           {!noCreate &&
             query.length > 0 &&
             !filteredOptions.some(
