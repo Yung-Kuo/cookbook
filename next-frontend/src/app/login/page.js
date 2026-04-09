@@ -3,6 +3,11 @@
 import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import {
+  clearStoredReturnPath,
+  getPostLoginDestination,
+  rememberReturnPathFromNextParam,
+} from "@/utils/postLoginRedirect";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
@@ -41,8 +46,21 @@ function LoginContent() {
   const handledRef = useRef(false);
 
   useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    if (code && state) return;
+
+    const next = searchParams.get("next");
+    if (next) {
+      rememberReturnPathFromNextParam(next);
+    } else {
+      clearStoredReturnPath();
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.push("/");
+      router.push(getPostLoginDestination(searchParams));
       return;
     }
 
@@ -67,7 +85,7 @@ function LoginContent() {
     }
 
     socialLogin(state, code)
-      .then(() => router.push("/"))
+      .then(() => router.push(getPostLoginDestination(searchParams)))
       .catch((err) => {
         console.error("OAuth login failed:", err);
         if (typeof window !== "undefined") {

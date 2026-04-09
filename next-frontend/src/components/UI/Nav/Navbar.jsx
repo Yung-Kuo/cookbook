@@ -1,15 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, logout } = useAuth();
 
+  const returnTarget =
+    pathname === "/login"
+      ? "/"
+      : `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+
+  const loginHref =
+    pathname === "/login"
+      ? "/login"
+      : `/login?next=${encodeURIComponent(returnTarget)}`;
+
   const personalHref =
-    isAuthenticated && user?.username ? `/users/${user.username}` : "/login";
+    isAuthenticated && user?.username
+      ? `/users/${user.username}`
+      : loginHref;
 
   const navLinks = [
     { href: "/", label: "Public" },
@@ -54,7 +67,7 @@ export default function Navbar() {
             </>
           ) : (
             <Link
-              href="/login"
+              href={loginHref}
               className="rounded-full bg-red-300 px-4 py-1 text-neutral-900 transition-all hover:bg-red-200"
             >
               Login
