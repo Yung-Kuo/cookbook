@@ -26,12 +26,13 @@ export async function socialLogin(provider, code) {
   });
 
   if (!response.ok) {
+    const raw = await response.text();
     let message = `Login failed (${response.status})`;
     try {
-      const errorData = await response.json();
+      const errorData = JSON.parse(raw);
       message = errorData.detail || JSON.stringify(errorData);
     } catch {
-      message = await response.text();
+      if (raw) message = raw;
     }
     throw new Error(message);
   }

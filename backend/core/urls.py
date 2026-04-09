@@ -10,6 +10,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.api.urls')),
 
+    # django-allauth named URLs (e.g. socialaccount_signup) used during OAuth signup flow
+    path('accounts/', include('allauth.urls')),
+
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/google/', GoogleLogin.as_view(), name='google_login'),
     path('api/auth/github/', GitHubLogin.as_view(), name='github_login'),
