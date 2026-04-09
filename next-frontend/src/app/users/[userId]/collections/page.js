@@ -81,7 +81,7 @@ export default function CollectionsListPage() {
       {error && <p className="text-red-400">{error}</p>}
       {!loading && !error && collections.length === 0 && (
         <p className="text-neutral-400">
-          No collections yet. Heart a recipe and use &quot;Save to collection&quot;
+          No collections yet. Like a recipe and use &quot;+ collection&quot;
           to create one.
         </p>
       )}

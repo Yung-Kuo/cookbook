@@ -83,14 +83,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(read_only=True, allow_null=True)
     images = RecipeImageSerializer(many=True, read_only=True)
     cover_image_url = serializers.SerializerMethodField()
-    heart_count = serializers.SerializerMethodField()
-    is_hearted = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
-    def get_heart_count(self, obj):
-        return getattr(obj, 'heart_count', 0)
+    def get_like_count(self, obj):
+        return getattr(obj, 'like_count', 0)
 
-    def get_is_hearted(self, obj):
-        return getattr(obj, 'is_hearted', False)
+    def get_is_liked(self, obj):
+        return getattr(obj, 'is_liked', False)
 
     def get_recipe_ingredients(self, obj):
         return RecipeIngredientSerializer(obj.recipeingredient_set.all(), many=True).data
@@ -114,7 +114,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'prep_time', 'cook_time', 'servings',
             'tags', 'recipe_ingredients',
             'owner_username', 'owner_id', 'is_public', 'images', 'cover_image_url',
-            'heart_count', 'is_hearted',
+            'like_count', 'is_liked',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner_username', 'owner_id', 'created_at']

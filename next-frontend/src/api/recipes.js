@@ -54,10 +54,10 @@ export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
   }
 };
 
-export const fetchHeartedRecipes = async (setRecipes, params = {}) => {
+export const fetchLikedRecipes = async (setRecipes, params = {}) => {
   try {
     const query = new URLSearchParams({
-      hearted: "true",
+      liked: "true",
       ...params,
     }).toString();
     const response = await fetch(`${API_URL}/recipes/?${query}`, {
@@ -69,7 +69,7 @@ export const fetchHeartedRecipes = async (setRecipes, params = {}) => {
     const data = await response.json();
     setRecipes(data);
   } catch (error) {
-    console.error("Error fetching hearted recipes:", error);
+    console.error("Error fetching liked recipes:", error);
   }
 };
 

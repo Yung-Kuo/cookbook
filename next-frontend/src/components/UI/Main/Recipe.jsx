@@ -1,174 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { CloseButton } from "../Buttons/CloseButton";
+import LikeButton from "../Buttons/LikeButton";
+import CollectionButton from "../Buttons/CollectionButton";
 import { useAuth } from "@/context/AuthContext";
-import { toggleHeart } from "@/api/hearts";
-import {
-  fetchCollections,
-  createCollection,
-  addRecipeToCollection,
-  removeRecipeFromCollection,
-} from "@/api/collections";
-
-function HeartIcon({ filled, className = "" }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.5"
-      className={className}
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-      />
-    </svg>
-  );
-}
-
-function CollectionPicker({ recipeId, onMembershipChange }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
-  const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [busyId, setBusyId] = useState(null);
-  const [error, setError] = useState(null);
-
-  const load = useCallback(async () => {
-    if (!recipeId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchCollections(recipeId);
-      setCollections(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e.message || "Failed to load");
-      setCollections([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [recipeId]);
-
-  useEffect(() => {
-    if (!open) return;
-    load();
-  }, [open, load]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
-
-  const toggleCollection = async (col) => {
-    if (!recipeId) return;
-    setBusyId(col.id);
-    setError(null);
-    try {
-      if (col.contains_recipe) {
-        await removeRecipeFromCollection(col.id, recipeId);
-      } else {
-        await addRecipeToCollection(col.id, recipeId);
-      }
-      await load();
-      onMembershipChange?.();
-    } catch (e) {
-      setError(e.message || "Update failed");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    const name = newName.trim();
-    if (!name || !recipeId) return;
-    setBusyId(-1);
-    setError(null);
-    try {
-      const created = await createCollection({ name });
-      await addRecipeToCollection(created.id, recipeId);
-      setNewName("");
-      await load();
-      onMembershipChange?.();
-    } catch (err) {
-      setError(err.message || "Could not create");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  return (
-    <div className="relative" ref={wrapRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="cursor-pointer rounded-full border border-neutral-600 bg-neutral-800 px-3 py-1.5 text-sm font-medium text-neutral-200 transition-all hover:border-sky-500 hover:text-sky-200"
-      >
-        Save to collection
-      </button>
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl">
-        <p className="mb-2 text-xs font-medium text-neutral-500">
-          Add this recipe to your collections
-        </p>
-        {loading && (
-          <p className="text-sm text-neutral-400">Loading…</p>
-        )}
-        {error && (
-          <p className="mb-2 text-sm text-red-400">{error}</p>
-        )}
-        <ul className="max-h-48 space-y-1 overflow-y-auto">
-          {collections.map((col) => (
-            <li key={col.id}>
-              <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-neutral-800">
-                <input
-                  type="checkbox"
-                  checked={Boolean(col.contains_recipe)}
-                  disabled={busyId === col.id}
-                  onChange={() => toggleCollection(col)}
-                  className="rounded border-neutral-500"
-                />
-                <span className="truncate text-sm text-neutral-200">
-                  {col.name}
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-        <form onSubmit={handleCreate} className="mt-3 flex gap-2 border-t border-neutral-700 pt-3">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="New collection name"
-            className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
-          />
-          <button
-            type="submit"
-            disabled={busyId === -1 || !newName.trim()}
-            className="shrink-0 rounded bg-amber-600 px-2 py-1 text-sm text-neutral-900 disabled:opacity-50"
-          >
-            Add
-          </button>
-        </form>
-      </div>
-      )}
-    </div>
-  );
-}
 
 function Recipe({
   selectedRecipe,
@@ -178,8 +15,6 @@ function Recipe({
   className,
 }) {
   const { user, isAuthenticated } = useAuth();
-  const [heartBusy, setHeartBusy] = useState(false);
-  const [heartOptimistic, setHeartOptimistic] = useState(null);
 
   const isOwnRecipe =
     isAuthenticated &&
@@ -202,41 +37,6 @@ function Recipe({
     return { createdDate, updatedDate, isUpdated };
   }, [selectedRecipe]);
 
-  useEffect(() => {
-    setHeartOptimistic(null);
-  }, [selectedRecipe?.id]);
-
-  const heartCount =
-    heartOptimistic?.heart_count ?? selectedRecipe?.heart_count ?? 0;
-  const isHearted =
-    heartOptimistic?.is_hearted ?? selectedRecipe?.is_hearted ?? false;
-
-  const handleHeartClick = async () => {
-    if (!selectedRecipe?.id || !isAuthenticated || isOwnRecipe || heartBusy)
-      return;
-    const prevCount = selectedRecipe.heart_count ?? 0;
-    const prevHearted = selectedRecipe.is_hearted ?? false;
-    const nextHearted = !prevHearted;
-    const nextCount = Math.max(0, prevCount + (nextHearted ? 1 : -1));
-    setHeartOptimistic({ heart_count: nextCount, is_hearted: nextHearted });
-    setHeartBusy(true);
-    try {
-      const data = await toggleHeart(selectedRecipe.id);
-      const patch = {
-        id: selectedRecipe.id,
-        heart_count: data.heart_count,
-        is_hearted: data.hearted,
-      };
-      setHeartOptimistic(null);
-      onRecipeChange?.(patch);
-    } catch (e) {
-      console.error(e);
-      setHeartOptimistic(null);
-    } finally {
-      setHeartBusy(false);
-    }
-  };
-
   if (!selectedRecipe) return null;
 
   return (
@@ -244,12 +44,6 @@ function Recipe({
       className={`${className} absolute top-0 right-0 z-10 overflow-scroll bg-neutral-900 p-5 pb-40 lg:pb-5 lg:pt-16`}
     >
       <div className="fixed top-18 right-5 z-20 flex flex-wrap items-center justify-end gap-3">
-        {isAuthenticated && selectedRecipe.id && (
-          <CollectionPicker
-            recipeId={selectedRecipe.id}
-            onMembershipChange={() => {}}
-          />
-        )}
         {onEdit && (
           <button
             type="button"
@@ -305,42 +99,16 @@ function Recipe({
                 {selectedRecipe.title}
               </h1>
             </Link>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2 text-neutral-400">
-                <button
-                  type="button"
-                  onClick={handleHeartClick}
-                  disabled={
-                    !isAuthenticated || isOwnRecipe || heartBusy
-                  }
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 transition-all ${
-                    isHearted
-                      ? "border-red-400 bg-red-950/40 text-red-300"
-                      : "border-neutral-600 text-neutral-300 hover:border-red-400/50"
-                  } ${
-                    !isAuthenticated || isOwnRecipe
-                      ? "cursor-default opacity-80"
-                      : "cursor-pointer"
-                  }`}
-                  title={
-                    !isAuthenticated
-                      ? "Log in to heart recipes"
-                      : isOwnRecipe
-                        ? "Your recipe"
-                        : isHearted
-                          ? "Remove heart"
-                          : "Heart this recipe"
-                  }
-                >
-                  <HeartIcon
-                    filled={isHearted}
-                    className="h-6 w-6 shrink-0"
-                  />
-                  <span className="text-lg font-semibold tabular-nums">
-                    {heartCount}
-                  </span>
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <LikeButton
+                recipe={selectedRecipe}
+                isAuthenticated={isAuthenticated}
+                isOwnRecipe={isOwnRecipe}
+                onRecipeChange={onRecipeChange}
+              />
+              {isAuthenticated && selectedRecipe.id && (
+                <CollectionButton recipeId={selectedRecipe.id} />
+              )}
               {selectedRecipe.is_public === false && (
                 <span className="rounded-full bg-neutral-700 px-3 py-1 text-sm text-neutral-300">
                   Private
@@ -368,7 +136,6 @@ function Recipe({
           <div>
             <div className="mb-2 flex justify-between">
               <h2 className="text-3xl lg:text-4xl">Ingredients</h2>
-              {/* servings */}
               {selectedRecipe.servings && (
                 <h4 className="flex items-end text-neutral-500">
                   {selectedRecipe.servings} servings
@@ -396,7 +163,6 @@ function Recipe({
             </div>
           </div>
         )}
-        {/* instructions */}
         <div>
           <h2 className="mb-2 text-3xl lg:text-4xl">Instructions</h2>
           {selectedRecipe.recipe_instructions && (
@@ -414,7 +180,6 @@ function Recipe({
         </div>
 
         <div className="flex flex-col gap-5">
-          {/* prep time */}
           {selectedRecipe.prep_time && (
             <h4 className="flex gap-2 text-neutral-500">
               Prep Time:
@@ -424,7 +189,6 @@ function Recipe({
               minutes
             </h4>
           )}
-          {/* cook time */}
           {selectedRecipe.cook_time && (
             <h4 className="flex gap-2 text-neutral-500">
               Cook Time:
@@ -436,9 +200,7 @@ function Recipe({
           )}
         </div>
 
-        {/* createdDate & updatedDate */}
         <div className="flex flex-col items-end">
-          {/* created */}
           {createdDate && (
             <h6 className="flex gap-2 text-neutral-500">
               Created at:
@@ -451,7 +213,6 @@ function Recipe({
               </span>
             </h6>
           )}
-          {/* updated */}
           {updatedDate && isUpdated && (
             <h6 className="flex gap-2 text-neutral-500">
               Last updated:

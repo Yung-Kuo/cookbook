@@ -21,7 +21,7 @@ from ..models import (
     Ingredient,
     UserProfile,
     RecipeImage,
-    Heart,
+    Like,
     Collection,
     CollectionRecipe,
 )
@@ -85,13 +85,13 @@ class RecipeViewSet(ModelViewSet):
             return RecipeWriteSerializer
         return RecipeSerializer
 
-    def _annotate_hearts(self, qs):
+    def _annotate_likes(self, qs):
         user = self.request.user
-        qs = qs.annotate(heart_count=Count('hearts', distinct=True))
+        qs = qs.annotate(like_count=Count('likes', distinct=True))
         if user.is_authenticated:
             qs = qs.annotate(
-                is_hearted=Exists(
-                    Heart.objects.filter(
+                is_liked=Exists(
+                    Like.objects.filter(
                         recipe_id=OuterRef('pk'),
                         user_id=user.pk,
                     )
@@ -99,23 +99,23 @@ class RecipeViewSet(ModelViewSet):
             )
         else:
             qs = qs.annotate(
-                is_hearted=Value(False, output_field=BooleanField())
+                is_liked=Value(False, output_field=BooleanField())
             )
         return qs
 
     def get_queryset(self):
         user = self.request.user
-        hearted = self.request.query_params.get('hearted', '').lower() == 'true'
+        liked = self.request.query_params.get('liked', '').lower() == 'true'
         personal = self.request.query_params.get('personal', '').lower() == 'true'
         owner_id_param = self.request.query_params.get('owner_id', '').strip()
         owner_username = self.request.query_params.get('owner', '').strip()
 
-        if hearted:
+        if liked:
             if not user.is_authenticated:
                 qs = Recipe.objects.none()
             else:
                 qs = (
-                    Recipe.objects.filter(hearts__user=user)
+                    Recipe.objects.filter(likes__user=user)
                     .filter(Q(is_public=True) | Q(owner=user))
                     .distinct()
                 )
@@ -140,26 +140,26 @@ class RecipeViewSet(ModelViewSet):
         else:
             qs = Recipe.objects.filter(is_public=True)
 
-        qs = self._annotate_hearts(qs)
+        qs = self._annotate_likes(qs)
         return qs.prefetch_related('images', 'tags')
 
     @action(
         detail=True,
         methods=['post'],
         permission_classes=[IsAuthenticated],
-        url_path='heart',
+        url_path='like',
     )
-    def heart(self, request, pk=None):
+    def like(self, request, pk=None):
         recipe = self.get_object()
-        heart = Heart.objects.filter(user=request.user, recipe=recipe).first()
-        if heart:
-            heart.delete()
-            hearted = False
+        like_obj = Like.objects.filter(user=request.user, recipe=recipe).first()
+        if like_obj:
+            like_obj.delete()
+            liked = False
         else:
-            Heart.objects.create(user=request.user, recipe=recipe)
-            hearted = True
-        heart_count = Heart.objects.filter(recipe=recipe).count()
-        return Response({'hearted': hearted, 'heart_count': heart_count})
+            Like.objects.create(user=request.user, recipe=recipe)
+            liked = True
+        like_count = Like.objects.filter(recipe=recipe).count()
+        return Response({'liked': liked, 'like_count': like_count})
 
     def perform_create(self, serializer):
         if self.request.user.is_authenticated:

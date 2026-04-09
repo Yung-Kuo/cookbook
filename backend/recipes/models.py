@@ -46,16 +46,16 @@ class Recipe(models.Model):
         return self.title
 
 
-class Heart(models.Model):
+class Like(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='hearts',
+        related_name='likes',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='hearts',
+        related_name='likes',
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -63,7 +63,7 @@ class Heart(models.Model):
         unique_together = ('user', 'recipe')
 
     def __str__(self):
-        return f"{self.user_id} heart on recipe {self.recipe_id}"
+        return f"{self.user_id} like on recipe {self.recipe_id}"
 
 
 class Collection(models.Model):

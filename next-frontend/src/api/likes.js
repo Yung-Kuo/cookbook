@@ -3,10 +3,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 import { getAuthHeaders } from "@/api/auth";
 
 /**
- * Toggle heart on a recipe. Returns { hearted, heart_count }.
+ * Toggle like on a recipe. Returns { liked, like_count }.
  */
-export async function toggleHeart(recipeId) {
-  const response = await fetch(`${API_URL}/recipes/${recipeId}/heart/`, {
+export async function toggleLike(recipeId) {
+  const response = await fetch(`${API_URL}/recipes/${recipeId}/like/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -15,7 +15,7 @@ export async function toggleHeart(recipeId) {
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || "Could not update heart");
+    throw new Error(err.detail || "Could not update like");
   }
   return response.json();
 }

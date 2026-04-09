@@ -24,9 +24,9 @@ export default function Navbar() {
       ? `/users/${user.pk}`
       : loginHref;
 
-  const heartedHref =
+  const likedHref =
     isAuthenticated && user?.pk != null
-      ? `/users/${user.pk}/hearted`
+      ? `/users/${user.pk}/liked`
       : loginHref;
 
   const collectionsHref =
@@ -37,7 +37,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Public" },
     { href: personalHref, label: "Personal" },
-    { href: heartedHref, label: "Hearted" },
+    { href: likedHref, label: "Liked" },
     { href: collectionsHref, label: "Collections" },
   ];
 
@@ -56,8 +56,8 @@ export default function Navbar() {
             } else if (base && href === base) {
               const norm = pathname.replace(/\/$/, "") || "/";
               isActive = norm === base;
-            } else if (base && href === `${base}/hearted`) {
-              isActive = pathname.startsWith(`${base}/hearted`);
+            } else if (base && href === `${base}/liked`) {
+              isActive = pathname.startsWith(`${base}/liked`);
             } else if (base && href === `${base}/collections`) {
               isActive = pathname.startsWith(`${base}/collections`);
             } else {

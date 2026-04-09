@@ -6,7 +6,7 @@ from .models import (
     RecipeImage,
     RecipeIngredient,
     RecipeInstruction,
-    Heart,
+    Like,
     Collection,
     CollectionRecipe,
 )
@@ -18,6 +18,6 @@ admin.site.register(RecipeIngredient)
 admin.site.register(RecipeInstruction)
 admin.site.register(Recipe)
 admin.site.register(RecipeImage)
-admin.site.register(Heart)
+admin.site.register(Like)
 admin.site.register(Collection)
 admin.site.register(CollectionRecipe)
