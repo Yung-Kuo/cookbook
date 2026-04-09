@@ -510,7 +510,7 @@ function RecipeCreateForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:py-10 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:text-4xl"
     >
       <h2 className="text-3xl font-bold lg:text-5xl">
         {isEditing ? "Edit Recipe" : "Create New Recipe"}
@@ -541,8 +541,8 @@ function RecipeCreateForm({
       <div>
         <label className="font-medium text-neutral-500">Photos</label>
         <p className="mt-1 text-lg text-neutral-500">
-          Click a thumbnail to set cover. First photo is cover when you add
-          multiple.
+          Click an image to make it the cover. The first photo is the cover by
+          default.
         </p>
         <input
           ref={fileInputRef}
@@ -778,16 +778,16 @@ function RecipeCreateForm({
       </div>
 
       {/* Visibility */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center lg:items-start justify-between lg:justify-start lg:gap-8 gap-4">
         <span id="visibility-heading" className="font-medium text-neutral-500">
           Visibility
         </span>
         <div
-          className="flex flex-wrap items-center gap-6"
+          className="flex lg:flex-col items-center lg:items-start gap-2 lg:gap-4"
           role="radiogroup"
           aria-labelledby="visibility-heading"
         >
-          <label className="flex cursor-pointer items-center gap-3 rounded-md focus-within:outline-none">
+          <label className="flex cursor-pointer items-center gap-2 rounded-md focus-within:outline-none">
             <input
               type="radio"
               name="visibility"
@@ -804,12 +804,13 @@ function RecipeCreateForm({
             >
               <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
             </span>
+
             <div className="text-2xl">
               <span className="text-neutral-300">Public </span>
               <span className="text-neutral-500">(visible to everyone)</span>
             </div>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-md focus-within:outline-none">
+          <label className="flex cursor-pointer items-center gap-2 rounded-md focus-within:outline-none">
             <input
               type="radio"
               name="visibility"
@@ -826,6 +827,7 @@ function RecipeCreateForm({
             >
               <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
             </span>
+
             <div className="text-2xl">
               <span className="text-neutral-300">Private </span>
               <span className="text-neutral-500">

@@ -41,7 +41,7 @@ function Recipe({
 
   return (
     <div
-      className={`${className} absolute top-0 right-0 z-10 overflow-scroll bg-neutral-900 p-5 pt-16 pb-40 lg:pb-5 lg:pt-16`}
+      className={`${className} absolute top-0 right-0 z-10 overflow-scroll bg-neutral-900 p-5 pt-32 pb-12 lg:pb-5 lg:pt-16`}
     >
       <div className="fixed top-18 right-5 z-20 flex flex-wrap items-center justify-end gap-3">
         {onEdit && (
