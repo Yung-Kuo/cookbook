@@ -2,8 +2,10 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
   return (
     <div
       onClick={onSelect}
-      className={`relative flex w-full hover:bg-neutral-600 bg-neutral-700 break-words whitespace-pre-wrap cursor-pointer pt-2 py-1 items-center justify-center border-b-4 pr-4 transition-all ${
-        isSelected ? " border-neutral-100 text-red-300" : "border-transparent"
+      className={`relative flex w-full rounded-tl-2xl rounded-br-2xl overflow-hidden hover:bg-neutral-600 bg-neutral-700 break-words whitespace-pre-wrap cursor-pointer pt-2 py-1 items-center justify-center border-b-4 pr-4 transition-all ${
+        isSelected
+          ? " border-neutral-100 text-red-300 !rounded-br-none"
+          : "border-transparent"
       }`}
     >
       {recipe.is_liked && (
@@ -13,13 +15,13 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
           title="Liked"
         />
       )}
-      {recipe.cover_image_url && (
+      {/* {recipe.cover_image_url && (
         <img
           src={recipe.cover_image_url}
           alt=""
           className="h-16 w-16 flex-shrink-0 object-cover lg:h-20 lg:w-20"
         />
-      )}
+      )} */}
       <div
         className={`flex h-full items-center justify-center transition-all ${isSelected ? "px-4" : "px-2"}`}
       >

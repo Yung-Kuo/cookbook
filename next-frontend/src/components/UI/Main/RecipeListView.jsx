@@ -83,7 +83,7 @@ export default function RecipeListView({ fetchFn }) {
   };
 
   return (
-    <div className="grid h-full w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
+    <div className="grid h-full w-full pt-16 grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
       <NewRecipePopup
         show={showNewRecipe || !!recipeToEdit}
         onClose={handleCloseRecipePopup}
