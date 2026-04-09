@@ -1,11 +1,19 @@
 import json
 from rest_framework import serializers
-from ..models import Recipe, Category, Ingredient, RecipeIngredient, RecipeInstruction, UserProfile
+from ..models import (
+    Recipe,
+    Tag,
+    Ingredient,
+    RecipeIngredient,
+    RecipeInstruction,
+    RecipeImage,
+    UserProfile,
+)
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
+        model = Tag
         fields = ['id', 'name']
         read_only_fields = ['id']
 
@@ -33,6 +41,20 @@ class RecipeInstructionSerializer(serializers.ModelSerializer):
         fields = ['id', 'text', 'order']
 
 
+class RecipeImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RecipeImage
+        fields = ['id', 'image_url', 'is_cover', 'order']
+        read_only_fields = ['id']
+
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     avatar_url = serializers.SerializerMethodField()
@@ -52,11 +74,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     recipe_ingredients = serializers.SerializerMethodField(method_name='get_recipe_ingredients')
     recipe_instructions = serializers.SerializerMethodField(method_name='get_recipe_instructions')
     owner = serializers.CharField(source='owner.username', read_only=True, default=None)
-    image_url = serializers.SerializerMethodField()
+    images = RecipeImageSerializer(many=True, read_only=True)
+    cover_image_url = serializers.SerializerMethodField()
 
     def get_recipe_ingredients(self, obj):
         return RecipeIngredientSerializer(obj.recipeingredient_set.all(), many=True).data
@@ -64,9 +87,13 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_recipe_instructions(self, obj):
         return RecipeInstructionSerializer(obj.recipeinstruction_set.all(), many=True).data
 
-    def get_image_url(self, obj):
-        if obj.image:
-            return obj.image.url
+    def get_cover_image_url(self, obj):
+        cover = obj.images.filter(is_cover=True).first()
+        if cover and cover.image:
+            return cover.image.url
+        first = obj.images.first()
+        if first and first.image:
+            return first.image.url
         return None
 
     class Meta:
@@ -74,16 +101,16 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'recipe_instructions',
             'prep_time', 'cook_time', 'servings',
-            'category', 'recipe_ingredients',
-            'owner', 'is_public', 'image_url',
+            'tags', 'recipe_ingredients',
+            'owner', 'is_public', 'images', 'cover_image_url',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner', 'created_at']
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    category = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), allow_null=True
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
     )
     recipe_ingredients = RecipeIngredientSerializer(many=True, required=False)
     recipe_instructions = RecipeInstructionSerializer(many=True, required=True)
@@ -93,7 +120,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'recipe_instructions',
             'prep_time', 'cook_time', 'servings',
-            'category', 'recipe_ingredients', 'is_public', 'image',
+            'tags', 'recipe_ingredients', 'is_public',
         ]
 
     def _parse_json_field(self, data, field_name):
@@ -110,7 +137,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         """Handle FormData where nested fields arrive as JSON strings."""
         if hasattr(data, 'getlist'):
             mutable = data.copy()
-            for field in ('recipe_ingredients', 'recipe_instructions'):
+            for field in ('recipe_ingredients', 'recipe_instructions', 'tags'):
                 parsed = self._parse_json_field(mutable, field)
                 if parsed is not None:
                     mutable.pop(field, None)
@@ -119,10 +146,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
     def create(self, validated_data):
+        tags_data = validated_data.pop('tags', [])
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', [])
         recipe_instructions_data = validated_data.pop('recipe_instructions', [])
 
         recipe = Recipe.objects.create(**validated_data)
+        if tags_data:
+            recipe.tags.set(tags_data)
 
         for ingredient_data in recipe_ingredients_data:
             RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
@@ -133,10 +163,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        tags_data = validated_data.pop('tags', None)
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', None)
         recipe_instructions_data = validated_data.pop('recipe_instructions', None)
 
         instance = super().update(instance, validated_data)
+
+        if tags_data is not None:
+            instance.tags.set(tags_data)
 
         if recipe_ingredients_data is not None:
             instance.recipeingredient_set.all().delete()

@@ -5,7 +5,7 @@ import Recipe from "@/components/UI/Main/Recipe";
 import RecipeListItem from "@/components/UI/Main/RecipeListItem";
 import AddRecipeButton from "@/components/UI/Buttons/AddRecipeButton";
 import NewRecipePopup from "@/components/UI/Popups/NewRecipePopup";
-import { fetchCategories } from "@/api/categories";
+import { fetchTags } from "@/api/tags";
 
 export default function RecipeListView({ fetchFn }) {
   const [recipes, setRecipes] = useState([]);
@@ -14,34 +14,34 @@ export default function RecipeListView({ fetchFn }) {
   const [recipeToEdit, setRecipeToEdit] = useState(null);
 
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [categories, setCategories] = useState([]);
+  const [tagFilter, setTagFilter] = useState("");
+  const [tags, setTags] = useState([]);
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    fetchCategories().then(setCategories).catch(() => {});
+    fetchTags().then(setTags).catch(() => {});
   }, []);
 
   const doFetch = useCallback(
-    (searchVal, categoryVal) => {
+    (searchVal, tagVal) => {
       const params = {};
       if (searchVal) params.search = searchVal;
-      if (categoryVal) params.category = categoryVal;
+      if (tagVal) params.tags = tagVal;
       fetchFn(setRecipes, params);
     },
     [fetchFn],
   );
 
   useEffect(() => {
-    doFetch(search, categoryFilter);
-  }, [categoryFilter, doFetch]);
+    doFetch(search, tagFilter);
+  }, [tagFilter, doFetch]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearch(val);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      doFetch(val, categoryFilter);
+      doFetch(val, tagFilter);
     }, 350);
   };
 
@@ -81,14 +81,14 @@ export default function RecipeListView({ fetchFn }) {
             className="w-full rounded-md bg-neutral-900 px-3 py-2 text-lg text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-sky-600"
           />
           <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
             className="w-full rounded-md bg-neutral-900 px-3 py-2 text-lg text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-600"
           >
-            <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
+            <option value="">All tags</option>
+            {tags.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
               </option>
             ))}
           </select>

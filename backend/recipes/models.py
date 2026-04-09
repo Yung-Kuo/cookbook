@@ -16,7 +16,7 @@ class UserProfile(models.Model):
         return f"{self.user.username}'s profile"
 
 
-class Category(models.Model):
+class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -33,11 +33,10 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
-    image = CloudinaryField('image', folder='cookbook/recipes', blank=True, null=True)
     prep_time = models.IntegerField(help_text="Preparation time in minutes", null=True, blank=True, default=None)
     cook_time = models.IntegerField(help_text="Cooking time in minutes", null=True, blank=True, default=None)
     servings = models.IntegerField(null=True, blank=True, default=None)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    tags = models.ManyToManyField('Tag', blank=True, related_name='recipes')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='recipes')
     is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -45,6 +44,20 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class RecipeImage(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='images')
+    image = CloudinaryField('image', folder='cookbook/recipes')
+    is_cover = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Image for {self.recipe.title}"
+
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)

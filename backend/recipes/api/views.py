@@ -1,25 +1,27 @@
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, SAFE_METHODS
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.shortcuts import get_object_or_404
-from ..models import Recipe, Category, Ingredient, UserProfile
+from ..models import Recipe, Tag, Ingredient, UserProfile, RecipeImage
 from .serializers import (
     RecipeSerializer,
     RecipeWriteSerializer,
-    CategorySerializer,
+    TagSerializer,
     IngredientSerializer,
     UserProfileSerializer,
+    RecipeImageSerializer,
 )
 
 
-class CategoryViewSet(ModelViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+class TagViewSet(ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class IngredientViewSet(ModelViewSet):
@@ -54,7 +56,7 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    filterset_fields = ['category', 'owner__username']
+    filterset_fields = ['tags', 'owner__username']
     search_fields = ['title', 'description']
 
     def get_serializer_class(self):
@@ -68,18 +70,17 @@ class RecipeViewSet(ModelViewSet):
         owner_username = self.request.query_params.get('owner', '').strip()
 
         if personal and user.is_authenticated:
-            return Recipe.objects.filter(owner=user)
-
-        if owner_username:
+            qs = Recipe.objects.filter(owner=user)
+        elif owner_username:
             qs = Recipe.objects.filter(owner__username=owner_username, is_public=True)
             if user.is_authenticated and user.username == owner_username:
                 qs = Recipe.objects.filter(owner=user)
-            return qs
+        elif user.is_authenticated:
+            qs = Recipe.objects.filter(Q(is_public=True) | Q(owner=user))
+        else:
+            qs = Recipe.objects.filter(is_public=True)
 
-        if user.is_authenticated:
-            return Recipe.objects.filter(Q(is_public=True) | Q(owner=user))
-
-        return Recipe.objects.filter(is_public=True)
+        return qs.prefetch_related('images', 'tags')
 
     def perform_create(self, serializer):
         if self.request.user.is_authenticated:
@@ -120,3 +121,78 @@ class RecipeViewSet(ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         return super().destroy(request, *args, **kwargs)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        parser_classes=[MultiPartParser, FormParser],
+        url_path='images',
+    )
+    def upload_image(self, request, pk=None):
+        """POST multipart with field 'image' and optional 'is_cover' (true/false)."""
+        recipe = self.get_object()
+        if recipe.owner and recipe.owner != request.user:
+            return Response(
+                {"detail": "You do not have permission to edit this recipe."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response(
+                {"detail": "No image file provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        is_cover = str(request.data.get('is_cover', 'false')).lower() in ('1', 'true', 'yes')
+        max_order = recipe.images.aggregate(m=Max('order'))['m']
+        next_order = (max_order or 0) + 1
+
+        if is_cover:
+            recipe.images.update(is_cover=False)
+
+        ri = RecipeImage.objects.create(
+            recipe=recipe,
+            image=image_file,
+            is_cover=is_cover,
+            order=next_order,
+        )
+        return Response(RecipeImageSerializer(ri).data, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=['delete'],
+        url_path=r'images/(?P<image_id>[^/.]+)',
+    )
+    def delete_image(self, request, pk=None, image_id=None):
+        recipe = self.get_object()
+        if recipe.owner and recipe.owner != request.user:
+            return Response(
+                {"detail": "You do not have permission to edit this recipe."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
+        was_cover = ri.is_cover
+        ri.delete()
+        if was_cover:
+            first = recipe.images.order_by('order').first()
+            if first:
+                first.is_cover = True
+                first.save(update_fields=['is_cover'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=['patch'],
+        url_path=r'images/(?P<image_id>[^/.]+)/set-cover',
+    )
+    def set_cover_image(self, request, pk=None, image_id=None):
+        recipe = self.get_object()
+        if recipe.owner and recipe.owner != request.user:
+            return Response(
+                {"detail": "You do not have permission to edit this recipe."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
+        recipe.images.update(is_cover=False)
+        ri.is_cover = True
+        ri.save(update_fields=['is_cover'])
+        return Response(RecipeImageSerializer(ri).data)

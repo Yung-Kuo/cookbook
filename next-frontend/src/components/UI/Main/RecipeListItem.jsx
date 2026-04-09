@@ -6,9 +6,9 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
         isSelected ? " border-neutral-100 text-red-300" : "border-neutral-800"
       }`}
     >
-      {recipe.image_url && (
+      {recipe.cover_image_url && (
         <img
-          src={recipe.image_url}
+          src={recipe.cover_image_url}
           alt=""
           className="h-16 w-16 flex-shrink-0 object-cover lg:h-20 lg:w-20"
         />

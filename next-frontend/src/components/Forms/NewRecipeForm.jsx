@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createRecipe, updateRecipe } from "../../api/recipes";
-import { fetchCategories, createCategory } from "../../api/categories";
+import { createRecipe, updateRecipe, fetchRecipeById } from "../../api/recipes";
+import { fetchTags, createTag } from "../../api/tags";
+import {
+  uploadRecipeImage,
+  deleteRecipeImage,
+  setCoverImage,
+} from "../../api/recipeImages";
 import { fetchIngredients, createIngredient } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
 import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
+import TagMultiSelect from "../UI/HeadlessUI/TagMultiSelect";
 
 const UNITS = [
   { id: 0, name: "g" },
@@ -50,18 +56,16 @@ function recipeToFormData(recipe) {
     ? recipe.recipe_ingredients.map((ri) => ({
         id: ri.id ?? crypto.randomUUID(),
         ingredient:
-          ri.ingredient != null
-            ? { id: ri.ingredient, name: ri.name }
-            : "",
+          ri.ingredient != null ? { id: ri.ingredient, name: ri.name } : "",
         quantity:
           ri.quantity !== null && ri.quantity !== undefined
             ? String(ri.quantity)
             : "",
         unit: ri.unit
-          ? UNITS.find((u) => u.name === ri.unit) ?? {
+          ? (UNITS.find((u) => u.name === ri.unit) ?? {
               id: -1,
               name: ri.unit,
-            }
+            })
           : "",
       }))
     : [
@@ -80,7 +84,7 @@ function recipeToFormData(recipe) {
     prep_time: scalarToFormString(recipe.prep_time),
     cook_time: scalarToFormString(recipe.cook_time),
     servings: scalarToFormString(recipe.servings),
-    category: recipe.category ?? "",
+    tags: recipe.tags?.length ? [...recipe.tags] : [],
     recipe_ingredients: recipeIngredients,
   };
 }
@@ -98,7 +102,7 @@ const EMPTY_FORM = {
   prep_time: "",
   cook_time: "",
   servings: "",
-  category: "",
+  tags: [],
   recipe_ingredients: [
     {
       id: "ingredient-1",
@@ -120,20 +124,24 @@ function RecipeCreateForm({
   //    Matches the structure expected by RecipeWriteSerializer
   // ----------------------------------------------------
   const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM }));
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  /** Local + server-backed photos: localId, optional serverId/image_url, optional file/preview, isCover */
+  const [photoItems, setPhotoItems] = useState([]);
   const fileInputRef = useRef(null);
 
   const clearForm = () => {
+    setPhotoItems((prev) => {
+      prev.forEach((p) => {
+        if (p.preview) URL.revokeObjectURL(p.preview);
+      });
+      return [];
+    });
     setFormData({ ...EMPTY_FORM });
-    setImageFile(null);
-    setImagePreview(null);
   };
 
   // ----------------------------------------------------
   // 2. State for dropdown data (Categories, Ingredients)
   // ----------------------------------------------------
-  const [categories, setCategories] = useState([]);
+  const [allTags, setAllTags] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
   const [dropdownError, setDropdownError] = useState(null);
@@ -144,13 +152,13 @@ function RecipeCreateForm({
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        const fetchedCategories = await fetchCategories();
-        setCategories(fetchedCategories);
+        const fetchedTags = await fetchTags();
+        setAllTags(fetchedTags);
 
         const fetchedIngredients = await fetchIngredients();
         setIngredients(fetchedIngredients);
       } catch (err) {
-        setDropdownError("Failed to load categories or ingredients.");
+        setDropdownError("Failed to load tags or ingredients.");
         console.error("Error loading dropdown data:", err);
       } finally {
         setLoadingDropdowns(false);
@@ -163,8 +171,14 @@ function RecipeCreateForm({
   useEffect(() => {
     if (existingRecipe) {
       setFormData(recipeToFormData(existingRecipe));
-      setImagePreview(existingRecipe.image_url || null);
-      setImageFile(null);
+      setPhotoItems(
+        (existingRecipe.images || []).map((img) => ({
+          localId: `srv-${img.id}`,
+          serverId: img.id,
+          image_url: img.image_url,
+          isCover: img.is_cover,
+        })),
+      );
     } else {
       clearForm();
     }
@@ -181,25 +195,97 @@ function RecipeCreateForm({
     }));
   };
 
-  const handleCategoryChange = (value) => {
+  const handleTagsChange = (tags) => {
     setFormData((prevData) => ({
       ...prevData,
-      category: value,
+      tags,
     }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
+  const refreshImagesFromServer = async (recipeId) => {
+    const fresh = await fetchRecipeById(recipeId);
+    setPhotoItems(
+      (fresh.images || []).map((img) => ({
+        localId: `srv-${img.id}`,
+        serverId: img.id,
+        image_url: img.image_url,
+        isCover: img.is_cover,
+      })),
+    );
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+  const addPhotoFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    if (existingRecipe) {
+      try {
+        const hadPhotos = photoItems.length > 0;
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const isCover = !hadPhotos && i === 0;
+          await uploadRecipeImage(existingRecipe.id, file, isCover);
+        }
+        await refreshImagesFromServer(existingRecipe.id);
+      } catch (err) {
+        console.error("Failed to upload image:", err);
+      }
+    } else {
+      setPhotoItems((prev) => {
+        const added = files.map((file) => ({
+          localId: crypto.randomUUID(),
+          file,
+          preview: URL.createObjectURL(file),
+          isCover: false,
+        }));
+        if (prev.length === 0 && added.length > 0) {
+          added[0].isCover = true;
+        }
+        return [...prev, ...added];
+      });
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const setCoverLocal = (localId) => {
+    setPhotoItems((prev) =>
+      prev.map((p) => ({ ...p, isCover: p.localId === localId })),
+    );
+  };
+
+  const removePhoto = async (item) => {
+    if (item.serverId != null && existingRecipe) {
+      try {
+        await deleteRecipeImage(existingRecipe.id, item.serverId);
+        await refreshImagesFromServer(existingRecipe.id);
+      } catch (err) {
+        console.error("Failed to delete image:", err);
+      }
+      return;
+    }
+    setPhotoItems((prev) => {
+      const next = prev.filter((p) => p.localId !== item.localId);
+      if (item.preview) {
+        URL.revokeObjectURL(item.preview);
+      }
+      if (next.length && !next.some((p) => p.isCover)) {
+        next[0] = { ...next[0], isCover: true };
+      }
+      return next;
+    });
+  };
+
+  const makeCover = async (item) => {
+    if (item.serverId != null && existingRecipe) {
+      try {
+        await setCoverImage(existingRecipe.id, item.serverId);
+        await refreshImagesFromServer(existingRecipe.id);
+      } catch (err) {
+        console.error("Failed to set cover:", err);
+      }
+      return;
+    }
+    setCoverLocal(item.localId);
   };
 
   const addIngredient = () => {
@@ -283,18 +369,24 @@ function RecipeCreateForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Handle category creation
-    let category = formData.category;
-    if (category && !category.id) {
-      try {
-        category = await createCategory({ name: category.name });
-        if (category) {
-          setCategories([...categories, category]);
+    // 1. Handle tag creation (new tags without id)
+    let tagIds = [];
+    try {
+      const resolved = [];
+      for (const t of formData.tags || []) {
+        if (!t) continue;
+        if (t.id) {
+          resolved.push(t.id);
+        } else if (t.name?.trim()) {
+          const created = await createTag({ name: t.name.trim() });
+          resolved.push(created.id);
+          setAllTags((prev) => [...prev, created]);
         }
-      } catch (error) {
-        console.error("Failed to create category:", error);
-        return;
       }
+      tagIds = [...new Set(resolved)];
+    } catch (error) {
+      console.error("Failed to create tags:", error);
+      return;
     }
 
     // 2. Handle ingredient creation
@@ -345,8 +437,7 @@ function RecipeCreateForm({
           quantity: Number(ing.quantity),
           unit: ing.unit.name,
         })),
-      category: category?.id ?? null,
-      ...(imageFile ? { image: imageFile } : {}),
+      tags: tagIds,
     };
 
     const hasEmptyInstruction = submissionData.recipe_instructions.some(
@@ -387,13 +478,23 @@ function RecipeCreateForm({
       } else {
         const { data, error } = await createRecipe(submissionData);
         if (data) {
-          onRecipeCreated(data);
+          try {
+            for (const item of photoItems) {
+              if (item.file) {
+                await uploadRecipeImage(data.id, item.file, item.isCover);
+              }
+            }
+            const finalRecipe = await fetchRecipeById(data.id);
+            onRecipeCreated(finalRecipe);
+          } catch (uploadErr) {
+            console.error("Recipe created but image upload failed:", uploadErr);
+            onRecipeCreated(data);
+          }
           clearForm();
+          onClose();
         }
         if (error) {
           console.error("Error creating recipe:", error);
-        } else {
-          onClose();
         }
       }
     } catch (err) {
@@ -433,43 +534,68 @@ function RecipeCreateForm({
         </div>
       </div>
 
-      {/* Image Upload */}
+      {/* Photos (gallery + cover) */}
       <div>
-        <label className="font-medium text-neutral-500">Photo</label>
-        <div className="mt-2 flex items-center gap-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
+        <label className="font-medium text-neutral-500">Photos</label>
+        <p className="mt-1 text-lg text-neutral-500">
+          Click a thumbnail to set cover. First photo is cover when you add
+          multiple.
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={addPhotoFiles}
+          className="hidden"
+        />
+        <div className="mt-2 flex flex-wrap gap-3">
+          {photoItems.map((item) => {
+            const src = item.preview || item.image_url;
+            return (
+              <div
+                key={item.localId}
+                className="relative flex h-32 w-32 flex-shrink-0 flex-col overflow-hidden rounded-md border-2 border-neutral-600"
+              >
+                {src && (
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                )}
+                {item.isCover && (
+                  <span className="absolute top-1 left-1 rounded bg-amber-500 px-1.5 py-0.5 text-xs font-semibold text-neutral-900">
+                    Cover
+                  </span>
+                )}
+                <div className="absolute right-0 bottom-0 left-0 flex gap-1 bg-black/60 p-1">
+                  <button
+                    type="button"
+                    onClick={() => makeCover(item)}
+                    className="flex-1 cursor-pointer rounded px-1 text-xs text-neutral-100 hover:bg-neutral-700"
+                  >
+                    Cover
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(item)}
+                    className="cursor-pointer rounded px-1 text-xs text-red-300 hover:bg-red-900/80"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            );
+          })}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer rounded-md bg-neutral-700 px-4 py-2 text-lg text-neutral-200 transition-all hover:bg-neutral-600 active:scale-95"
+            className="flex h-32 w-32 flex-shrink-0 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-neutral-500 text-lg text-neutral-400 transition-all hover:border-sky-600 hover:text-neutral-200"
           >
-            {imagePreview ? "Change Photo" : "Add Photo"}
+            + Add
           </button>
-          {imagePreview && (
-            <button
-              type="button"
-              onClick={removeImage}
-              className="cursor-pointer rounded-md bg-red-900/50 px-4 py-2 text-lg text-red-300 transition-all hover:bg-red-900/80 active:scale-95"
-            >
-              Remove
-            </button>
-          )}
         </div>
-        {imagePreview && (
-          <div className="mt-3 overflow-hidden rounded-md">
-            <img
-              src={imagePreview}
-              alt="Recipe preview"
-              className="h-48 w-full object-cover lg:h-64"
-            />
-          </div>
-        )}
       </div>
 
       {/* Description */}
@@ -636,19 +762,16 @@ function RecipeCreateForm({
         </div>
       </div>
 
-      {/* Category Dropdown */}
+      {/* Tags */}
       <div>
-        <label htmlFor="category" className="font-medium text-neutral-500">
-          Category
+        <label htmlFor="tags" className="font-medium text-neutral-500">
+          Tags
         </label>
-        <div className="mt-2">
-          <ComboboxCreate
-            options={categories}
-            value={formData.category}
-            onChange={handleCategoryChange}
-            className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-          />
-        </div>
+        <TagMultiSelect
+          options={allTags}
+          value={formData.tags}
+          onChange={handleTagsChange}
+        />
       </div>
 
       {/* prep time, cook time */}

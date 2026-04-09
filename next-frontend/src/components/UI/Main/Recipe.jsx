@@ -37,18 +37,42 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
             Edit
           </button>
         )}
-        <CloseButton onClose={onClose} />
+        {onClose && <CloseButton onClose={onClose} />}
       </div>
 
       <div className="flex flex-col gap-24 text-xl lg:text-2xl">
         <div className="flex flex-col gap-5">
-          {selectedRecipe.image_url && (
+          {selectedRecipe.cover_image_url && (
             <div className="-mx-5 -mt-5 overflow-hidden lg:-mt-16">
               <img
-                src={selectedRecipe.image_url}
+                src={selectedRecipe.cover_image_url}
                 alt={selectedRecipe.title}
                 className="h-64 w-full object-cover lg:h-96"
               />
+            </div>
+          )}
+          {(selectedRecipe.images || []).length > 1 && (
+            <div className="-mx-5 flex gap-2 overflow-x-auto pb-2">
+              {[...(selectedRecipe.images || [])]
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((img) => (
+                  <div
+                    key={img.id}
+                    className={`h-24 w-36 flex-shrink-0 overflow-hidden rounded-md border-2 ${
+                      img.is_cover
+                        ? "border-amber-500"
+                        : "border-transparent"
+                    }`}
+                  >
+                    {img.image_url && (
+                      <img
+                        src={img.image_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </div>
+                ))}
             </div>
           )}
           <Link
@@ -58,11 +82,16 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
               {selectedRecipe.title}
             </h1>
           </Link>
-          {selectedRecipe.category && (
-            <div className="flex justify-end">
-              <div className="rounded-full bg-neutral-700 px-4 py-1">
-                <h6>{selectedRecipe.category.name}</h6>
-              </div>
+          {selectedRecipe.tags?.length > 0 && (
+            <div className="flex flex-wrap justify-end gap-2">
+              {selectedRecipe.tags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="rounded-full bg-neutral-700 px-4 py-1"
+                >
+                  <h6>{tag.name}</h6>
+                </div>
+              ))}
             </div>
           )}
           {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}

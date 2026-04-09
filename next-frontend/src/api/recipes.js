@@ -64,23 +64,6 @@ export const fetchRecipeById = async (id) => {
 };
 
 function buildRecipeBody(recipeData) {
-  const { image, ...jsonFields } = recipeData;
-
-  if (image instanceof File) {
-    const formData = new FormData();
-    formData.append("image", image);
-
-    for (const [key, value] of Object.entries(jsonFields)) {
-      if (value === null || value === undefined) continue;
-      if (typeof value === "object") {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, value);
-      }
-    }
-    return { body: formData, headers: { ...getAuthHeaders() } };
-  }
-
   return {
     body: JSON.stringify(recipeData),
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
