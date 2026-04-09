@@ -8,24 +8,36 @@ from dj_rest_auth.registration.views import SocialLoginView
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 
-class DynamicCallbackMixin:
-    """Use callback_url from request body so the same backend serves any frontend origin."""
-
-    def get_serializer_context(self):
-        ctx = super().get_serializer_context()
-        callback_url = self.request.data.get('callback_url')
-        if callback_url:
-            ctx['callback_url'] = callback_url
-        return ctx
+def _callback_url_from_view(view):
+    """dj-rest-auth reads view.callback_url via getattr; use request body when present."""
+    if hasattr(view, 'request') and view.request:
+        url = view.request.data.get('callback_url')
+        if url:
+            return url
+    return f"{FRONTEND_URL}/login"
 
 
-class GoogleLogin(DynamicCallbackMixin, SocialLoginView):
+class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
-    callback_url = f"{FRONTEND_URL}/login"
     client_class = OAuth2Client
 
+    @property
+    def callback_url(self):
+        return _callback_url_from_view(self)
 
-class GitHubLogin(DynamicCallbackMixin, SocialLoginView):
+    @callback_url.setter
+    def callback_url(self, value):
+        pass
+
+
+class GitHubLogin(SocialLoginView):
     adapter_class = GitHubOAuth2Adapter
-    callback_url = f"{FRONTEND_URL}/login"
     client_class = OAuth2Client
+
+    @property
+    def callback_url(self):
+        return _callback_url_from_view(self)
+
+    @callback_url.setter
+    def callback_url(self, value):
+        pass
