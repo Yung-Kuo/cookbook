@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -38,6 +38,7 @@ function LoginContent() {
   const { isAuthenticated, socialLogin, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const handledRef = useRef(false);
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -48,11 +49,34 @@ function LoginContent() {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (code && state && !loading) {
-      socialLogin(state, code)
-        .then(() => router.push("/users"))
-        .catch((err) => console.error("OAuth login failed:", err));
+    if (!code || !state || loading) return;
+
+    const storageKey = `oauth_handled_${code}`;
+    if (
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(storageKey)
+    ) {
+      return;
     }
+
+    if (handledRef.current) return;
+    handledRef.current = true;
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(storageKey, "1");
+    }
+
+    router.replace("/login");
+
+    socialLogin(state, code)
+      .then(() => router.push("/users"))
+      .catch((err) => {
+        console.error("OAuth login failed:", err);
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(storageKey);
+        }
+        handledRef.current = false;
+      });
   }, [searchParams, loading, isAuthenticated, socialLogin, router]);
 
   const code = searchParams.get("code");
