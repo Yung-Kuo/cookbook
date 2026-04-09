@@ -510,7 +510,7 @@ function RecipeCreateForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-6 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:py-10 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 py-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:py-10 lg:text-4xl"
     >
       <h2 className="text-3xl font-bold lg:text-5xl">
         {isEditing ? "Edit Recipe" : "Create New Recipe"}

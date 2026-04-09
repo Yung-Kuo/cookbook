@@ -2,10 +2,8 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
   return (
     <div
       onClick={onSelect}
-      className={`relative flex w-full rounded-tl-2xl rounded-br-2xl overflow-hidden hover:bg-neutral-600 bg-neutral-700 break-words whitespace-pre-wrap cursor-pointer pt-2 py-1 items-center justify-center border-b-4 pr-4 transition-all ${
-        isSelected
-          ? " border-neutral-100 text-red-300 !rounded-br-none"
-          : "border-transparent"
+      className={`relative flex w-full overflow-hidden hover:bg-neutral-600 bg-neutral-700 break-words whitespace-pre-wrap cursor-pointer pt-2 py-1 items-center justify-center border-b-4 pr-4 transition-all ${
+        isSelected ? " border-neutral-100 text-red-300" : "border-transparent"
       }`}
     >
       {recipe.is_liked && (
