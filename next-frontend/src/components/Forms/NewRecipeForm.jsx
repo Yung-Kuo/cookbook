@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createRecipe, updateRecipe } from "../../api/recipes";
 import { fetchCategories, createCategory } from "../../api/categories";
 import { fetchIngredients, createIngredient } from "../../api/ingredients";
@@ -120,9 +120,14 @@ function RecipeCreateForm({
   //    Matches the structure expected by RecipeWriteSerializer
   // ----------------------------------------------------
   const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM }));
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const clearForm = () => {
     setFormData({ ...EMPTY_FORM });
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   // ----------------------------------------------------
@@ -158,6 +163,8 @@ function RecipeCreateForm({
   useEffect(() => {
     if (existingRecipe) {
       setFormData(recipeToFormData(existingRecipe));
+      setImagePreview(existingRecipe.image_url || null);
+      setImageFile(null);
     } else {
       clearForm();
     }
@@ -179,6 +186,20 @@ function RecipeCreateForm({
       ...prevData,
       category: value,
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const addIngredient = () => {
@@ -308,7 +329,6 @@ function RecipeCreateForm({
       }
     }
 
-    // 3. Build submissionData
     const submissionData = {
       ...formData,
       prep_time: formData.prep_time === "" ? null : Number(formData.prep_time),
@@ -326,6 +346,7 @@ function RecipeCreateForm({
           unit: ing.unit.name,
         })),
       category: category?.id ?? null,
+      ...(imageFile ? { image: imageFile } : {}),
     };
 
     const hasEmptyInstruction = submissionData.recipe_instructions.some(
@@ -410,6 +431,45 @@ function RecipeCreateForm({
             required
           />
         </div>
+      </div>
+
+      {/* Image Upload */}
+      <div>
+        <label className="font-medium text-neutral-500">Photo</label>
+        <div className="mt-2 flex items-center gap-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="cursor-pointer rounded-md bg-neutral-700 px-4 py-2 text-lg text-neutral-200 transition-all hover:bg-neutral-600 active:scale-95"
+          >
+            {imagePreview ? "Change Photo" : "Add Photo"}
+          </button>
+          {imagePreview && (
+            <button
+              type="button"
+              onClick={removeImage}
+              className="cursor-pointer rounded-md bg-red-900/50 px-4 py-2 text-lg text-red-300 transition-all hover:bg-red-900/80 active:scale-95"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        {imagePreview && (
+          <div className="mt-3 overflow-hidden rounded-md">
+            <img
+              src={imagePreview}
+              alt="Recipe preview"
+              className="h-48 w-full object-cover lg:h-64"
+            />
+          </div>
+        )}
       </div>
 
       {/* Description */}

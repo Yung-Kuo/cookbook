@@ -31,3 +31,7 @@ django-allauth
 dj-rest-auth
 PyJWT[crypto]
 requests
+cloudinary
+django-cloudinary-storage
+Pillow
+django-filter

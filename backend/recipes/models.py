@@ -1,5 +1,20 @@
 from django.conf import settings
 from django.db import models
+from cloudinary.models import CloudinaryField
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile'
+    )
+    display_name = models.CharField(max_length=100, blank=True)
+    bio = models.TextField(blank=True)
+    avatar = CloudinaryField('avatar', folder='cookbook/avatars', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -7,17 +22,18 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
 class Ingredient(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
 
-    
+
 class Recipe(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
-    instructions = models.TextField()
+    image = CloudinaryField('image', folder='cookbook/recipes', blank=True, null=True)
     prep_time = models.IntegerField(help_text="Preparation time in minutes", null=True, blank=True, default=None)
     cook_time = models.IntegerField(help_text="Cooking time in minutes", null=True, blank=True, default=None)
     servings = models.IntegerField(null=True, blank=True, default=None)
@@ -28,7 +44,7 @@ class Recipe(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.title # Returns the recipe title
+        return self.title
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)

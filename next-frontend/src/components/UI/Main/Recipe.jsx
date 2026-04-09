@@ -42,6 +42,15 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
 
       <div className="flex flex-col gap-24 text-xl lg:text-2xl">
         <div className="flex flex-col gap-5">
+          {selectedRecipe.image_url && (
+            <div className="-mx-5 -mt-5 overflow-hidden lg:-mt-16">
+              <img
+                src={selectedRecipe.image_url}
+                alt={selectedRecipe.title}
+                className="h-64 w-full object-cover lg:h-96"
+              />
+            </div>
+          )}
           <Link
             href={`/users/${selectedRecipe.owner || "_"}/recipes/${selectedRecipe.id}`}
           >
@@ -49,7 +58,6 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
               {selectedRecipe.title}
             </h1>
           </Link>
-          {/* category */}
           {selectedRecipe.category && (
             <div className="flex justify-end">
               <div className="rounded-full bg-neutral-700 px-4 py-1">
@@ -57,7 +65,6 @@ function Recipe({ selectedRecipe, onClose, onEdit, className }) {
               </div>
             </div>
           )}
-          {/* description */}
           {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}
         </div>
 

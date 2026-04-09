@@ -13,7 +13,7 @@ export default function UserPage() {
 
   const fetchFn = isOwnProfile
     ? fetchPersonalRecipes
-    : (setRecipes) => fetchUserRecipes(username, setRecipes);
+    : (setRecipes, params) => fetchUserRecipes(username, setRecipes, params);
 
   return <RecipeListView fetchFn={fetchFn} />;
 }

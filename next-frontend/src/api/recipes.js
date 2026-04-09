@@ -2,9 +2,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { getAuthHeaders } from "@/api/auth";
 
-export const fetchRecipes = async (setRecipes) => {
+export const fetchRecipes = async (setRecipes, params = {}) => {
   try {
-    const response = await fetch(`${API_URL}/recipes/`);
+    const query = new URLSearchParams(params).toString();
+    const url = query ? `${API_URL}/recipes/?${query}` : `${API_URL}/recipes/`;
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -15,9 +17,10 @@ export const fetchRecipes = async (setRecipes) => {
   }
 };
 
-export const fetchPersonalRecipes = async (setRecipes) => {
+export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
   try {
-    const response = await fetch(`${API_URL}/recipes/?personal=true`, {
+    const query = new URLSearchParams({ personal: "true", ...params }).toString();
+    const response = await fetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
@@ -30,9 +33,13 @@ export const fetchPersonalRecipes = async (setRecipes) => {
   }
 };
 
-export const fetchUserRecipes = async (username, setRecipes) => {
+export const fetchUserRecipes = async (username, setRecipes, params = {}) => {
   try {
-    const response = await fetch(`${API_URL}/recipes/?owner=${encodeURIComponent(username)}`);
+    const query = new URLSearchParams({
+      owner: username,
+      ...params,
+    }).toString();
+    const response = await fetch(`${API_URL}/recipes/?${query}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -56,15 +63,37 @@ export const fetchRecipeById = async (id) => {
   }
 };
 
+function buildRecipeBody(recipeData) {
+  const { image, ...jsonFields } = recipeData;
+
+  if (image instanceof File) {
+    const formData = new FormData();
+    formData.append("image", image);
+
+    for (const [key, value] of Object.entries(jsonFields)) {
+      if (value === null || value === undefined) continue;
+      if (typeof value === "object") {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, value);
+      }
+    }
+    return { body: formData, headers: { ...getAuthHeaders() } };
+  }
+
+  return {
+    body: JSON.stringify(recipeData),
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  };
+}
+
 export const createRecipe = async (recipeData) => {
   try {
+    const { body, headers } = buildRecipeBody(recipeData);
     const response = await fetch(`${API_URL}/recipes/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify(recipeData),
+      headers,
+      body,
     });
 
     const responseData = await response.json();
@@ -83,13 +112,11 @@ export const createRecipe = async (recipeData) => {
 
 export const updateRecipe = async (id, recipeData) => {
   try {
+    const { body, headers } = buildRecipeBody(recipeData);
     const response = await fetch(`${API_URL}/recipes/${id}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify(recipeData),
+      headers,
+      body,
     });
 
     const responseData = await response.json();
