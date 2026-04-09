@@ -79,7 +79,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     recipe_ingredients = serializers.SerializerMethodField(method_name='get_recipe_ingredients')
     recipe_instructions = serializers.SerializerMethodField(method_name='get_recipe_instructions')
     owner_username = serializers.CharField(source='owner.username', read_only=True, default=None, allow_null=True)
-    owner_id = serializers.IntegerField(source='owner_id', read_only=True, allow_null=True)
+    owner_id = serializers.IntegerField(read_only=True, allow_null=True)
     images = RecipeImageSerializer(many=True, read_only=True)
     cover_image_url = serializers.SerializerMethodField()
 
