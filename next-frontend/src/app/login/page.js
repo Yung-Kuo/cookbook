@@ -42,7 +42,7 @@ function LoginContent() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.push("/users");
+      router.push("/");
       return;
     }
 
@@ -66,10 +66,8 @@ function LoginContent() {
       sessionStorage.setItem(storageKey, "1");
     }
 
-    router.replace("/login");
-
     socialLogin(state, code)
-      .then(() => router.push("/users"))
+      .then(() => router.push("/"))
       .catch((err) => {
         console.error("OAuth login failed:", err);
         if (typeof window !== "undefined") {
