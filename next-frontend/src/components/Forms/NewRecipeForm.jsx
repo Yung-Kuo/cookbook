@@ -520,7 +520,7 @@ function RecipeCreateForm({
       <div className="flex w-full gap-4">
         <label
           htmlFor="title"
-          className="font-medium whitespace-nowrap text-neutral-500"
+          className="font-medium whitespace-nowrap text-neutral-300"
         >
           Title :
         </label>
@@ -539,11 +539,7 @@ function RecipeCreateForm({
 
       {/* Photos (gallery + cover) */}
       <div>
-        <label className="font-medium text-neutral-500">Photos</label>
-        <p className="mt-1 text-lg text-neutral-500">
-          Click an image to make it the cover. The first photo is the cover by
-          default.
-        </p>
+        <label className="font-medium text-neutral-300">Photos</label>
         <input
           ref={fileInputRef}
           type="file"
@@ -603,7 +599,7 @@ function RecipeCreateForm({
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="font-medium text-neutral-500">
+        <label htmlFor="description" className="font-medium text-neutral-300">
           Description
         </label>
         <div className="grid grid-cols-1 grid-rows-1">
@@ -623,7 +619,7 @@ function RecipeCreateForm({
 
       {/* Instructions */}
       <div className="flex flex-col gap-4">
-        <label htmlFor="instructions" className="font-medium text-neutral-500">
+        <label htmlFor="instructions" className="font-medium text-neutral-300">
           Instructions
         </label>
         <div className="flex flex-col gap-4">
@@ -669,7 +665,7 @@ function RecipeCreateForm({
 
       {/* Ingredient List */}
       <div className="flex flex-col gap-4">
-        <h3 className="font-medium text-neutral-500">Ingredient List</h3>
+        <h3 className="font-medium text-neutral-300">Ingredient List</h3>
         <div className="flex flex-col">
           {formData.recipe_ingredients.map((recipe_ingredient) => (
             <div
@@ -742,7 +738,7 @@ function RecipeCreateForm({
 
           {/* servings */}
           <div className="flex items-center gap-4">
-            <label htmlFor="servings" className="font-medium text-neutral-500">
+            <label htmlFor="servings" className="font-medium text-neutral-300">
               Servings
             </label>
             <input
@@ -767,7 +763,7 @@ function RecipeCreateForm({
 
       {/* Tags */}
       <div>
-        <label htmlFor="tags" className="font-medium text-neutral-500">
+        <label htmlFor="tags" className="font-medium text-neutral-300">
           Tags
         </label>
         <TagMultiSelect
@@ -779,7 +775,7 @@ function RecipeCreateForm({
 
       {/* Visibility */}
       <div className="flex flex-wrap items-center lg:items-start justify-between lg:justify-start lg:gap-8 gap-4">
-        <span id="visibility-heading" className="font-medium text-neutral-500">
+        <span id="visibility-heading" className="font-medium text-neutral-300">
           Visibility
         </span>
         <div
@@ -841,7 +837,7 @@ function RecipeCreateForm({
       {/* prep time, cook time */}
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <div>
-          <label htmlFor="prep_time" className="font-medium text-neutral-500">
+          <label htmlFor="prep_time" className="font-medium text-neutral-300">
             Prep Time (mins)
           </label>
           <input
@@ -862,7 +858,7 @@ function RecipeCreateForm({
           />
         </div>
         <div>
-          <label htmlFor="cook_time" className="font-medium text-neutral-500">
+          <label htmlFor="cook_time" className="font-medium text-neutral-300">
             Cook Time (mins)
           </label>
           <input
