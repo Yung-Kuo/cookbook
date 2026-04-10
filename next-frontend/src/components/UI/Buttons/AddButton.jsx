@@ -2,7 +2,7 @@ import AddIcon from "../../Icons/AddIcon";
 
 function AddButton({
   parentClassName,
-  className = "bg-red-300 hover:bg-red-400 text-neutral-900",
+  className = "bg-amber-500 text-neutral-800 hover:bg-amber-600",
   onClick,
   title = "Add a new item",
 }) {

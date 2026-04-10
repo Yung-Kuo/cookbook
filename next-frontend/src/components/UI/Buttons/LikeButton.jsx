@@ -75,7 +75,7 @@ export default function LikeButton({
       type="button"
       onClick={handleClick}
       disabled={disabled}
-      className={`cursor-pointer border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 bg-red-950/40 text-red-300 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""}`.trim()}
+      className={`cursor-pointer border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 !bg-red-950/40 text-red-400 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""}`.trim()}
       title={
         !isAuthenticated
           ? "Log in to like recipes"

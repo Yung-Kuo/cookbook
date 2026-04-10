@@ -13,6 +13,9 @@ import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
 import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
 import TagMultiSelect from "../UI/HeadlessUI/TagMultiSelect";
+import FormSection from "./FormSection";
+import AutoGrowTextarea from "./AutoGrowTextarea";
+import RecipeFormPhotoItem from "./RecipeFormPhotoItem";
 
 const UNITS = [
   { id: 0, name: "g" },
@@ -517,29 +520,30 @@ function RecipeCreateForm({
       </h2>
 
       {/* Recipe title */}
-      <div className="flex w-full gap-4">
-        <label
-          htmlFor="title"
-          className="font-medium whitespace-nowrap text-neutral-300"
-        >
-          Title :
-        </label>
-        <div className="grow">
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="w-full border-b-2 border-neutral-500 text-neutral-100 focus:outline-none"
-            required
-          />
-        </div>
-      </div>
+      <FormSection
+        label="Title :"
+        htmlFor="title"
+        className="flex w-full flex-row gap-4"
+        labelClassName="font-medium whitespace-nowrap text-neutral-300"
+        contentClassName="grow"
+      >
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          className="w-full border-b-2 border-neutral-500 text-neutral-100 focus:outline-none"
+          required
+        />
+      </FormSection>
 
       {/* Photos (gallery + cover) */}
-      <div>
-        <label className="font-medium text-neutral-300">Photos</label>
+      <FormSection
+        label="Photos"
+        className="flex flex-col"
+        contentClassName="mt-2"
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -548,45 +552,16 @@ function RecipeCreateForm({
           onChange={addPhotoFiles}
           className="hidden"
         />
-        <div className="mt-2 flex flex-wrap gap-4">
-          {photoItems.map((item) => {
-            const src = item.preview || item.image_url;
-            return (
-              <div
-                key={item.localId}
-                className="relative flex h-32 w-32 flex-shrink-0 flex-col overflow-hidden rounded-md border-2 border-neutral-600"
-              >
-                {src && (
-                  <img
-                    src={src}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                )}
-                {item.isCover && (
-                  <span className="absolute top-1 left-1 rounded bg-amber-500 px-1.5 py-0.5 text-xs font-semibold text-neutral-900">
-                    Cover
-                  </span>
-                )}
-                <div className="absolute right-0 bottom-0 left-0 flex gap-1 bg-black/60 p-1">
-                  <button
-                    type="button"
-                    onClick={() => makeCover(item)}
-                    className="flex-1 cursor-pointer rounded px-1 text-xs text-neutral-100 hover:bg-neutral-700"
-                  >
-                    Cover
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(item)}
-                    className="cursor-pointer rounded px-1 text-xs text-red-300 hover:bg-red-900/80"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex flex-wrap gap-4">
+          {photoItems.map((item) => (
+            <RecipeFormPhotoItem
+              key={item.localId}
+              src={item.preview || item.image_url}
+              isCover={item.isCover}
+              onMakeCover={() => makeCover(item)}
+              onRemove={() => removePhoto(item)}
+            />
+          ))}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -595,145 +570,122 @@ function RecipeCreateForm({
             + Add
           </button>
         </div>
-      </div>
+      </FormSection>
 
       {/* Description */}
-      <div>
-        <label htmlFor="description" className="font-medium text-neutral-300">
-          Description
-        </label>
-        <div className="grid grid-cols-1 grid-rows-1">
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="3"
-            className="z-10 col-start-1 row-start-1 mt-2 w-full resize-none rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-          ></textarea>
-          <span className="invisible col-start-1 row-start-1 mt-2 border-2 border-transparent p-2 text-2xl whitespace-pre-wrap">
-            {formData.description}{" "}
-          </span>
-        </div>
-      </div>
+      <FormSection label="Description" htmlFor="description">
+        <AutoGrowTextarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          rows={3}
+          topMargin
+        />
+      </FormSection>
 
       {/* Instructions */}
-      <div className="flex flex-col gap-4">
-        <label htmlFor="instructions" className="font-medium text-neutral-300">
-          Instructions
-        </label>
-        <div className="flex flex-col gap-4">
-          {formData.recipe_instructions.map((recipe_instruction) => (
-            <div
-              key={recipe_instruction.id}
-              className="flex items-center gap-4"
-            >
-              <h4 className="flex gap-2 text-neutral-500">
-                <span className="hidden lg:flex">Step</span>{" "}
-                <span>{recipe_instruction.order}</span>
-              </h4>
-              <div className="grid w-full grid-cols-1 grid-rows-1">
-                <textarea
-                  id={`instruction-${recipe_instruction.id}`}
-                  name="text"
-                  value={recipe_instruction.text}
-                  onChange={(e) =>
-                    handleInstructionChange(e, recipe_instruction.id)
-                  }
-                  rows="1"
-                  className="z-10 col-start-1 row-start-1 w-full resize-none rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-                  required
-                />
-                <span className="invisible col-start-1 row-start-1 border-2 border-transparent p-2 text-2xl whitespace-pre-wrap">
-                  {recipe_instruction.text}{" "}
-                </span>
-              </div>
+      <FormSection
+        label="Instructions"
+        htmlFor="instructions"
+        contentClassName="flex flex-col gap-4"
+      >
+        {formData.recipe_instructions.map((recipe_instruction) => (
+          <div key={recipe_instruction.id} className="flex items-center gap-4">
+            <h4 className="flex gap-2 text-neutral-500">
+              <span className="hidden lg:flex">Step</span>{" "}
+              <span>{recipe_instruction.order}</span>
+            </h4>
+            <AutoGrowTextarea
+              id={`instruction-${recipe_instruction.id}`}
+              name="text"
+              value={recipe_instruction.text}
+              onChange={(e) =>
+                handleInstructionChange(e, recipe_instruction.id)
+              }
+              rows={1}
+              required
+              fullWidth
+            />
 
-              <DeleteButton
-                onClick={() => removeInstruction(recipe_instruction.id)}
-              />
-            </div>
-          ))}
-        </div>
+            <DeleteButton
+              onClick={() => removeInstruction(recipe_instruction.id)}
+            />
+          </div>
+        ))}
 
         <AddButton
           onClick={addInstruction}
           parentClassName="h-8 w-8 lg:h-10 lg:w-10"
-          className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
         />
-      </div>
+      </FormSection>
 
       {/* Ingredient List */}
-      <div className="flex flex-col gap-4">
-        <h3 className="font-medium text-neutral-300">Ingredient List</h3>
-        <div className="flex flex-col">
-          {formData.recipe_ingredients.map((recipe_ingredient) => (
-            <div
-              key={recipe_ingredient.id}
-              className="flex items-center gap-4 border-dotted border-neutral-600 not-first:border-t-2 not-first:pt-2 not-last:pb-2 lg:border-none lg:pt-0 lg:pb-0"
-            >
-              <div className="grid grow grid-cols-2 grid-rows-2 justify-between gap-2 lg:grid-cols-3 lg:grid-rows-1 lg:gap-2">
-                <div className="col-span-2 col-start-1 row-start-1 lg:col-span-1">
-                  <ComboboxCreate
-                    name="ingredient"
-                    options={ingredients}
-                    value={recipe_ingredient.ingredient}
-                    onChange={(value) =>
-                      handleIngredientChange(
-                        value,
-                        "ingredient",
-                        recipe_ingredient.id,
-                      )
-                    }
-                    className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <input
-                    value={recipe_ingredient.quantity}
-                    onChange={(e) =>
-                      handleIngredientChange(
-                        e.target.value,
-                        "quantity",
-                        recipe_ingredient.id,
-                      )
-                    }
-                    name="quantity"
-                    placeholder="quantity"
-                    className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 placeholder-neutral-600 focus:border-sky-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <ComboboxCreate
-                    name="unit"
-                    options={UNITS}
-                    noCreate
-                    value={recipe_ingredient.unit}
-                    onChange={(value) =>
-                      handleIngredientChange(
-                        value,
-                        "unit",
-                        recipe_ingredient.id,
-                      )
-                    }
-                    className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-                  />
-                </div>
+      <FormSection
+        label="Ingredient List"
+        contentClassName="flex flex-col gap-4"
+      >
+        {formData.recipe_ingredients.map((recipe_ingredient) => (
+          <div
+            key={recipe_ingredient.id}
+            className="flex items-center gap-4 border-dotted border-neutral-600 not-first:border-t-2 lg:border-none"
+          >
+            <div className="grid grow grid-cols-2 grid-rows-2 justify-between gap-2 lg:grid-cols-3 lg:grid-rows-1 lg:gap-2">
+              <div className="col-span-2 col-start-1 row-start-1 lg:col-span-1">
+                <ComboboxCreate
+                  name="ingredient"
+                  options={ingredients}
+                  value={recipe_ingredient.ingredient}
+                  onChange={(value) =>
+                    handleIngredientChange(
+                      value,
+                      "ingredient",
+                      recipe_ingredient.id,
+                    )
+                  }
+                  className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <input
+                  value={recipe_ingredient.quantity}
+                  onChange={(e) =>
+                    handleIngredientChange(
+                      e.target.value,
+                      "quantity",
+                      recipe_ingredient.id,
+                    )
+                  }
+                  name="quantity"
+                  placeholder="quantity"
+                  className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 placeholder-neutral-600 focus:border-sky-600 focus:outline-none"
+                />
               </div>
 
-              <DeleteButton
-                onClick={() => removeIngredient(recipe_ingredient.id)}
-              />
+              <div>
+                <ComboboxCreate
+                  name="unit"
+                  options={UNITS}
+                  noCreate
+                  value={recipe_ingredient.unit}
+                  onChange={(value) =>
+                    handleIngredientChange(value, "unit", recipe_ingredient.id)
+                  }
+                  className="grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+                />
+              </div>
             </div>
-          ))}
-        </div>
+
+            <DeleteButton
+              onClick={() => removeIngredient(recipe_ingredient.id)}
+            />
+          </div>
+        ))}
 
         <div className="flex items-center justify-between">
           <AddButton
             onClick={addIngredient}
             parentClassName="h-8 w-8 lg:h-10 lg:w-10"
-            className="bg-amber-500 text-neutral-800 hover:bg-amber-600"
           />
 
           {/* servings */}
@@ -759,19 +711,16 @@ function RecipeCreateForm({
             />
           </div>
         </div>
-      </div>
+      </FormSection>
 
       {/* Tags */}
-      <div>
-        <label htmlFor="tags" className="font-medium text-neutral-300">
-          Tags
-        </label>
+      <FormSection label="Tags" htmlFor="tags">
         <TagMultiSelect
           options={allTags}
           value={formData.tags}
           onChange={handleTagsChange}
         />
-      </div>
+      </FormSection>
 
       {/* Visibility */}
       <div className="flex flex-wrap items-center lg:items-start justify-between lg:justify-start lg:gap-8 gap-4">
@@ -835,11 +784,8 @@ function RecipeCreateForm({
       </div>
 
       {/* prep time, cook time */}
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <div>
-          <label htmlFor="prep_time" className="font-medium text-neutral-300">
-            Prep Time (mins)
-          </label>
+      <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
+        <FormSection label="Prep Time (mins)" htmlFor="prep_time">
           <input
             type="text"
             id="prep_time"
@@ -854,13 +800,10 @@ function RecipeCreateForm({
             inputMode="numeric"
             pattern="[0-9]*"
             min="1"
-            className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+            className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
-        </div>
-        <div>
-          <label htmlFor="cook_time" className="font-medium text-neutral-300">
-            Cook Time (mins)
-          </label>
+        </FormSection>
+        <FormSection label="Cook Time (mins)" htmlFor="cook_time">
           <input
             type="text"
             id="cook_time"
@@ -875,9 +818,9 @@ function RecipeCreateForm({
             inputMode="numeric"
             pattern="[0-9]*"
             min="1"
-            className="mt-2 w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+            className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
           />
-        </div>
+        </FormSection>
       </div>
 
       {/* Form Submission Buttons */}

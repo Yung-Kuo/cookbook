@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
             >
               <Navbar />
             </Suspense>
-            <div className="flex-1 overflow-hidden">{children}</div>
+            <div className="flex-1 overflow-hidden pt-16">{children}</div>
           </div>
         </AuthProvider>
       </body>

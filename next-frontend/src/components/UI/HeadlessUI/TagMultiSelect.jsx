@@ -33,20 +33,15 @@ export default function TagMultiSelect({
     containerClassName ??
     (layout === "stacked"
       ? "flex flex-col gap-2"
-      : "mt-2 grid grid-cols-3 grid-rows-1 gap-3");
+      : "grid grid-cols-3 grid-rows-1 gap-3");
 
   const comboWrapClass =
-    layout === "stacked"
-      ? "min-w-0 w-full"
-      : "col-start-1 row-start-1 min-w-0";
+    layout === "stacked" ? "min-w-0 w-full" : "col-start-1 row-start-1 min-w-0";
 
   const chipsInner = (
     <div className="flex min-h-10 flex-wrap gap-2">
       {value.map((tag) => (
-        <Tag
-          key={tag.id ?? `new-${tag.name}`}
-          onRemove={() => removeTag(tag)}
-        >
+        <Tag key={tag.id ?? `new-${tag.name}`} onRemove={() => removeTag(tag)}>
           {tag.name}
         </Tag>
       ))}

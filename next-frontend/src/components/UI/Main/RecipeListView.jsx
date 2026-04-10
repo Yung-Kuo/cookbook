@@ -83,7 +83,7 @@ export default function RecipeListView({ fetchFn }) {
   };
 
   return (
-    <div className="grid h-full w-full pt-16 grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
+    <div className="grid h-full w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
       <NewRecipePopup
         show={showNewRecipe || !!recipeToEdit}
         onClose={handleCloseRecipePopup}
@@ -103,7 +103,7 @@ export default function RecipeListView({ fetchFn }) {
           <div className="grid grid-cols-2 gap-2">
             <input
               type="text"
-              placeholder="Search recipe titles"
+              placeholder="Search titles"
               value={search}
               onChange={handleSearchChange}
               className="h-10 w-full min-w-0 rounded-md border-2 border-transparent bg-neutral-900 px-3 text-lg text-neutral-100 placeholder-neutral-500 focus:border-sky-600 focus:outline-none"

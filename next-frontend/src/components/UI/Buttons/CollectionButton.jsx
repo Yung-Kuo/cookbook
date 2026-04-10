@@ -95,12 +95,12 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
       <RoundedButton
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 hover:text-sky-200"
+        className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 active:outline-none hover:text-sky-200"
       >
         + collection
       </RoundedButton>
       {open && (
-        <div className="absolute left-0 z-50 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl lg:left-auto lg:right-0">
+        <div className="absolute left-0 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl">
           <p className="mb-2 text-xs font-medium text-neutral-500">
             Add this recipe to your collections
           </p>
@@ -109,15 +109,34 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
           <ul className="max-h-48 space-y-1 overflow-y-auto">
             {collections.map((col) => (
               <li key={col.id}>
-                <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-neutral-800">
+                <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-neutral-800 has-[:disabled]:cursor-not-allowed focus-within:outline-none">
                   <input
                     type="checkbox"
                     checked={Boolean(col.contains_recipe)}
                     disabled={busyId === col.id}
                     onChange={() => toggleCollection(col)}
-                    className="rounded border-neutral-500"
+                    className="peer sr-only"
                   />
-                  <span className="truncate text-sm text-neutral-200">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-checked:[&>svg]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-900 peer-disabled:opacity-50"
+                  >
+                    <svg
+                      className="h-4 w-4 text-red-300 opacity-0 transition-opacity"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2.5 6L5 8.5L9.5 3"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span className="truncate text-lg text-neutral-200">
                     {col.name}
                   </span>
                 </label>
@@ -133,12 +152,12 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="New collection name"
-              className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
+              className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-base text-neutral-100 outline-none focus:border-sky-600 focus:outline-none"
             />
             <button
               type="submit"
               disabled={busyId === -1 || !newName.trim()}
-              className="shrink-0 rounded bg-amber-600 px-2 py-1 text-sm text-neutral-900 disabled:opacity-50"
+              className="shrink-0 rounded bg-amber-500 hover:enabled:bg-amber-400 transition-colors cursor-pointer px-2 py-1 text-base font-bold text-neutral-900 disabled:opacity-50"
             >
               Add
             </button>

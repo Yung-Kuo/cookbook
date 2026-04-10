@@ -82,8 +82,8 @@ export default function CollectionsListPage() {
       {error && <p className="text-red-400">{error}</p>}
       {!loading && !error && collections.length === 0 && (
         <p className="text-neutral-400">
-          No collections yet. Like a recipe and use &quot;+ collection&quot;
-          to create one.
+          No collections yet. Like a recipe and use &quot;+ collection&quot; to
+          create one.
         </p>
       )}
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
