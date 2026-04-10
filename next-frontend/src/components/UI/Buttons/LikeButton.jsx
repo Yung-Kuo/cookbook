@@ -75,7 +75,7 @@ export default function LikeButton({
       type="button"
       onClick={handleClick}
       disabled={disabled}
-      className={`cursor-pointer border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 !bg-red-950/40 text-red-400 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""}`.trim()}
+      className={`cursor-pointer  overflow-hidden border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 !bg-red-950/40 text-red-400 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""} `}
       title={
         !isAuthenticated
           ? "Log in to like recipes"
@@ -86,8 +86,14 @@ export default function LikeButton({
               : "Like this recipe"
       }
     >
+      {/* <div className="flex items-center justify-center h-10 w-10 min-w-10 rounded-full"> */}
       <HeartIcon filled={isLiked} className="h-5 w-5 shrink-0" />
-      <span className="font-bold tabular-nums">{likeCount}</span>
+      {/* </div> */}
+      {/* {likeCount > 0 && ( */}
+      <span className={`font-bold transition-all tabular-nums`}>
+        {likeCount}
+      </span>
+      {/* )} */}
     </RoundedButton>
   );
 }

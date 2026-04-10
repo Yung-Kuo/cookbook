@@ -8,9 +8,10 @@ import {
   removeRecipeFromCollection,
 } from "@/api/collections";
 import RoundedButton from "./RoundedButton";
+import BookmarkIcon from "../../Icons/BookmarkIcon";
 
 /**
- * Dropdown to add/remove recipe from collections. Button label: "+ collection"
+ * Dropdown to add/remove recipe from collections.
  */
 export default function CollectionButton({ recipeId, onMembershipChange }) {
   const [open, setOpen] = useState(false);
@@ -20,6 +21,14 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
   const [newName, setNewName] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setOpen(false);
+    setNewName("");
+    setError(null);
+    setBusyId(null);
+    setCollections([]);
+  }, [recipeId]);
 
   const load = useCallback(async () => {
     if (!recipeId) return;
@@ -97,7 +106,9 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
         onClick={() => setOpen((o) => !o)}
         className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 active:outline-none hover:text-sky-200"
       >
-        + collection
+        {/* Bookmarks icon */}
+        <BookmarkIcon className="h-5 w-5 shrink-0" />
+        <span>collections</span>
       </RoundedButton>
       {open && (
         <div className="absolute left-0 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl">
