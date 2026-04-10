@@ -108,7 +108,7 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
       >
         {/* Bookmarks icon */}
         <BookmarkIcon className="h-5 w-5 shrink-0" />
-        <span>collections</span>
+        <span className="mr-1">collections</span>
       </RoundedButton>
       {open && (
         <div className="absolute left-0 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl">

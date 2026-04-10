@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import BackendKeepalive from "@/components/BackendKeepalive";
 import Navbar from "@/components/UI/Nav/Navbar";
+import MobileBottomNav from "@/components/UI/Nav/MobileBottomNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Cookbook",
   description: "Welcome to my Cookbook. Built with Next.js & Django.",
+};
+
+export const viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {
@@ -36,7 +41,12 @@ export default function RootLayout({ children }) {
             >
               <Navbar />
             </Suspense>
-            <div className="flex-1 overflow-hidden pt-16">{children}</div>
+            <div className="flex-1 overflow-hidden pt-14 max-lg:pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
+              {children}
+            </div>
+            <Suspense fallback={null}>
+              <MobileBottomNav />
+            </Suspense>
           </div>
         </AuthProvider>
       </body>
