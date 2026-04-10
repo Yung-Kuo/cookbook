@@ -32,7 +32,7 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 grid grid-cols-1 grid-rows-1 font-bold text-lg h-14 w-full z-30">
+    <nav className="lg:fixed absolute top-0 left-0 right-0 grid grid-cols-1 grid-rows-1 font-bold text-lg h-14 w-full z-30">
       <div className="bg-neutral-800/40 w-full h-full row-start-1 col-start-1 backdrop-blur-xs" />
 
       {/* Desktop */}
@@ -71,7 +71,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile: slim top bar */}
-      <div className="flex lg:hidden items-center justify-between w-full h-full px-4 row-start-1 col-start-1 z-40">
+      <div className="flex lg:hidden items-center justify-between w-full h-full px-6 row-start-1 col-start-1 z-40">
         <Link
           href="/"
           className="text-neutral-100 transition-colors hover:text-red-300"

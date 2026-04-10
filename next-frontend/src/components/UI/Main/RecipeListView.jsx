@@ -83,7 +83,7 @@ export default function RecipeListView({ fetchFn }) {
   };
 
   return (
-    <div className="grid h-full w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
+    <div className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
       <NewRecipePopup
         show={showNewRecipe || !!recipeToEdit}
         onClose={handleCloseRecipePopup}
@@ -95,11 +95,9 @@ export default function RecipeListView({ fetchFn }) {
       />
       <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       {/* left panel */}
-      <div
-        className={`flex h-full w-full flex-col lg:w-2/5 ${showNewRecipe || recipeToEdit || selectedRecipe ? "overflow-hidden lg:overflow-scroll" : "overflow-scroll"}`}
-      >
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:w-2/5">
         {/* Search & Filter Bar */}
-        <div className="sticky top-0 z-10 flex flex-col gap-2 bg-neutral-800 px-6 py-3">
+        <div className="z-10 flex shrink-0 flex-col gap-2 bg-neutral-800 px-4 lg:px-6 py-3">
           <div className="grid grid-cols-2 gap-2">
             <input
               type="text"
@@ -133,11 +131,11 @@ export default function RecipeListView({ fetchFn }) {
         </div>
 
         {/* recipe list */}
-        <div className="flex flex-col gap-2 py-2 w-full">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-2 w-full">
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
-              className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "pr-0 pl-4" : "px-6"}`}
+              className={`w-full transition-all ${selectedRecipe?.id === recipe.id ? "lg:pr-0 lg:pl-4" : "lg:px-6"}`}
             >
               <RecipeListItem
                 recipe={recipe}

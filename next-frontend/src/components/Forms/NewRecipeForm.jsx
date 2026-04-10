@@ -513,7 +513,7 @@ function RecipeCreateForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 pb-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:text-4xl"
     >
       <h2 className="text-3xl font-bold lg:text-5xl">
         {isEditing ? "Edit Recipe" : "Create New Recipe"}
@@ -728,11 +728,11 @@ function RecipeCreateForm({
           Visibility
         </span>
         <div
-          className="flex lg:flex-col items-center lg:items-start gap-2 lg:gap-4"
+          className="flex flex-col gap-2 lg:gap-4"
           role="radiogroup"
           aria-labelledby="visibility-heading"
         >
-          <label className="flex cursor-pointer items-center gap-2 rounded-md focus-within:outline-none">
+          <label className="flex cursor-pointer items-center gap-4 rounded-md focus-within:outline-none">
             <input
               type="radio"
               name="visibility"
@@ -755,7 +755,7 @@ function RecipeCreateForm({
               <span className="text-neutral-500">(visible to everyone)</span>
             </div>
           </label>
-          <label className="flex cursor-pointer items-center gap-2 rounded-md focus-within:outline-none">
+          <label className="flex cursor-pointer items-center gap-4 rounded-md focus-within:outline-none">
             <input
               type="radio"
               name="visibility"
