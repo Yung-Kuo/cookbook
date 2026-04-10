@@ -1,3 +1,5 @@
+import { apiFetch } from "@/api/client";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function getAuthToken() {
@@ -19,7 +21,7 @@ export async function socialLogin(provider, code) {
 
   const callbackUrl = `${window.location.origin}/login`;
 
-  const response = await fetch(endpoint, {
+  const response = await apiFetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code, callback_url: callbackUrl }),
@@ -45,7 +47,7 @@ export async function socialLogin(provider, code) {
 export async function logout() {
   const token = getAuthToken();
   try {
-    await fetch(`${API_URL}/auth/logout/`, {
+    await apiFetch(`${API_URL}/auth/logout/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -61,7 +63,7 @@ export async function fetchCurrentUser() {
   const token = getAuthToken();
   if (!token) return null;
 
-  const response = await fetch(`${API_URL}/auth/user/`, {
+  const response = await apiFetch(`${API_URL}/auth/user/`, {
     headers: { Authorization: `Token ${token}` },
   });
 

@@ -1,6 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 import { getAuthHeaders } from "@/api/auth";
+import { apiFetch } from "@/api/client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /** Builds query string; repeats `tags` for each id (django-filter). */
 export function recipeListQueryString(params = {}) {
@@ -24,7 +25,7 @@ export const fetchRecipes = async (setRecipes, params = {}) => {
   try {
     const query = recipeListQueryString(params);
     const url = query ? `${API_URL}/recipes/?${query}` : `${API_URL}/recipes/`;
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
@@ -40,7 +41,7 @@ export const fetchRecipes = async (setRecipes, params = {}) => {
 export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
   try {
     const query = recipeListQueryString({ personal: "true", ...params });
-    const response = await fetch(`${API_URL}/recipes/?${query}`, {
+    const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
@@ -59,7 +60,7 @@ export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
       owner_id: String(userId),
       ...params,
     });
-    const response = await fetch(`${API_URL}/recipes/?${query}`, {
+    const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
@@ -78,7 +79,7 @@ export const fetchLikedRecipes = async (setRecipes, params = {}) => {
       liked: "true",
       ...params,
     });
-    const response = await fetch(`${API_URL}/recipes/?${query}`, {
+    const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
@@ -93,7 +94,7 @@ export const fetchLikedRecipes = async (setRecipes, params = {}) => {
 
 export const fetchRecipeById = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/recipes/${id}/`, {
+    const response = await apiFetch(`${API_URL}/recipes/${id}/`, {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
@@ -116,7 +117,7 @@ function buildRecipeBody(recipeData) {
 export const createRecipe = async (recipeData) => {
   try {
     const { body, headers } = buildRecipeBody(recipeData);
-    const response = await fetch(`${API_URL}/recipes/`, {
+    const response = await apiFetch(`${API_URL}/recipes/`, {
       method: "POST",
       headers,
       body,
@@ -139,7 +140,7 @@ export const createRecipe = async (recipeData) => {
 export const updateRecipe = async (id, recipeData) => {
   try {
     const { body, headers } = buildRecipeBody(recipeData);
-    const response = await fetch(`${API_URL}/recipes/${id}/`, {
+    const response = await apiFetch(`${API_URL}/recipes/${id}/`, {
       method: "PUT",
       headers,
       body,

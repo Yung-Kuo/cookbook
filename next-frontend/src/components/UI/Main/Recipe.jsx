@@ -44,11 +44,11 @@ function Recipe({
       className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 p-5 pt-32 pb-12 lg:pb-5 lg:pt-16`}
     >
       <div className="fixed top-18 right-5 z-20 flex flex-wrap items-center justify-end gap-3">
-        {onEdit && (
+        {onEdit && isOwnRecipe && (
           <RoundedButton
             type="button"
             onClick={onEdit}
-            className="cursor-pointer bg-red-300 text-neutral-800 hover:bg-red-400 focus:outline-none active:scale-95 !text-lg !font-bold"
+            className="cursor-pointer border border-neutral-600 bg-transparent text-neutral-200 hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95 !text-lg !font-bold"
           >
             Edit
           </RoundedButton>

@@ -90,7 +90,7 @@ export default function Navbar() {
           ) : (
             <RoundedButton
               href={loginHref}
-              className="cursor-pointer text-lg font-bold bg-red-300 text-neutral-800 hover:bg-red-400"
+              className="cursor-pointer !text-lg !font-bold bg-red-300 text-neutral-800 hover:bg-red-400"
             >
               Login
             </RoundedButton>

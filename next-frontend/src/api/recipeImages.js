@@ -1,6 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 import { getAuthHeaders } from "@/api/auth";
+import { apiFetch } from "@/api/client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * @param {number|string} recipeId
@@ -12,7 +13,7 @@ export async function uploadRecipeImage(recipeId, file, isCover = false) {
   formData.append("image", file);
   formData.append("is_cover", isCover ? "true" : "false");
 
-  const response = await fetch(`${API_URL}/recipes/${recipeId}/images/`, {
+  const response = await apiFetch(`${API_URL}/recipes/${recipeId}/images/`, {
     method: "POST",
     headers: { ...getAuthHeaders() },
     body: formData,
@@ -26,7 +27,7 @@ export async function uploadRecipeImage(recipeId, file, isCover = false) {
 }
 
 export async function deleteRecipeImage(recipeId, imageId) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_URL}/recipes/${recipeId}/images/${imageId}/`,
     {
       method: "DELETE",
@@ -40,7 +41,7 @@ export async function deleteRecipeImage(recipeId, imageId) {
 }
 
 export async function setCoverImage(recipeId, imageId) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_URL}/recipes/${recipeId}/images/${imageId}/set-cover/`,
     {
       method: "PATCH",

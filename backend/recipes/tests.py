@@ -1,3 +1,44 @@
-from django.test import TestCase
+from django.contrib.auth import get_user_model
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APITestCase
 
-# Create your tests here.
+from recipes.models import Like, Recipe
+
+User = get_user_model()
+
+
+class RecipeListIsLikedTests(APITestCase):
+    """is_liked on list reflects the authenticated viewer, not whether anyone liked."""
+
+    def setUp(self):
+        self.user_a = User.objects.create_user(username="alice", password="pass")
+        self.user_b = User.objects.create_user(username="bob", password="pass")
+        self.token_a = Token.objects.create(user=self.user_a)
+        self.token_b = Token.objects.create(user=self.user_b)
+        self.recipe = Recipe.objects.create(
+            title="Shared",
+            owner=self.user_a,
+            is_public=True,
+        )
+        Like.objects.create(user=self.user_a, recipe=self.recipe)
+
+    def test_other_user_sees_is_liked_false_while_like_count_positive(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token_b.key}")
+        res = self.client.get("/api/recipes/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        row = next(r for r in res.data if r["id"] == self.recipe.id)
+        self.assertFalse(row["is_liked"])
+        self.assertEqual(row["like_count"], 1)
+
+    def test_after_viewer_likes_is_liked_true(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token_b.key}")
+        like_res = self.client.post(f"/api/recipes/{self.recipe.id}/like/")
+        self.assertEqual(like_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(like_res.data["liked"])
+
+        res = self.client.get("/api/recipes/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        row = next(r for r in res.data if r["id"] == self.recipe.id)
+        self.assertTrue(row["is_liked"])
+        self.assertEqual(row["like_count"], 2)

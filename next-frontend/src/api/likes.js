@@ -1,12 +1,13 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 import { getAuthHeaders } from "@/api/auth";
+import { apiFetch } from "@/api/client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * Toggle like on a recipe. Returns { liked, like_count }.
  */
 export async function toggleLike(recipeId) {
-  const response = await fetch(`${API_URL}/recipes/${recipeId}/like/`, {
+  const response = await apiFetch(`${API_URL}/recipes/${recipeId}/like/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

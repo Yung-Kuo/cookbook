@@ -1,4 +1,9 @@
+import { useAuth } from "@/context/AuthContext";
+
 export default function RecipeListItem({ recipe, isSelected, onSelect }) {
+  const { isAuthenticated } = useAuth();
+  const showLikedCorner = isAuthenticated && recipe.is_liked === true;
+
   return (
     <div
       onClick={onSelect}
@@ -6,7 +11,7 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
         isSelected ? " border-neutral-100 text-red-300" : "border-transparent"
       }`}
     >
-      {recipe.is_liked && (
+      {showLikedCorner && (
         <span
           className="pointer-events-none absolute top-0 right-0 z-10 h-6 w-6 rounded-bl-full bg-red-400"
           aria-label="You liked this recipe"

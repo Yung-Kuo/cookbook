@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import BackendKeepalive from "@/components/BackendKeepalive";
 import Navbar from "@/components/UI/Nav/Navbar";
 
 const geistSans = Geist({
@@ -26,6 +27,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          <BackendKeepalive />
           <div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-800">
             <Suspense
               fallback={

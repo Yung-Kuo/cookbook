@@ -1,8 +1,10 @@
+import { apiFetch } from "@/api/client";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const fetchIngredients = async () => {
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_URL}/ingredients/`,
     );
     if (!response.ok) {
@@ -18,7 +20,7 @@ export const fetchIngredients = async () => {
 
 export const createIngredient = async (ingredientData) => {
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_URL}/ingredients/`,
       {
         method: "POST",
