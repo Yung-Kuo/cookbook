@@ -7,6 +7,7 @@ import LikeButton from "../Buttons/LikeButton";
 import CollectionButton from "../Buttons/CollectionButton";
 import RoundedButton from "../Buttons/RoundedButton";
 import Tag from "../Tag";
+import RecipeImageSection from "./RecipeImageSection";
 import { useAuth } from "@/context/AuthContext";
 
 function Recipe({
@@ -67,40 +68,7 @@ function Recipe({
       <div className="flex flex-col gap-24 text-xl lg:text-2xl px-4">
         {/* recipe title and cover */}
         <div className="flex flex-col gap-12">
-          {/* cover and other images */}
-          <div className="flex flex-col gap-4 lg:pt-4 -mx-4 lg:mx-0">
-            {selectedRecipe.cover_image_url && (
-              <div className="overflow-hidden ">
-                <img
-                  src={selectedRecipe.cover_image_url}
-                  alt={selectedRecipe.title}
-                  className="h-64 w-full object-cover lg:h-96"
-                />
-              </div>
-            )}
-            {(selectedRecipe.images || []).length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {[...(selectedRecipe.images || [])]
-                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                  .map((img) => (
-                    <div
-                      key={img.id}
-                      className={`h-24 w-36 flex-shrink-0 overflow-hidden rounded-md border-2 ${
-                        img.is_cover ? "border-amber-500" : "border-transparent"
-                      }`}
-                    >
-                      {img.image_url && (
-                        <img
-                          src={img.image_url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
+          <RecipeImageSection recipe={selectedRecipe} />
           {/* title and buttons */}
           <div className="flex flex-col gap-4">
             <Link
