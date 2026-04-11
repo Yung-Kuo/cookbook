@@ -32,7 +32,7 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 grid grid-cols-1 grid-rows-1 font-bold text-lg h-10 lg:h-14 w-full z-30">
+    <nav className="fixed hidden top-0 left-0 right-0 lg:grid grid-cols-1 grid-rows-1 font-bold text-lg h-14 w-full z-30">
       <div className="bg-neutral-800/40 w-full h-full row-start-1 col-start-1 backdrop-blur-xs" />
 
       {/* Desktop */}

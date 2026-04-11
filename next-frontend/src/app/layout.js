@@ -41,9 +41,7 @@ export default function RootLayout({ children }) {
             >
               <Navbar />
             </Suspense>
-            <div className="flex-1 overflow-hidden pt-14 max-lg:pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
-              {children}
-            </div>
+            <div className="flex-1 overflow-hidden lg:pt-14">{children}</div>
             <Suspense fallback={null}>
               <MobileBottomNav />
             </Suspense>
