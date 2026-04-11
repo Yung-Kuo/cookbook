@@ -51,7 +51,7 @@ function Recipe({
       className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 pb-20 lg:pb-4 lg:pt-14`}
     >
       {/* close and edit buttons */}
-      <div className="fixed top-4 lg:top-14 pt-4 right-4 z-20 flex flex-wrap items-center justify-end gap-2">
+      <div className="fixed top-4 lg:top-14 lg:pt-4 right-4 z-20 flex flex-wrap items-center justify-end gap-2">
         {onEdit && isOwnRecipe && (
           <RoundedButton
             type="button"
@@ -68,9 +68,15 @@ function Recipe({
       <div className="flex flex-col gap-24 text-xl lg:text-2xl px-4">
         {/* recipe title and cover */}
         <div className="flex flex-col gap-12">
-          <RecipeImageSection recipe={selectedRecipe} />
+          {/* cover and other images */}
+          {/* hide when there's no image */}
+          {selectedRecipe.images?.length > 0 && (
+            <RecipeImageSection recipe={selectedRecipe} />
+          )}
           {/* title and buttons */}
-          <div className="flex flex-col gap-4">
+          <div
+            className={`flex flex-col gap-4 ${selectedRecipe.images?.length === 0 ? "pt-20 lg:pt-0" : ""}`}
+          >
             <Link
               href={`/users/${selectedRecipe.owner_id ?? "_"}/recipes/${selectedRecipe.id}`}
             >

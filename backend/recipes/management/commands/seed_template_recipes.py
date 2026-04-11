@@ -8,10 +8,13 @@ Run from the backend directory (with your virtualenv activated):
 Safe to run multiple times: new titles are inserted; existing template titles get
 their tags re-synced to TEMPLATE_RECIPE_TAGS (so tag updates apply).
 
-When Cloudinary env vars are set, each template recipe gets one or two stock food
-photos (Pexels URLs uploaded via Cloudinary). Recipes that already have images are
+When Cloudinary env vars are set, template recipes get photos from Wikimedia Commons
+URLs chosen to match each dish title (uploaded via Cloudinary). A few recipes include
+several photos to exercise the image gallery. Recipes that already have images are
 skipped unless you pass --replace-template-images (deletes and re-uploads).
 """
+
+import time
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -91,78 +94,95 @@ TEMPLATE_RECIPE_TAGS = [
 
 TAG_NAMES = sorted({name for group in TEMPLATE_RECIPE_TAGS for name in group})
 
-# Stock food photos (Pexels — free to use). Optional second URL adds a gallery strip in the UI.
+# Dish-matched photos: Wikimedia Commons (CC / free licenses). URLs are stable CDN links.
+# Five recipes use multiple dish-specific images to stress-test the gallery (first = cover).
+_W = "https://upload.wikimedia.org/wikipedia/commons"
 
-
-def _pexels(photo_id: int) -> str:
-    return (
-        f"https://images.pexels.com/photos/{photo_id}/pexels-photo-{photo_id}.jpeg"
-        "?auto=compress&cs=tinysrgb&w=1600"
-    )
-
-
-_STOCK = {
-    "eggs": _pexels(6210743),
-    "avocado": _pexels(1640777),
-    "yogurt": _pexels(3184183),
-    "soup": _pexels(1437267),
-    "salad": _pexels(1640777),
-    "sandwich": _pexels(1040685),
-    "wok": _pexels(3296273),
-    "tacos": _pexels(7259913),
-    "curry": _pexels(7625056),
-    "salmon": _pexels(1435899),
-    "risotto": _pexels(376464),
-    "pasta": _pexels(3184183),
-    "noodles": _pexels(3296273),
-    "fried_rice": _pexels(6210743),
-    "chili": _pexels(7692896),
-    "stew": _pexels(1437267),
-    "veg": _pexels(1640772),
-    "potatoes": _pexels(842142),
-    "bread": _pexels(1640784),
-    "cookies": _pexels(1640783),
-    "brownies": _pexels(376464),
-    "dessert": _pexels(1640774),
-    "pancakes": _pexels(1040685),
-    "french_toast": _pexels(6210743),
-    "smoothie": _pexels(3184183),
-    "granola": _pexels(1647163),
-    "banana_bread": _pexels(1640780),
-    "apple": _pexels(1640784),
-    "prep": _pexels(1640773),
+_IM = {
+    "omelette": f"{_W}/f/f6/Homemade_omelette.png",
+    "avocado_toast": f"{_W}/4/4a/Avocado_toast.jpg",
+    "yogurt_bowl": f"{_W}/9/96/Yogurt_with_granola.jpg",
+    "tomato_soup": f"{_W}/b/b5/Tomato_soup.jpg",
+    "caesar_gallery": [
+        f"{_W}/a/a1/Caesar_salad.jpg",
+        f"{_W}/f/f7/Caesar_Salad_-_Purezza_2023-11-22.jpg",
+        f"{_W}/2/23/Caesar_salad_%282%29.jpg",
+        f"{_W}/8/82/Caesar_Salad_in_Bali.jpg",
+    ],
+    "grilled_cheese": f"{_W}/8/89/Grilled_cheese_sandwich.jpg",
+    "stir_fry": f"{_W}/e/e7/Chicken_stir_fry.jpg",
+    "tacos_gallery": [
+        f"{_W}/a/a8/Tacos.jpg",
+        f"{_W}/7/73/001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg",
+        f"{_W}/3/3a/Tacos_al_pastor.jpg",
+        f"{_W}/7/73/Fish_tacos_in_Pittsburg.jpg",
+    ],
+    "veggie_curry": f"{_W}/8/8e/Chana_masala.jpg",
+    "salmon": f"{_W}/3/34/Salmon_dish.jpg",
+    "mushroom_risotto": f"{_W}/e/ee/Mushroom_risotto_%283990739885%29.jpg",
+    # Three marinara / tomato-sauce spaghetti photos (omit very large Commons originals).
+    "spaghetti_marinara_gallery": [
+        f"{_W}/9/93/Spaghetti.jpg",
+        f"{_W}/9/9d/Liat_Portal_for_Foodie_Disorder_-_Spaghetti_with_Tomato_Sauce.jpg",
+        f"{_W}/7/7c/Spaghetti_and_meatballs_1.jpg",
+    ],
+    "pad_thai_gallery": [
+        f"{_W}/e/ed/Pad_Thai.JPG",
+        f"{_W}/6/63/Thai-Pad-Thai_2023-06-04.jpg",
+        f"{_W}/0/01/Pad_Thai_Noodles_-_Little_Thai%2C_Brighton_2024-03-21.jpg",
+        f"{_W}/3/39/Phat_Thai_kung_Chang_Khien_street_stall.jpg",
+    ],
+    "fried_rice": f"{_W}/5/50/Fried_rice.jpg",
+    "bean_chili": f"{_W}/2/24/Chili_con_carne.jpg",
+    "lentil_stew": f"{_W}/3/37/Lentil_soup.jpg",
+    "roasted_veg": f"{_W}/1/1d/Roasted_vegetables.jpg",
+    "mashed_potatoes": f"{_W}/0/04/Mashed_potatoes.jpg",
+    "garlic_bread": f"{_W}/4/4b/Garlic_bread.jpg",
+    "cookies_gallery": [
+        f"{_W}/5/50/Chocolate_chip_cookies.jpg",
+        f"{_W}/a/a9/Chocolate_Chip_Cookies.jpg",
+        f"{_W}/a/ab/Chocolate_chip_cookie.jpg",
+    ],
+    "brownies": f"{_W}/d/d7/Brownies.jpg",
+    "fruit_crumble": f"{_W}/2/25/Rhubarb_crumble.jpg",
+    "pancakes": f"{_W}/2/2d/Pancakes.jpg",
+    "french_toast": f"{_W}/1/16/French_Toast.jpg",
+    "smoothie_bowl": f"{_W}/3/35/Smoothie_bowl.jpg",
+    "granola_bar": f"{_W}/f/fb/Granola_bar.jpg",
+    "banana_bread": f"{_W}/e/ee/Banana_bread.jpg",
+    "apple_crisp": f"{_W}/e/e3/Apple_Crisp.jpg",
 }
 
-# Parallel to TEMPLATE_TITLES: [cover, ...optional gallery]
+# Parallel to TEMPLATE_TITLES: list of image URLs (first = cover).
 TEMPLATE_RECIPE_IMAGE_URLS = [
-    [_STOCK["eggs"], _STOCK["prep"]],
-    [_STOCK["avocado"]],
-    [_STOCK["yogurt"], _STOCK["prep"]],
-    [_STOCK["soup"]],
-    [_STOCK["salad"], _STOCK["prep"]],
-    [_STOCK["sandwich"]],
-    [_STOCK["wok"], _STOCK["prep"]],
-    [_STOCK["tacos"]],
-    [_STOCK["curry"]],
-    [_STOCK["salmon"], _STOCK["prep"]],
-    [_STOCK["risotto"]],
-    [_STOCK["pasta"], _STOCK["prep"]],
-    [_STOCK["noodles"]],
-    [_STOCK["fried_rice"], _STOCK["prep"]],
-    [_STOCK["chili"]],
-    [_STOCK["stew"]],
-    [_STOCK["veg"], _STOCK["prep"]],
-    [_STOCK["potatoes"]],
-    [_STOCK["bread"], _STOCK["prep"]],
-    [_STOCK["cookies"]],
-    [_STOCK["brownies"], _STOCK["prep"]],
-    [_STOCK["dessert"]],
-    [_STOCK["pancakes"], _STOCK["prep"]],
-    [_STOCK["french_toast"]],
-    [_STOCK["smoothie"], _STOCK["prep"]],
-    [_STOCK["granola"]],
-    [_STOCK["banana_bread"], _STOCK["prep"]],
-    [_STOCK["apple"]],
+    [_IM["omelette"]],
+    [_IM["avocado_toast"]],
+    [_IM["yogurt_bowl"]],
+    [_IM["tomato_soup"]],
+    list(_IM["caesar_gallery"]),
+    [_IM["grilled_cheese"]],
+    [_IM["stir_fry"]],
+    list(_IM["tacos_gallery"]),
+    [_IM["veggie_curry"]],
+    [_IM["salmon"]],
+    [_IM["mushroom_risotto"]],
+    list(_IM["spaghetti_marinara_gallery"]),
+    list(_IM["pad_thai_gallery"]),
+    [_IM["fried_rice"]],
+    [_IM["bean_chili"]],
+    [_IM["lentil_stew"]],
+    [_IM["roasted_veg"]],
+    [_IM["mashed_potatoes"]],
+    [_IM["garlic_bread"]],
+    list(_IM["cookies_gallery"]),
+    [_IM["brownies"]],
+    [_IM["fruit_crumble"]],
+    [_IM["pancakes"]],
+    [_IM["french_toast"]],
+    [_IM["smoothie_bowl"]],
+    [_IM["granola_bar"]],
+    [_IM["banana_bread"]],
+    [_IM["apple_crisp"]],
 ]
 
 
@@ -308,14 +328,36 @@ class Command(BaseCommand):
 
         created = 0
         for order, url in enumerate(image_urls):
-            try:
-                result = cloudinary.uploader.upload(
-                    url,
-                    folder="cookbook/recipes",
-                    resource_type="image",
-                    overwrite=False,
-                    unique_filename=True,
-                )
+            # Space requests so Wikimedia Commons does not rate-limit Cloudinary’s fetch (HTTP 429).
+            if order > 0:
+                time.sleep(0.85)
+
+            result = None
+            last_exc = None
+            for attempt in range(4):
+                try:
+                    result = cloudinary.uploader.upload(
+                        url,
+                        folder="cookbook/recipes",
+                        resource_type="image",
+                        overwrite=False,
+                        unique_filename=True,
+                    )
+                    last_exc = None
+                    break
+                except Exception as exc:
+                    last_exc = exc
+                    err = str(exc).lower()
+                    if attempt < 3 and (
+                        "429" in err
+                        or "too many" in err
+                        or "timed out" in err
+                    ):
+                        time.sleep(3 * (attempt + 1))
+                        continue
+                    break
+
+            if result:
                 RecipeImage.objects.create(
                     recipe=recipe,
                     image=result["public_id"],
@@ -323,10 +365,10 @@ class Command(BaseCommand):
                     order=order,
                 )
                 created += 1
-            except Exception as exc:
+            elif last_exc:
                 self.stderr.write(
                     self.style.WARNING(
-                        f"Could not upload image for {recipe.title} ({url[:60]}…): {exc}"
+                        f"Could not upload image for {recipe.title} ({url[:60]}…): {last_exc}"
                     )
                 )
         return created
