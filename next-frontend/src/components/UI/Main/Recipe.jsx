@@ -37,6 +37,12 @@ function Recipe({
     return { createdDate, updatedDate, isUpdated };
   }, [selectedRecipe]);
 
+  const recipeTags = useMemo(() => {
+    const raw = selectedRecipe?.tags;
+    if (raw == null) return [];
+    return Array.isArray(raw) ? raw : [raw];
+  }, [selectedRecipe?.tags]);
+
   if (!selectedRecipe) return null;
 
   return (
@@ -114,10 +120,10 @@ function Recipe({
               )}
             </div>
           </div>
-          {selectedRecipe.tags?.length > 0 && (
+          {recipeTags.length > 0 && (
             <div className="flex flex-wrap justify-end gap-2">
-              {selectedRecipe.tags.map((tag) => (
-                <Tag key={tag.id}>{tag.name}</Tag>
+              {recipeTags.map((tag, idx) => (
+                <Tag key={tag.id ?? `${tag.name}-${idx}`}>{tag.name}</Tag>
               ))}
             </div>
           )}

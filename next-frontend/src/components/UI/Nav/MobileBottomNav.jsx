@@ -26,7 +26,7 @@ export default function MobileBottomNav() {
       pathname.startsWith(`/users/${uid}/collections`));
 
   const tabClass = (active) =>
-    `flex flex-1 flex-col items-center justify-center gap-0.5 min-h-14 text-xs font-bold transition-colors ${
+    `flex flex-1 flex-col items-center justify-center active:outline-none gap-0.5 min-h-14 text-xs font-bold transition-colors ${
       active ? "text-red-300" : "text-neutral-400"
     }`;
 

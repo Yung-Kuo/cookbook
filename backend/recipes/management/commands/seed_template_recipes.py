@@ -5,15 +5,13 @@ Run from the backend directory (with your virtualenv activated):
 
     python manage.py seed_template_recipes
 
-Safe to run multiple times: existing titles prefixed with "Template:" are skipped.
+Safe to run multiple times: new titles are inserted; existing template titles get
+their tags re-synced to TEMPLATE_RECIPE_TAGS (so tag updates apply).
 """
 
 from django.core.management.base import BaseCommand
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeInstruction, Tag
-
-
-TAG_NAMES = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"]
 
 # Titles must stay stable so re-runs stay idempotent.
 TEMPLATE_TITLES = [
@@ -47,6 +45,40 @@ TEMPLATE_TITLES = [
     "Template: Apple crisp",
 ]
 
+# Parallel to TEMPLATE_TITLES: meal/course, dish type, and cuisine tags.
+TEMPLATE_RECIPE_TAGS = [
+    ["Breakfast", "French"],
+    ["Breakfast", "American"],
+    ["Breakfast", "Mediterranean"],
+    ["Lunch", "Soup", "Italian"],
+    ["Lunch", "Salad", "Italian"],
+    ["Lunch", "American", "Snack"],
+    ["Dinner", "Chinese"],
+    ["Dinner", "Mexican"],
+    ["Dinner", "Indian"],
+    ["Dinner", "Mediterranean"],
+    ["Dinner", "Italian"],
+    ["Dinner", "Italian"],
+    ["Dinner", "Thai"],
+    ["Dinner", "Vietnamese"],
+    ["Dinner", "American"],
+    ["Dinner", "Soup", "Indian"],
+    ["Dinner", "Mediterranean"],
+    ["Dinner", "American"],
+    ["Snack", "Italian"],
+    ["Dessert", "American"],
+    ["Dessert", "American"],
+    ["Dessert", "American"],
+    ["Breakfast", "American"],
+    ["Breakfast", "French"],
+    ["Breakfast", "Snack"],
+    ["Snack", "American"],
+    ["Dessert", "Snack"],
+    ["Dessert", "American"],
+]
+
+TAG_NAMES = sorted({name for group in TEMPLATE_RECIPE_TAGS for name in group})
+
 
 class Command(BaseCommand):
     help = (
@@ -55,7 +87,12 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        tags = [Tag.objects.get_or_create(name=n)[0] for n in TAG_NAMES]
+        if len(TEMPLATE_RECIPE_TAGS) != len(TEMPLATE_TITLES):
+            raise ValueError(
+                "TEMPLATE_RECIPE_TAGS must have the same length as TEMPLATE_TITLES"
+            )
+
+        tag_by_name = {n: Tag.objects.get_or_create(name=n)[0] for n in TAG_NAMES}
 
         ingredient_rows = [
             ("Salt", 1, "tsp"),
@@ -70,11 +107,14 @@ class Command(BaseCommand):
             ingredients.append((ing, qty, unit))
 
         created = 0
-        skipped = 0
+        tags_synced = 0
 
         for i, title in enumerate(TEMPLATE_TITLES):
-            if Recipe.objects.filter(title=title).exists():
-                skipped += 1
+            tag_objs = [tag_by_name[n] for n in TEMPLATE_RECIPE_TAGS[i]]
+            existing = Recipe.objects.filter(title=title).first()
+            if existing:
+                existing.tags.set(tag_objs)
+                tags_synced += 1
                 continue
 
             recipe = Recipe.objects.create(
@@ -86,7 +126,7 @@ class Command(BaseCommand):
                 is_public=True,
                 owner=None,
             )
-            recipe.tags.add(tags[i % len(tags)])
+            recipe.tags.set(tag_objs)
 
             for ing, qty, unit in ingredients:
                 RecipeIngredient.objects.create(
@@ -115,6 +155,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"seed_template_recipes: created {created} recipe(s), skipped {skipped} existing."
+                "seed_template_recipes: "
+                f"created {created} recipe(s); "
+                f"synced tags on {tags_synced} existing template recipe(s)."
             )
         )

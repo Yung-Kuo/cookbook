@@ -101,7 +101,7 @@ export default function RecipeListView({ fetchFn }) {
         />
 
         {/* recipe list */}
-        <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 lg:px-0 py-2 pb-24 w-full">
+        <div className="flex flex-1 flex-grow flex-col gap-2 overflow-y-auto px-4 lg:px-0 py-2 pb-24 w-full">
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
