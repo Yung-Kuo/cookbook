@@ -47,14 +47,15 @@ function Recipe({
 
   return (
     <div
-      className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 p-5 pt-32 pb-16 lg:pb-5 lg:pt-16`}
+      className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 p-4 pb-20 lg:pb-4 lg:pt-14`}
     >
-      <div className="fixed top-18 right-5 z-20 flex flex-wrap items-center justify-end gap-3">
+      {/* close and edit buttons */}
+      <div className="fixed top-4 lg:top-14 pt-4 right-4 z-20 flex flex-wrap items-center justify-end gap-2">
         {onEdit && isOwnRecipe && (
           <RoundedButton
             type="button"
             onClick={onEdit}
-            className="cursor-pointer border border-neutral-600 bg-transparent text-neutral-200 hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95 !text-lg !font-bold"
+            className="cursor-pointer border border-neutral-600 bg-neutral-800/60 backdrop-blur-xs text-neutral-200 hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95 !text-lg !font-bold"
           >
             Edit
           </RoundedButton>
@@ -62,40 +63,45 @@ function Recipe({
         {onClose && <CloseButton onClose={onClose} />}
       </div>
 
+      {/* recipe content */}
       <div className="flex flex-col gap-24 text-xl lg:text-2xl">
-        <div className="flex flex-col gap-5">
-          {selectedRecipe.cover_image_url && (
-            <div className="-mx-5 -mt-5 overflow-hidden lg:-mt-16">
-              <img
-                src={selectedRecipe.cover_image_url}
-                alt={selectedRecipe.title}
-                className="h-64 w-full object-cover lg:h-96"
-              />
-            </div>
-          )}
-          {(selectedRecipe.images || []).length > 1 && (
-            <div className="-mx-5 flex gap-2 overflow-x-auto pb-2">
-              {[...(selectedRecipe.images || [])]
-                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                .map((img) => (
-                  <div
-                    key={img.id}
-                    className={`h-24 w-36 flex-shrink-0 overflow-hidden rounded-md border-2 ${
-                      img.is_cover ? "border-amber-500" : "border-transparent"
-                    }`}
-                  >
-                    {img.image_url && (
-                      <img
-                        src={img.image_url}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-12">
+          {/* cover and other images */}
+          <div className="flex flex-col gap-4 pt-4">
+            {selectedRecipe.cover_image_url && (
+              <div className="overflow-hidden ">
+                <img
+                  src={selectedRecipe.cover_image_url}
+                  alt={selectedRecipe.title}
+                  className="h-64 w-full object-cover lg:h-96"
+                />
+              </div>
+            )}
+            {(selectedRecipe.images || []).length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {[...(selectedRecipe.images || [])]
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  .map((img) => (
+                    <div
+                      key={img.id}
+                      className={`h-24 w-36 flex-shrink-0 overflow-hidden rounded-md border-2 ${
+                        img.is_cover ? "border-amber-500" : "border-transparent"
+                      }`}
+                    >
+                      {img.image_url && (
+                        <img
+                          src={img.image_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+          {/* title and buttons */}
+          <div className="flex flex-col gap-4">
             <Link
               href={`/users/${selectedRecipe.owner_id ?? "_"}/recipes/${selectedRecipe.id}`}
             >
@@ -120,6 +126,7 @@ function Recipe({
               )}
             </div>
           </div>
+          {/* tags */}
           {recipeTags.length > 0 && (
             <div className="flex flex-wrap justify-end gap-2">
               {recipeTags.map((tag, idx) => (
@@ -127,7 +134,14 @@ function Recipe({
               ))}
             </div>
           )}
-          {selectedRecipe.description && <h4>{selectedRecipe.description}</h4>}
+          {/* description */}
+          <div className="flex flex-col gap-4">
+            {selectedRecipe.description && (
+              <p className="whitespace-pre-wrap">
+                {selectedRecipe.description}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ingredients */}
