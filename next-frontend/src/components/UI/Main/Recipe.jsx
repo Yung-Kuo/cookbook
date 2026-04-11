@@ -47,7 +47,7 @@ function Recipe({
 
   return (
     <div
-      className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 p-4 pb-20 lg:pb-4 lg:pt-14`}
+      className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 pb-20 lg:pb-4 lg:pt-14`}
     >
       {/* close and edit buttons */}
       <div className="fixed top-4 lg:top-14 pt-4 right-4 z-20 flex flex-wrap items-center justify-end gap-2">
@@ -64,10 +64,11 @@ function Recipe({
       </div>
 
       {/* recipe content */}
-      <div className="flex flex-col gap-24 text-xl lg:text-2xl">
+      <div className="flex flex-col gap-24 text-xl lg:text-2xl px-4">
+        {/* recipe title and cover */}
         <div className="flex flex-col gap-12">
           {/* cover and other images */}
-          <div className="flex flex-col gap-4 pt-4">
+          <div className="flex flex-col gap-4 lg:pt-4 -mx-4 lg:mx-0">
             {selectedRecipe.cover_image_url && (
               <div className="overflow-hidden ">
                 <img
@@ -176,6 +177,8 @@ function Recipe({
             </div>
           </div>
         )}
+
+        {/* instructions */}
         <div>
           <h2 className="mb-2 text-3xl lg:text-4xl">Instructions</h2>
           {selectedRecipe.recipe_instructions && (
@@ -192,6 +195,7 @@ function Recipe({
           )}
         </div>
 
+        {/* prep time and cook time */}
         <div className="flex flex-col gap-5">
           {selectedRecipe.prep_time && (
             <h4 className="flex gap-2 text-neutral-500">
@@ -213,6 +217,7 @@ function Recipe({
           )}
         </div>
 
+        {/* created date and updated date */}
         <div className="flex flex-col items-end">
           {createdDate && (
             <h6 className="flex gap-2 text-neutral-500">
