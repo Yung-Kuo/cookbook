@@ -77,7 +77,7 @@ export default function RecipeListView({ fetchFn }) {
   };
 
   return (
-    <div className="grid h-full w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
+    <div className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
       <NewRecipePopup
         show={showNewRecipe || !!recipeToEdit}
         onClose={handleCloseRecipePopup}
@@ -91,7 +91,7 @@ export default function RecipeListView({ fetchFn }) {
         <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       )}
       {/* left panel */}
-      <div className="flex h-full w-full flex-col overflow-hidden lg:w-2/5">
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:w-2/5">
         <RecipeListSearchBar
           search={search}
           onSearchChange={handleSearchChange}
@@ -101,7 +101,7 @@ export default function RecipeListView({ fetchFn }) {
         />
 
         {/* recipe list */}
-        <div className="flex flex-1 flex-grow flex-col gap-2 overflow-y-auto px-4 lg:px-0 py-2 pb-24 w-full">
+        <div className="flex min-h-0 flex-1 flex-grow flex-col gap-2 overflow-y-auto overscroll-y-contain px-4 lg:px-0 py-2 pb-24 w-full">
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
