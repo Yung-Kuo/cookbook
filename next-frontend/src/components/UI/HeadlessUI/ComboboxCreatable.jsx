@@ -35,7 +35,7 @@ function ComboboxCreate({
           aria-label="Assignee"
           displayValue={(option) => option?.name}
           onChange={(event) => setQuery(event.target.value)}
-          className={`z-10 col-start-1 row-start-1 placeholder-neutral-600 ${className}`}
+          className={`z-10 col-start-1 row-start-1 placeholder-neutral-500 ${className}`}
           placeholder={name}
         />
       </div>

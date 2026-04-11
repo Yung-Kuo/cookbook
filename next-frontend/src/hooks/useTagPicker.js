@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 
-/** Tag typeahead + chip list state (e.g. TagMultiSelect, recipe list filter). */
+/** State for TagCombobox + TagChipTray (e.g. recipe list filter, new recipe form). */
 export function useTagPicker(options, value, onChange) {
   const [comboKey, setComboKey] = useState(0);
 

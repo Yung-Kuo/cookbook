@@ -12,8 +12,10 @@ import { fetchIngredients, createIngredient } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
 import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
-import TagMultiSelect from "../UI/HeadlessUI/TagMultiSelect";
+import TagChipTray from "../UI/HeadlessUI/TagChipTray";
+import TagCombobox from "../UI/HeadlessUI/TagCombobox";
 import FormSection from "./FormSection";
+import { useTagPicker } from "@/hooks/useTagPicker";
 import AutoGrowTextarea from "./AutoGrowTextarea";
 import RecipeFormPhotoItem from "./RecipeFormPhotoItem";
 
@@ -35,6 +37,30 @@ const UNITS = [
 function scalarToFormString(v) {
   if (v === null || v === undefined) return "";
   return String(v);
+}
+
+/** Split total minutes from API into hours + minutes for the form */
+function minutesToHourMinuteFields(totalMins) {
+  if (totalMins == null || totalMins === "") {
+    return { hours: "", mins: "" };
+  }
+  const n = Math.max(0, Math.floor(Number(totalMins)));
+  if (Number.isNaN(n)) return { hours: "", mins: "" };
+  return {
+    hours: String(Math.floor(n / 60)),
+    mins: String(n % 60),
+  };
+}
+
+/** Combine hours + minutes strings into total minutes, or null if both empty */
+function hourMinuteFieldsToMinutes(hoursStr, minsStr) {
+  const hEmpty = hoursStr === "";
+  const mEmpty = minsStr === "";
+  if (hEmpty && mEmpty) return null;
+  const h = hEmpty ? 0 : parseInt(hoursStr, 10);
+  const m = mEmpty ? 0 : parseInt(minsStr, 10);
+  if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || m < 0) return null;
+  return h * 60 + m;
 }
 
 /** Map API recipe (read serializer) to local form state */
@@ -80,12 +106,17 @@ function recipeToFormData(recipe) {
         },
       ];
 
+  const prepHm = minutesToHourMinuteFields(recipe.prep_time);
+  const cookHm = minutesToHourMinuteFields(recipe.cook_time);
+
   return {
     title: recipe.title ?? "",
     description: recipe.description ?? "",
     recipe_instructions: instructions,
-    prep_time: scalarToFormString(recipe.prep_time),
-    cook_time: scalarToFormString(recipe.cook_time),
+    prep_time_hours: prepHm.hours,
+    prep_time_mins: prepHm.mins,
+    cook_time_hours: cookHm.hours,
+    cook_time_mins: cookHm.mins,
     servings: scalarToFormString(recipe.servings),
     tags: recipe.tags?.length ? [...recipe.tags] : [],
     recipe_ingredients: recipeIngredients,
@@ -103,8 +134,10 @@ const EMPTY_FORM = {
       order: 1,
     },
   ],
-  prep_time: "",
-  cook_time: "",
+  prep_time_hours: "",
+  prep_time_mins: "",
+  cook_time_hours: "",
+  cook_time_mins: "",
   servings: "",
   tags: [],
   recipe_ingredients: [
@@ -200,12 +233,25 @@ function RecipeCreateForm({
     }));
   };
 
+  const handleUnsignedIntChange = (e) => {
+    const { name, value } = e.target;
+    if (value === "" || /^\d+$/.test(value)) {
+      setFormData((prevData) => ({ ...prevData, [name]: value }));
+    }
+  };
+
   const handleTagsChange = (tags) => {
     setFormData((prevData) => ({
       ...prevData,
       tags,
     }));
   };
+
+  const { comboKey, handleSelect, removeTag, availableOptions } = useTagPicker(
+    allTags,
+    formData.tags,
+    handleTagsChange,
+  );
 
   const refreshImagesFromServer = async (recipeId) => {
     const fresh = await fetchRecipeById(recipeId);
@@ -426,10 +472,24 @@ function RecipeCreateForm({
       }
     }
 
+    const {
+      prep_time_hours: _ph,
+      prep_time_mins: _pm,
+      cook_time_hours: _ch,
+      cook_time_mins: _cm,
+      ...formFieldsForApi
+    } = formData;
+
     const submissionData = {
-      ...formData,
-      prep_time: formData.prep_time === "" ? null : Number(formData.prep_time),
-      cook_time: formData.cook_time === "" ? null : Number(formData.cook_time),
+      ...formFieldsForApi,
+      prep_time: hourMinuteFieldsToMinutes(
+        formData.prep_time_hours,
+        formData.prep_time_mins,
+      ),
+      cook_time: hourMinuteFieldsToMinutes(
+        formData.cook_time_hours,
+        formData.cook_time_mins,
+      ),
       servings: formData.servings === "" ? null : Number(formData.servings),
       recipe_instructions: formData.recipe_instructions.map((ins) => ({
         ...ins,
@@ -658,7 +718,7 @@ function RecipeCreateForm({
                   }
                   name="quantity"
                   placeholder="quantity"
-                  className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 placeholder-neutral-600 focus:border-sky-600 focus:outline-none"
+                  className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 placeholder-neutral-500 focus:border-sky-600 focus:outline-none"
                 />
               </div>
 
@@ -715,11 +775,25 @@ function RecipeCreateForm({
 
       {/* Tags */}
       <FormSection label="Tags" htmlFor="tags">
-        <TagMultiSelect
-          options={allTags}
-          value={formData.tags}
-          onChange={handleTagsChange}
-        />
+        <div className="flex w-full flex-col lg:flex-row items-start gap-2 lg:gap-8">
+          <div className="flex-1 w-full shrink-0">
+            <TagCombobox
+              comboKey={comboKey}
+              name="Add tag"
+              options={availableOptions}
+              onChange={handleSelect}
+              className="h-10 w-full rounded-md border-2 border-transparent bg-neutral-900 px-3 text-lg text-neutral-100 placeholder-neutral-500 focus:border-sky-600 focus:outline-none"
+            />
+          </div>
+          <div className="lg:w-2/3 w-full">
+            <TagChipTray
+              tags={formData.tags}
+              onRemoveTag={removeTag}
+              variant="field"
+              placeholder="Selected Tags"
+            />
+          </div>
+        </div>
       </FormSection>
 
       {/* Visibility */}
@@ -783,43 +857,71 @@ function RecipeCreateForm({
         </div>
       </div>
 
-      {/* prep time, cook time */}
-      <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
-        <FormSection label="Prep Time (mins)" htmlFor="prep_time">
-          <input
-            type="text"
-            id="prep_time"
-            name="prep_time"
-            value={formData.prep_time}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^\d+$/.test(value)) {
-                handleChange(e);
-              }
-            }}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            min="1"
-            className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-          />
+      {/* prep time, cook time (stored as total minutes on the API) */}
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
+        <FormSection label="Prep Time" htmlFor="prep_time_hours">
+          <div className="flex gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-lg text-neutral-500">Hours</span>
+              <input
+                type="text"
+                id="prep_time_hours"
+                name="prep_time_hours"
+                value={formData.prep_time_hours}
+                onChange={handleUnsignedIntChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+              />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-lg text-neutral-500">Minutes</span>
+              <input
+                type="text"
+                id="prep_time_mins"
+                name="prep_time_mins"
+                value={formData.prep_time_mins}
+                onChange={handleUnsignedIntChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+              />
+            </div>
+          </div>
         </FormSection>
-        <FormSection label="Cook Time (mins)" htmlFor="cook_time">
-          <input
-            type="text"
-            id="cook_time"
-            name="cook_time"
-            value={formData.cook_time}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^\d+$/.test(value)) {
-                handleChange(e);
-              }
-            }}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            min="1"
-            className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
-          />
+        <FormSection label="Cook Time" htmlFor="cook_time_hours">
+          <div className="flex gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-lg text-neutral-500">Hours</span>
+              <input
+                type="text"
+                id="cook_time_hours"
+                name="cook_time_hours"
+                value={formData.cook_time_hours}
+                onChange={handleUnsignedIntChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+              />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-lg text-neutral-500">Minutes</span>
+              <input
+                type="text"
+                id="cook_time_mins"
+                name="cook_time_mins"
+                value={formData.cook_time_mins}
+                onChange={handleUnsignedIntChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                className="w-full rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
+              />
+            </div>
+          </div>
         </FormSection>
       </div>
 
