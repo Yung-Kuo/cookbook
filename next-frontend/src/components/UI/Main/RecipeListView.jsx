@@ -6,6 +6,7 @@ import RecipeListItem from "@/components/UI/Main/RecipeListItem";
 import RecipeListSearchBar from "@/components/UI/Main/RecipeListSearchBar";
 import AddRecipeButton from "@/components/UI/Buttons/AddRecipeButton";
 import NewRecipePopup from "@/components/UI/Popups/NewRecipePopup";
+import { fetchRecipeById } from "@/api/recipes";
 import { fetchTags } from "@/api/tags";
 import { useAuth } from "@/context/AuthContext";
 
@@ -116,6 +117,13 @@ export default function RecipeListView({ fetchFn }) {
                     return;
                   }
                   setSelectedRecipe(recipe);
+                  fetchRecipeById(recipe.id)
+                    .then((full) => {
+                      setSelectedRecipe((prev) =>
+                        prev?.id === recipe.id ? full : prev,
+                      );
+                    })
+                    .catch(() => {});
                 }}
               />
             </div>

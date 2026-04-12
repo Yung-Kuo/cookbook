@@ -73,10 +73,11 @@ function Recipe({
           {selectedRecipe.images?.length > 0 && (
             <RecipeImageSection recipe={selectedRecipe} />
           )}
-          {/* title and buttons */}
+          {/* title and tags */}
           <div
             className={`flex flex-col gap-4 ${selectedRecipe.images?.length === 0 ? "pt-20 lg:pt-0" : ""}`}
           >
+            {/* title */}
             <Link
               href={`/users/${selectedRecipe.owner_id ?? "_"}/recipes/${selectedRecipe.id}`}
             >
@@ -84,39 +85,38 @@ function Recipe({
                 {selectedRecipe.title}
               </h1>
             </Link>
-            <div className="flex flex-wrap items-center gap-2">
-              <LikeButton
-                recipe={selectedRecipe}
-                isAuthenticated={isAuthenticated}
-                isOwnRecipe={isOwnRecipe}
-                onRecipeChange={onRecipeChange}
-              />
-              {isAuthenticated && selectedRecipe.id && (
-                <CollectionButton recipeId={selectedRecipe.id} />
-              )}
-              {selectedRecipe.is_public === false && (
-                <span className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-neutral-700 px-4 text-base text-neutral-300">
-                  Private
-                </span>
-              )}
-            </div>
-          </div>
-          {/* tags */}
-          {recipeTags.length > 0 && (
-            <div className="flex flex-wrap justify-end gap-2">
-              {recipeTags.map((tag, idx) => (
-                <Tag key={tag.id ?? `${tag.name}-${idx}`}>{tag.name}</Tag>
-              ))}
-            </div>
-          )}
-          {/* description */}
-          <div className="flex flex-col gap-4">
+            {/* tags */}
+            {recipeTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {recipeTags.map((tag, idx) => (
+                  <Tag key={tag.id ?? `${tag.name}-${idx}`}>{tag.name}</Tag>
+                ))}
+              </div>
+            )}
+            {/* description */}
             {selectedRecipe.description && (
               <p className="whitespace-pre-wrap">
                 {selectedRecipe.description}
               </p>
             )}
           </div>
+        </div>
+        {/* like and collection buttons */}
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          <LikeButton
+            recipe={selectedRecipe}
+            isAuthenticated={isAuthenticated}
+            isOwnRecipe={isOwnRecipe}
+            onRecipeChange={onRecipeChange}
+          />
+          {isAuthenticated && selectedRecipe.id && (
+            <CollectionButton recipeId={selectedRecipe.id} />
+          )}
+          {selectedRecipe.is_public === false && (
+            <span className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-neutral-700 px-4 text-base text-neutral-300">
+              Private
+            </span>
+          )}
         </div>
 
         {/* ingredients */}

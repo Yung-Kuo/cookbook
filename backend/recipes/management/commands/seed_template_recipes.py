@@ -99,7 +99,8 @@ TAG_NAMES = sorted({name for group in TEMPLATE_RECIPE_TAGS for name in group})
 _W = "https://upload.wikimedia.org/wikipedia/commons"
 
 _IM = {
-    "omelette": f"{_W}/f/f6/Homemade_omelette.png",
+    # French-style omelette (Mon Ami Gabi, Las Vegas); CC BY-SA 2.0 — restaurant photo, not the old coriander home shot
+    "herb_omelette": f"{_W}/a/a7/346_-_Mon_Ami_Gabi.jpg",
     "avocado_toast": f"{_W}/4/4a/Avocado_toast.jpg",
     "yogurt_bowl": f"{_W}/9/96/Yogurt_with_granola.jpg",
     "tomato_soup": f"{_W}/b/b5/Tomato_soup.jpg",
@@ -155,7 +156,7 @@ _IM = {
 
 # Parallel to TEMPLATE_TITLES: list of image URLs (first = cover).
 TEMPLATE_RECIPE_IMAGE_URLS = [
-    [_IM["omelette"]],
+    [_IM["herb_omelette"]],
     [_IM["avocado_toast"]],
     [_IM["yogurt_bowl"]],
     [_IM["tomato_soup"]],
@@ -304,6 +305,21 @@ class Command(BaseCommand):
                 f" ({recipes_skipped_images_present} recipes already had photos)."
             )
         self.stdout.write(self.style.SUCCESS(msg))
+
+        missing_img = []
+        for title in TEMPLATE_TITLES:
+            r = Recipe.objects.filter(title=title).first()
+            if r is not None and not r.images.exists():
+                missing_img.append(title)
+        if missing_img:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Template recipes still have no images (configure Cloudinary and re-run, "
+                    "or use --replace-template-images): "
+                    + "; ".join(missing_img[:12])
+                    + ("; …" if len(missing_img) > 12 else "")
+                )
+            )
 
     def _cloudinary_ready(self):
         c = getattr(settings, "CLOUDINARY_STORAGE", None) or {}

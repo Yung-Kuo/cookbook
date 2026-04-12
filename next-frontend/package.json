@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:templates": "bash ../scripts/seed_template_recipes.sh",
+    "seed:templates:images": "bash ../scripts/seed_template_recipes.sh --replace-template-images"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

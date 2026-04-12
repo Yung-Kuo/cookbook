@@ -39,9 +39,11 @@ export default function RecipeImageSection({ recipe }) {
       {heroImageUrl && (
         <div className="overflow-hidden">
           <img
+            key={`${recipe.id}-${heroImageUrl}`}
             src={heroImageUrl}
             alt={recipe.title}
             className="h-64 w-full object-cover lg:h-96"
+            decoding="async"
           />
         </div>
       )}
@@ -66,9 +68,11 @@ export default function RecipeImageSection({ recipe }) {
               >
                 {img.image_url && (
                   <img
+                    key={`${recipe.id}-${img.id}`}
                     src={img.image_url}
                     alt=""
                     className="h-full w-full object-cover"
+                    decoding="async"
                   />
                 )}
               </button>
