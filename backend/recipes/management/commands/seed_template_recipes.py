@@ -9,12 +9,21 @@ Safe to run multiple times: new titles are inserted; existing template titles ge
 their tags re-synced to TEMPLATE_RECIPE_TAGS (so tag updates apply).
 
 When Cloudinary env vars are set, template recipes get photos from Wikimedia Commons
-URLs chosen to match each dish title (uploaded via Cloudinary). A few recipes include
-several photos to exercise the image gallery. Recipes that already have images are
-skipped unless you pass --replace-template-images (deletes and re-uploads).
+URLs chosen to match each dish title (uploaded via Cloudinary). Uploads use scaled
+Commons thumbnail URLs when possible (smaller fetch, fewer HTTP 429 / size-limit issues),
+with a fallback to the full file URL if needed. A few recipes include several photos to
+exercise the image gallery. Recipes that already have images are skipped unless you pass
+--replace-template-images (deletes and re-uploads).
+
+After changing image URLs in this file, run:
+
+    python manage.py seed_template_recipes --replace-template-images
+
+so existing template rows pick up the new cover order and assets (Cloudinary uploads).
 """
 
 import time
+from urllib.parse import unquote, urlparse
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -94,57 +103,95 @@ TEMPLATE_RECIPE_TAGS = [
 
 TAG_NAMES = sorted({name for group in TEMPLATE_RECIPE_TAGS for name in group})
 
-# Dish-matched photos: Wikimedia Commons (CC / free licenses). URLs are stable CDN links.
-# Five recipes use multiple dish-specific images to stress-test the gallery (first = cover).
+_COMMONS_PATH = "/wikipedia/commons/"
+
+
+def _commons_thumb_url_for_cloudinary(full_url: str, max_edge: int = 1600) -> str:
+    """
+    Point Cloudinary at a Commons *thumbnail* URL instead of the full-resolution file.
+
+    Smaller downloads stay under typical remote-fetch size caps, and Wikimedia’s CDN
+    is less likely to return HTTP 429 when Cloudinary’s servers fetch many images in a row.
+    """
+    parsed = urlparse(full_url.strip())
+    if parsed.netloc != "upload.wikimedia.org":
+        return full_url
+    path = parsed.path
+    if "/thumb/" in path:
+        return full_url
+    if _COMMONS_PATH not in path:
+        return full_url
+    lower = path.lower()
+    if not lower.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp")):
+        return full_url
+    rel = path.split(_COMMONS_PATH, 1)[1]
+    dir_file = rel.rsplit("/", 1)
+    if len(dir_file) != 2:
+        return full_url
+    dir_part, file_enc = dir_file
+    base_decoded = unquote(file_enc)
+    thumb_rel = f"thumb/{dir_part}/{file_enc}/{max_edge}px-{base_decoded}"
+    return f"{parsed.scheme}://{parsed.netloc}{_COMMONS_PATH}{thumb_rel}"
+
+
+# Template image curation (each list in TEMPLATE_RECIPE_IMAGE_URLS):
+# - Index 0 is the cover (best hero for the exact template title).
+# - Every photo must match the dish; extras are alternate angles of the same dish type.
+# - Prefer landscape originals (width >= height) for the fixed-height hero; check Commons
+#   imageinfo dimensions when swapping URLs.
+# Wikimedia Commons — CC / free licenses; stable CDN links.
 _W = "https://upload.wikimedia.org/wikipedia/commons"
 
 _IM = {
-    # French-style omelette (Mon Ami Gabi, Las Vegas); CC BY-SA 2.0 — restaurant photo, not the old coriander home shot
     "herb_omelette": f"{_W}/a/a7/346_-_Mon_Ami_Gabi.jpg",
     "avocado_toast": f"{_W}/4/4a/Avocado_toast.jpg",
-    "yogurt_bowl": f"{_W}/9/96/Yogurt_with_granola.jpg",
+    # Landscape bowl: fruit, yogurt, granola (replaces portrait-only yogurt shot).
+    "yogurt_bowl": f"{_W}/9/9c/Fruit%2C_yogurt%2C_granola_%2833887713066%29.jpg",
     "tomato_soup": f"{_W}/b/b5/Tomato_soup.jpg",
+    # Cover = landscape plate under Cloudinary’s 10MB fetch cap (Bali original was too large).
     "caesar_gallery": [
-        f"{_W}/a/a1/Caesar_salad.jpg",
         f"{_W}/f/f7/Caesar_Salad_-_Purezza_2023-11-22.jpg",
         f"{_W}/2/23/Caesar_salad_%282%29.jpg",
-        f"{_W}/8/82/Caesar_Salad_in_Bali.jpg",
+        f"{_W}/a/a1/Caesar_salad.jpg",
     ],
     "grilled_cheese": f"{_W}/8/89/Grilled_cheese_sandwich.jpg",
     "stir_fry": f"{_W}/e/e7/Chicken_stir_fry.jpg",
+    # Cover = mixed taco platter (landscape, includes carne asada); extra = carne asada plate.
     "tacos_gallery": [
-        f"{_W}/a/a8/Tacos.jpg",
         f"{_W}/7/73/001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg",
-        f"{_W}/3/3a/Tacos_al_pastor.jpg",
-        f"{_W}/7/73/Fish_tacos_in_Pittsburg.jpg",
+        f"{_W}/4/49/Carne_asada_taco.jpg",
     ],
     "veggie_curry": f"{_W}/8/8e/Chana_masala.jpg",
     "salmon": f"{_W}/3/34/Salmon_dish.jpg",
     "mushroom_risotto": f"{_W}/e/ee/Mushroom_risotto_%283990739885%29.jpg",
-    # Three marinara / tomato-sauce spaghetti photos (omit very large Commons originals).
+    # Cover = meatballs + sauce (landscape); drop tiny portrait generic spaghetti.jpg.
     "spaghetti_marinara_gallery": [
-        f"{_W}/9/93/Spaghetti.jpg",
-        f"{_W}/9/9d/Liat_Portal_for_Foodie_Disorder_-_Spaghetti_with_Tomato_Sauce.jpg",
         f"{_W}/7/7c/Spaghetti_and_meatballs_1.jpg",
+        f"{_W}/9/9d/Liat_Portal_for_Foodie_Disorder_-_Spaghetti_with_Tomato_Sauce.jpg",
     ],
+    # Cover = classic pad thai on a plate (clear dish read); Bangkok street last.
     "pad_thai_gallery": [
         f"{_W}/e/ed/Pad_Thai.JPG",
-        f"{_W}/6/63/Thai-Pad-Thai_2023-06-04.jpg",
         f"{_W}/0/01/Pad_Thai_Noodles_-_Little_Thai%2C_Brighton_2024-03-21.jpg",
+        f"{_W}/6/63/Thai-Pad-Thai_2023-06-04.jpg",
         f"{_W}/3/39/Phat_Thai_kung_Chang_Khien_street_stall.jpg",
     ],
     "fried_rice": f"{_W}/5/50/Fried_rice.jpg",
     "bean_chili": f"{_W}/2/24/Chili_con_carne.jpg",
-    "lentil_stew": f"{_W}/3/37/Lentil_soup.jpg",
+    # Landscape bowl (replaces portrait lentil soup file).
+    "lentil_stew": f"{_W}/e/ee/Bowl_of_lentil_soup_with_green_and_red_lentils.jpg",
     "roasted_veg": f"{_W}/1/1d/Roasted_vegetables.jpg",
-    "mashed_potatoes": f"{_W}/0/04/Mashed_potatoes.jpg",
+    # Landscape bowl (replaces square crop of generic mashed_potatoes.jpg).
+    "mashed_potatoes": f"{_W}/3/39/MashedPotatoes.jpg",
     "garlic_bread": f"{_W}/4/4b/Garlic_bread.jpg",
+    # Cover = tray of cookies (landscape); single cookie last.
     "cookies_gallery": [
         f"{_W}/5/50/Chocolate_chip_cookies.jpg",
         f"{_W}/a/a9/Chocolate_Chip_Cookies.jpg",
         f"{_W}/a/ab/Chocolate_chip_cookie.jpg",
     ],
-    "brownies": f"{_W}/d/d7/Brownies.jpg",
+    # Higher-res tray shot (replaces small generic Brownies.jpg if fetch/upload flaky).
+    "brownies": f"{_W}/3/35/Chocolate_brownies.jpg",
     "fruit_crumble": f"{_W}/2/25/Rhubarb_crumble.jpg",
     "pancakes": f"{_W}/2/2d/Pancakes.jpg",
     "french_toast": f"{_W}/1/16/French_Toast.jpg",
@@ -240,6 +287,10 @@ class Command(BaseCommand):
                     "skipping recipe images."
                 )
             )
+
+        # Space every Cloudinary→Commons fetch (including the first image of each recipe) so
+        # Wikimedia does not rate-limit remote loads with HTTP 429.
+        self._first_template_image_fetch = True
 
         for i, title in enumerate(TEMPLATE_TITLES):
             tag_objs = [tag_by_name[n] for n in TEMPLATE_RECIPE_TAGS[i]]
@@ -344,33 +395,42 @@ class Command(BaseCommand):
 
         created = 0
         for order, url in enumerate(image_urls):
-            # Space requests so Wikimedia Commons does not rate-limit Cloudinary’s fetch (HTTP 429).
-            if order > 0:
-                time.sleep(0.85)
+            thumb_url = _commons_thumb_url_for_cloudinary(url)
+            fetch_chain = [thumb_url] if thumb_url == url else [thumb_url, url]
+            # Pause before every remote fetch (including the first image of each recipe) so
+            # Commons is less likely to return 429 to Cloudinary’s origin fetcher.
+            if not getattr(self, "_first_template_image_fetch", False):
+                time.sleep(1.75)
+            self._first_template_image_fetch = False
 
             result = None
             last_exc = None
-            for attempt in range(4):
-                try:
-                    result = cloudinary.uploader.upload(
-                        url,
-                        folder="cookbook/recipes",
-                        resource_type="image",
-                        overwrite=False,
-                        unique_filename=True,
-                    )
-                    last_exc = None
+            for fetch_url in fetch_chain:
+                if result:
                     break
-                except Exception as exc:
-                    last_exc = exc
-                    err = str(exc).lower()
-                    if attempt < 3 and (
-                        "429" in err
-                        or "too many" in err
-                        or "timed out" in err
-                    ):
-                        time.sleep(3 * (attempt + 1))
-                        continue
+                for attempt in range(4):
+                    try:
+                        result = cloudinary.uploader.upload(
+                            fetch_url,
+                            folder="cookbook/recipes",
+                            resource_type="image",
+                            overwrite=False,
+                            unique_filename=True,
+                        )
+                        last_exc = None
+                        break
+                    except Exception as exc:
+                        last_exc = exc
+                        err = str(exc).lower()
+                        if attempt < 3 and (
+                            "429" in err
+                            or "too many" in err
+                            or "timed out" in err
+                        ):
+                            time.sleep(12 * (attempt + 1))
+                            continue
+                        break
+                if result:
                     break
 
             if result:

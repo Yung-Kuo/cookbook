@@ -35,7 +35,7 @@ export default function RecipeImageSection({ recipe }) {
   if (!recipe) return null;
 
   return (
-    <div className="flex flex-col gap-4 -mx-4 lg:p-4">
+    <div className="flex flex-col -mx-4">
       {heroImageUrl && (
         <div className="overflow-hidden">
           <img
@@ -48,7 +48,7 @@ export default function RecipeImageSection({ recipe }) {
         </div>
       )}
       {sortedRecipeImages.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 lg:gap-4 lg:p-4 overflow-x-auto p-2">
           {sortedRecipeImages.map((img) => {
             const isActive = activeGalleryImageId === img.id;
             return (

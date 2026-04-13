@@ -95,7 +95,7 @@ function Recipe({
             )}
             {/* description */}
             {selectedRecipe.description && (
-              <p className="whitespace-pre-wrap">
+              <p className="whitespace-pre-wrap py-8">
                 {selectedRecipe.description}
               </p>
             )}
