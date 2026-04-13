@@ -13,7 +13,7 @@ function RecipeFormModal({
 }) {
   return (
     <div
-      className={`fixed top-0 left-0 z-30 flex h-screen w-screen items-center justify-center overflow-hidden ${show ? "" : "hidden"}`}
+      className={`fixed top-0 left-0 z-40 flex h-screen w-screen items-center justify-center overflow-hidden ${show ? "" : "hidden"}`}
       aria-hidden={!show}
     >
       {/* mask */}

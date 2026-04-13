@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Recipe from "@/components/UI/Main/Recipe";
 import RecipeListItem from "@/components/UI/Main/RecipeListItem";
 import RecipeListSearchBar from "@/components/UI/Main/RecipeListSearchBar";
@@ -9,10 +10,11 @@ import AddRecipeButton from "@/components/UI/Buttons/AddRecipeButton";
 import RecipeFormModal from "@/components/UI/Popups/RecipeFormModal";
 import { fetchRecipeById } from "@/api/recipes";
 import { fetchTags } from "@/api/tags";
-import { useAuth } from "@/context/AuthContext";
+import { useAppNav } from "@/hooks/useAppNav";
 
 export default function RecipeListView({ fetchFn, profileUserId = null }) {
-  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { isAuthenticated, loginHref } = useAppNav();
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showNewRecipe, setShowNewRecipe] = useState(false);
@@ -123,9 +125,12 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
           setShowNewRecipe(false);
         }}
       />
-      {isAuthenticated && (
-        <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
-      )}
+      <AddRecipeButton
+        onClick={() => {
+          if (isAuthenticated) setShowNewRecipe(true);
+          else router.push(loginHref);
+        }}
+      />
       {/* left: profile = mobile column + lg column; else single search + list */}
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:w-2/5 lg:pt-14">
         {isProfile ? (

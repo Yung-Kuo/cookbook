@@ -9,7 +9,7 @@ import RoundedButton from "../Buttons/RoundedButton";
 import Tag from "@/components/tags/Tag";
 import RecipeImageSection from "./RecipeImageSection";
 import UserProfileIdentity from "./UserProfileIdentity";
-import { useAuth } from "@/context/AuthContext";
+import { useAppNav } from "@/hooks/useAppNav";
 
 function Recipe({
   selectedRecipe,
@@ -18,7 +18,7 @@ function Recipe({
   onRecipeChange,
   className,
 }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loginHref } = useAppNav();
 
   const isOwnRecipe =
     isAuthenticated && user?.pk != null && selectedRecipe?.owner_id === user.pk;
@@ -153,8 +153,12 @@ function Recipe({
             isOwnRecipe={isOwnRecipe}
             onRecipeChange={onRecipeChange}
           />
-          {isAuthenticated && selectedRecipe.id && (
-            <CollectionButton recipeId={selectedRecipe.id} />
+          {selectedRecipe.id && (
+            <CollectionButton
+              recipeId={selectedRecipe.id}
+              isAuthenticated={isAuthenticated}
+              loginHref={loginHref}
+            />
           )}
           {selectedRecipe.is_public === false && (
             <span className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-neutral-700 px-4 text-base text-neutral-300">

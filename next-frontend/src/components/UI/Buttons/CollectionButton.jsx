@@ -12,8 +12,14 @@ import BookmarkIcon from "../../Icons/BookmarkIcon";
 
 /**
  * Dropdown to add/remove recipe from collections.
+ * When not signed in, navigates to login (pass loginHref from useAppNav).
  */
-export default function CollectionButton({ recipeId, onMembershipChange }) {
+export default function CollectionButton({
+  recipeId,
+  onMembershipChange,
+  isAuthenticated = true,
+  loginHref,
+}) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const [collections, setCollections] = useState([]);
@@ -98,6 +104,18 @@ export default function CollectionButton({ recipeId, onMembershipChange }) {
       setBusyId(null);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <RoundedButton
+        href={loginHref ?? "/login"}
+        className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 active:outline-none hover:text-sky-200"
+      >
+        <BookmarkIcon className="h-5 w-5 shrink-0" />
+        <span className="mr-1">collections</span>
+      </RoundedButton>
+    );
+  }
 
   return (
     <div className="relative" ref={wrapRef}>
