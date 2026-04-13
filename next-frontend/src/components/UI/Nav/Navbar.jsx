@@ -32,11 +32,11 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="fixed hidden top-0 left-0 right-0 lg:grid grid-cols-1 grid-rows-1 font-bold text-lg h-14 w-full z-30">
-      <div className="bg-neutral-800/40 w-full h-full row-start-1 col-start-1 backdrop-blur-xs" />
+    <nav className="fixed top-0 right-0 left-0 z-40 hidden h-14 w-full grid-cols-1 grid-rows-1 text-lg font-bold lg:grid">
+      <div className="col-start-1 row-start-1 h-full w-full bg-neutral-800/60 backdrop-blur-xs" />
 
       {/* Desktop */}
-      <div className="hidden lg:flex items-center justify-between w-full h-full px-8 row-start-1 col-start-1 z-40">
+      <div className="z-40 col-start-1 row-start-1 hidden h-full w-full items-center justify-between px-8 lg:flex">
         <div className="flex items-center gap-8">
           {navLinks.map(({ href, label }) => {
             const active = isNavLinkActive(pathname, href, uid);
@@ -53,7 +53,7 @@ export default function Navbar() {
             <>
               <span className="text-neutral-400">{user?.username}</span>
               <RoundedButton
-                className="cursor-pointer !text-lg !font-bold bg-neutral-700 text-neutral-100 hover:bg-neutral-600"
+                className="cursor-pointer bg-neutral-700 !text-lg !font-bold text-neutral-100 hover:bg-neutral-600"
                 onClick={logout}
               >
                 Logout
@@ -62,7 +62,7 @@ export default function Navbar() {
           ) : (
             <RoundedButton
               href={loginHref}
-              className="cursor-pointer !text-lg !font-bold bg-red-300 text-neutral-800 hover:bg-red-400"
+              className="cursor-pointer bg-red-300 !text-lg !font-bold text-neutral-800 hover:bg-red-400"
             >
               Login
             </RoundedButton>
@@ -71,7 +71,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile: slim top bar */}
-      <div className="flex lg:hidden items-center justify-between w-full h-full px-6 row-start-1 col-start-1 z-40">
+      <div className="z-40 col-start-1 row-start-1 flex h-full w-full items-center justify-between px-6 lg:hidden">
         <Link
           href="/"
           className="text-neutral-100 transition-colors hover:text-red-300"
@@ -81,7 +81,7 @@ export default function Navbar() {
         {!isAuthenticated && (
           <RoundedButton
             href={loginHref}
-            className="cursor-pointer !text-base !font-bold bg-red-300 text-neutral-800 hover:bg-red-400"
+            className="cursor-pointer bg-red-300 !text-base !font-bold text-neutral-800 hover:bg-red-400"
           >
             Login
           </RoundedButton>

@@ -78,6 +78,8 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
     setSelectedRecipe((prev) => (prev?.id === updated.id ? updated : prev));
   };
 
+  const isProfile = profileUserId != null;
+
   const recipeListItems = recipes.map((recipe) => (
     <div
       key={recipe.id}
@@ -104,8 +106,6 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
     </div>
   ));
 
-  const isProfileRoute = profileUserId != null;
-
   return (
     <div className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800 text-4xl lg:flex">
       <RecipeFormModal
@@ -126,11 +126,10 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
       {isAuthenticated && (
         <AddRecipeButton onClick={() => setShowNewRecipe(true)} />
       )}
-      {/* left panel */}
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:w-2/5 lg:pt-16">
-        {isProfileRoute ? (
+      {/* left: profile = mobile column + lg column; else single search + list */}
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:w-2/5 lg:pt-14">
+        {isProfile ? (
           <>
-            {/* Mobile: single column scroll (profile + sticky search + list) */}
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain lg:hidden">
               <UserProfileSidePanel
                 userId={profileUserId}
@@ -145,11 +144,10 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
                   onFilterTagsChange={setSelectedFilterTags}
                 />
               </div>
-              <div className="flex flex-col gap-2 px-4 pt-4 pb-24">
+              <div className="flex flex-col gap-2 p-4 pb-24 lg:p-6">
                 {recipeListItems}
               </div>
             </div>
-            {/* Desktop: search + list only (profile in right column) */}
             <div className="hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex">
               <RecipeListSearchBar
                 search={search}
@@ -158,13 +156,13 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
                 selectedFilterTags={selectedFilterTags}
                 onFilterTagsChange={setSelectedFilterTags}
               />
-              <div className="flex min-h-0 w-full flex-1 flex-grow flex-col gap-2 overflow-y-auto overscroll-y-contain px-4 py-2 pb-24 lg:px-0">
+              <div className="flex min-h-0 w-full min-w-0 flex-1 flex-grow flex-col gap-2 overflow-y-auto overscroll-y-contain p-4 pb-24 lg:p-6 lg:px-0">
                 {recipeListItems}
               </div>
             </div>
           </>
         ) : (
-          <>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <RecipeListSearchBar
               search={search}
               onSearchChange={handleSearchChange}
@@ -172,24 +170,28 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
               selectedFilterTags={selectedFilterTags}
               onFilterTagsChange={setSelectedFilterTags}
             />
-            <div className="flex min-h-0 w-full flex-1 flex-grow flex-col gap-2 overflow-y-auto overscroll-y-contain px-4 py-2 pb-24 lg:px-0">
+            <div className="flex min-h-0 w-full min-w-0 flex-1 flex-grow flex-col gap-2 overflow-y-auto overscroll-y-contain p-4 pb-24 lg:p-6 lg:px-0">
               {recipeListItems}
             </div>
-          </>
+          </div>
         )}
       </div>
-      {/* right panel: optional profile column (user page) or recipe-only */}
-      {profileUserId != null && (
+      {/* right panel: desktop profile when user page; Recipe overlays when selected (same mount for all routes) */}
+      {(isProfile || selectedRecipe) && (
         <div
-          className={`relative flex w-full flex-col overflow-hidden ${
-            selectedRecipe
-              ? "min-h-0 flex-1 lg:relative lg:h-full lg:w-3/5"
-              : "hidden h-full lg:flex lg:w-3/5"
-          }`}
+          className={
+            isProfile
+              ? selectedRecipe
+                ? "relative flex min-h-0 w-full flex-1 flex-col overflow-hidden lg:relative lg:h-full lg:w-3/5"
+                : "relative hidden h-full w-full overflow-hidden lg:flex lg:w-3/5 lg:flex-col"
+              : "relative h-full min-h-0 w-full lg:w-3/5"
+          }
         >
-          <div className="absolute top-14 hidden min-h-0 flex-1 overflow-y-auto lg:block">
-            <UserProfileSidePanel userId={profileUserId} />
-          </div>
+          {isProfile && (
+            <div className="absolute top-14 hidden min-h-0 flex-1 overflow-y-auto lg:block">
+              <UserProfileSidePanel userId={profileUserId} />
+            </div>
+          )}
           {selectedRecipe && (
             <Recipe
               selectedRecipe={selectedRecipe}
@@ -198,16 +200,6 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
               onRecipeChange={handleRecipeChange}
             />
           )}
-        </div>
-      )}
-      {profileUserId == null && selectedRecipe && (
-        <div className="relative h-full min-h-0 w-full lg:w-3/5">
-          <Recipe
-            selectedRecipe={selectedRecipe}
-            onClose={() => setSelectedRecipe(null)}
-            onEdit={() => setRecipeToEdit(selectedRecipe)}
-            onRecipeChange={handleRecipeChange}
-          />
         </div>
       )}
     </div>
