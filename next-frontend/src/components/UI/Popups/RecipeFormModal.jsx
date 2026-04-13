@@ -1,14 +1,15 @@
 "use client";
 
-import NewRecipeForm from "../../Forms/NewRecipeForm";
+import RecipeForm from "../../Forms/RecipeForm";
 import { CloseButton } from "../Buttons/CloseButton";
 
-function NewRecipePopup({
+function RecipeFormModal({
   show,
   onClose,
   onRecipeCreated,
   existingRecipe,
   onRecipeUpdated,
+  onRecipeDeleted,
 }) {
   return (
     <div
@@ -30,15 +31,16 @@ function NewRecipePopup({
         </div>
 
         {/* Form */}
-        <NewRecipeForm
+        <RecipeForm
           onClose={onClose}
           onRecipeCreated={onRecipeCreated}
           existingRecipe={existingRecipe}
           onRecipeUpdated={onRecipeUpdated}
+          onRecipeDeleted={onRecipeDeleted}
         />
       </div>
     </div>
   );
 }
 
-export default NewRecipePopup;
+export default RecipeFormModal;

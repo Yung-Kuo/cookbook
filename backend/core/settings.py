@@ -12,7 +12,23 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 import dj_database_url
 from pathlib import Path
+from urllib.parse import urlparse
+
 from dotenv import load_dotenv
+
+
+def _safe_database_url_hint(url):
+    """Host/db name for logs — never include credentials."""
+    if not url:
+        return "(not set)"
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname or "?"
+        db = (parsed.path or "").lstrip("/") or "?"
+        scheme = parsed.scheme or "db"
+        return f"{scheme}://{host}/{db}"
+    except Exception:
+        return "(unparseable)"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,25 +48,28 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # ALLOWED_HOSTS = []
 
 DEBUG = bool(os.environ.get("DEBUG", False))
-print(f"DEBUG (settings.py): Final DEBUG setting: {DEBUG}")
-print(f"DEBUG (settings.py): OS environment 'DEBUG' variable: {os.environ.get('DEBUG')}")
- 
+
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(",")
 # ALLOWED_HOSTS = ["localhost,127.0.0.1","cookbook-zel0.onrender.com"]
 
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-print(f"DEBUG: os.environ.get('DATABASE_URL') -> {DATABASE_URL}")
-
 if DATABASE_URL:
     try:
         DATABASES = {
             'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
         }
-        print(f"DEBUG: Using PostgreSQL with DATABASE_URL: {DATABASE_URL}")
+        if DEBUG:
+            print(
+                "DEBUG: Using PostgreSQL (DATABASE_URL -> "
+                f"{_safe_database_url_hint(DATABASE_URL)})"
+            )
     except Exception as e:
-        print(f"ERROR: Failed to parse DATABASE_URL: {DATABASE_URL} - {e}")
+        print(
+            "ERROR: Failed to parse DATABASE_URL "
+            f"({_safe_database_url_hint(DATABASE_URL)}): {e}"
+        )
         # Fallback to SQLite if parsing fails
         DATABASES = {
             'default': {
@@ -60,7 +79,8 @@ if DATABASE_URL:
         }
         print("DEBUG: Falling back to SQLite due to parsing error.")
 else:
-    print("DEBUG: DATABASE_URL not found in environment, falling back to SQLite.")
+    if DEBUG:
+        print("DEBUG: DATABASE_URL not set, using SQLite.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -239,3 +259,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Default non-interactive test DB setup (no stdin prompt). See core/test_runner.py.
+TEST_RUNNER = "core.test_runner.CookbookDiscoverRunner"

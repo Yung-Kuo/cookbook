@@ -6,8 +6,9 @@ import { CloseButton } from "../Buttons/CloseButton";
 import LikeButton from "../Buttons/LikeButton";
 import CollectionButton from "../Buttons/CollectionButton";
 import RoundedButton from "../Buttons/RoundedButton";
-import Tag from "../Tag";
+import Tag from "@/components/tags/Tag";
 import RecipeImageSection from "./RecipeImageSection";
+import UserProfileIdentity from "./UserProfileIdentity";
 import { useAuth } from "@/context/AuthContext";
 
 function Recipe({
@@ -46,17 +47,48 @@ function Recipe({
 
   if (!selectedRecipe) return null;
 
+  const ownerLabel =
+    selectedRecipe.owner_display_name?.trim() ||
+    selectedRecipe.owner_username ||
+    "Author";
+
   return (
     <div
-      className={`${className} absolute overflow-scroll top-0 right-0 z-10 bg-neutral-900 pb-20 lg:pb-4 lg:pt-14`}
+      className={`${className} fixed inset-0 z-20 flex min-h-0 flex-col overflow-hidden bg-neutral-900 lg:absolute lg:inset-0 lg:z-20 lg:pb-4`}
     >
-      {/* close and edit buttons */}
-      <div className="fixed top-4 lg:top-14 lg:pt-4 right-4 z-20 flex flex-wrap items-center justify-end gap-2">
+      {/* Mobile: strip with owner + edit/close — hidden on lg */}
+      <div className="fixed top-0 left-0 z-30 flex w-full shrink-0 items-center justify-between bg-neutral-800/40 p-4 backdrop-blur-xs lg:hidden">
+        <div className="min-w-0 flex-1 basis-0">
+          {selectedRecipe.owner_id != null && (
+            <UserProfileIdentity
+              userId={selectedRecipe.owner_id}
+              avatarUrl={selectedRecipe.owner_avatar_url}
+              displayName={ownerLabel}
+              size="recipeOwner"
+            />
+          )}
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {onEdit && isOwnRecipe && (
+            <RoundedButton
+              type="button"
+              onClick={onEdit}
+              className="cursor-pointer border border-neutral-600 bg-neutral-800/60 !text-lg !font-bold text-neutral-200 backdrop-blur-xs hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95"
+            >
+              Edit
+            </RoundedButton>
+          )}
+          {onClose && <CloseButton onClose={onClose} />}
+        </div>
+      </div>
+
+      {/* Desktop: floating edit/close only — hidden below lg */}
+      <div className="absolute top-4 right-4 z-30 hidden flex-wrap items-center justify-end gap-2 lg:top-18 lg:flex">
         {onEdit && isOwnRecipe && (
           <RoundedButton
             type="button"
             onClick={onEdit}
-            className="cursor-pointer border border-neutral-600 bg-neutral-800/60 backdrop-blur-xs text-neutral-200 hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95 !text-lg !font-bold"
+            className="cursor-pointer border border-neutral-600 bg-neutral-800/60 !text-lg !font-bold text-neutral-200 backdrop-blur-xs hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95"
           >
             Edit
           </RoundedButton>
@@ -65,7 +97,7 @@ function Recipe({
       </div>
 
       {/* recipe content */}
-      <div className="flex flex-col gap-24 text-xl lg:text-2xl px-4">
+      <div className="flex min-h-0 flex-col gap-12 overflow-y-auto px-4 pt-14 pb-24 text-xl lg:text-2xl">
         {/* recipe title and cover */}
         <div className="flex flex-col gap-12">
           {/* cover and other images */}
@@ -73,9 +105,9 @@ function Recipe({
           {selectedRecipe.images?.length > 0 && (
             <RecipeImageSection recipe={selectedRecipe} />
           )}
-          {/* title and tags */}
+          {/* title, tags, description */}
           <div
-            className={`flex flex-col gap-4 ${selectedRecipe.images?.length === 0 ? "pt-20 lg:pt-0" : ""}`}
+            className={`flex flex-col gap-4 ${selectedRecipe.images?.length === 0 ? "pt-6 lg:pt-4" : ""}`}
           >
             {/* title */}
             <Link
@@ -93,16 +125,28 @@ function Recipe({
                 ))}
               </div>
             )}
+            {/* Desktop: owner in flow (mobile uses top strip) */}
+            {selectedRecipe.owner_id != null && (
+              <div className="hidden lg:block">
+                <UserProfileIdentity
+                  userId={selectedRecipe.owner_id}
+                  avatarUrl={selectedRecipe.owner_avatar_url}
+                  displayName={ownerLabel}
+                  size="recipeOwner"
+                  truncateDisplayName={false}
+                />
+              </div>
+            )}
             {/* description */}
             {selectedRecipe.description && (
-              <p className="whitespace-pre-wrap py-8">
+              <p className="py-8 whitespace-pre-wrap">
                 {selectedRecipe.description}
               </p>
             )}
           </div>
         </div>
         {/* like and collection buttons */}
-        <div className="flex flex-wrap items-center gap-2 justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <LikeButton
             recipe={selectedRecipe}
             isAuthenticated={isAuthenticated}
@@ -170,7 +214,7 @@ function Recipe({
         </div>
 
         {/* prep time and cook time */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {selectedRecipe.prep_time && (
             <h4 className="flex gap-2 text-neutral-500">
               Prep Time:

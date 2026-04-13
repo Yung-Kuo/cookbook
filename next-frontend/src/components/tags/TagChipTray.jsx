@@ -1,6 +1,6 @@
 "use client";
 
-import Tag from "../Tag";
+import Tag from "./Tag";
 
 const VARIANT_CLASS = {
   compact:

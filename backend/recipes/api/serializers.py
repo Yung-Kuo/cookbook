@@ -81,6 +81,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     recipe_instructions = serializers.SerializerMethodField(method_name='get_recipe_instructions')
     owner_username = serializers.CharField(source='owner.username', read_only=True, default=None, allow_null=True)
     owner_id = serializers.IntegerField(read_only=True, allow_null=True)
+    owner_display_name = serializers.SerializerMethodField()
+    owner_avatar_url = serializers.SerializerMethodField()
     images = RecipeImageSerializer(many=True, read_only=True)
     cover_image_url = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
@@ -107,13 +109,32 @@ class RecipeSerializer(serializers.ModelSerializer):
             return first.image.url
         return None
 
+    def get_owner_display_name(self, obj):
+        owner = obj.owner
+        if not owner:
+            return None
+        profile = getattr(owner, 'profile', None)
+        if profile and profile.display_name and str(profile.display_name).strip():
+            return str(profile.display_name).strip()
+        return owner.username
+
+    def get_owner_avatar_url(self, obj):
+        owner = obj.owner
+        if not owner:
+            return None
+        profile = getattr(owner, 'profile', None)
+        if profile and profile.avatar:
+            return profile.avatar.url
+        return None
+
     class Meta:
         model = Recipe
         fields = [
             'id', 'title', 'description', 'recipe_instructions',
             'prep_time', 'cook_time', 'servings',
             'tags', 'recipe_ingredients',
-            'owner_username', 'owner_id', 'is_public', 'images', 'cover_image_url',
+            'owner_username', 'owner_id', 'owner_display_name', 'owner_avatar_url',
+            'is_public', 'images', 'cover_image_url',
             'like_count', 'is_liked',
             'created_at', 'updated_at'
         ]

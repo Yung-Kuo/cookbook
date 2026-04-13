@@ -1,6 +1,6 @@
 "use client";
 
-import ComboboxCreate from "./ComboboxCreatable";
+import ComboboxCreate from "@/components/inputs/ComboboxCreatable";
 
 // Tag pick list on top of ComboboxCreate; comboKey remounts after each select.
 export default function TagCombobox({

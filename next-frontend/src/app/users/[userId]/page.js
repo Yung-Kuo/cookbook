@@ -17,5 +17,11 @@ export default function UserPage() {
     ? fetchPersonalRecipes
     : (setRecipes, params) => fetchUserRecipes(id, setRecipes, params);
 
-  return <RecipeListView fetchFn={fetchFn} />;
+  const numericId = Number(id);
+  return (
+    <RecipeListView
+      fetchFn={fetchFn}
+      profileUserId={Number.isFinite(numericId) ? numericId : null}
+    />
+  );
 }

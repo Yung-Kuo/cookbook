@@ -141,7 +141,7 @@ class RecipeViewSet(ModelViewSet):
             qs = Recipe.objects.filter(is_public=True)
 
         qs = self._annotate_likes(qs)
-        return qs.prefetch_related('images', 'tags')
+        return qs.select_related('owner', 'owner__profile').prefetch_related('images', 'tags')
 
     @action(
         detail=True,

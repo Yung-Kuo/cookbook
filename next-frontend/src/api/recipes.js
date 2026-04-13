@@ -159,3 +159,26 @@ export const updateRecipe = async (id, recipeData) => {
     return { error: error.message };
   }
 };
+
+export const deleteRecipe = async (id) => {
+  try {
+    const response = await apiFetch(`${API_URL}/recipes/${id}/`, {
+      method: "DELETE",
+      headers: { ...getAuthHeaders() },
+    });
+    if (!response.ok) {
+      let message = "Failed to delete recipe";
+      try {
+        const responseData = await response.json();
+        message = responseData.detail || JSON.stringify(responseData);
+      } catch {
+        /* ignore */
+      }
+      throw new Error(message);
+    }
+    return { data: true };
+  } catch (error) {
+    console.error("Error deleting recipe:", error);
+    return { error: error.message };
+  }
+};

@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createRecipe, updateRecipe, fetchRecipeById } from "../../api/recipes";
+import {
+  createRecipe,
+  updateRecipe,
+  fetchRecipeById,
+  deleteRecipe,
+} from "../../api/recipes";
 import { fetchTags, createTag } from "../../api/tags";
 import {
   uploadRecipeImage,
@@ -11,11 +16,11 @@ import {
 import { fetchIngredients, createIngredient } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
-import ComboboxCreate from "../UI/HeadlessUI/ComboboxCreatable";
-import TagChipTray from "../UI/HeadlessUI/TagChipTray";
-import TagCombobox from "../UI/HeadlessUI/TagCombobox";
+import ComboboxCreate from "@/components/inputs/ComboboxCreatable";
+import TagChipTray from "@/components/tags/TagChipTray";
+import TagCombobox from "@/components/tags/TagCombobox";
 import FormSection from "./FormSection";
-import { useTagPicker } from "@/hooks/useTagPicker";
+import { useTagPicker } from "@/components/tags/useTagPicker";
 import AutoGrowTextarea from "./AutoGrowTextarea";
 import RecipeFormPhotoItem from "./RecipeFormPhotoItem";
 
@@ -151,11 +156,12 @@ const EMPTY_FORM = {
   is_public: true,
 };
 
-function RecipeCreateForm({
+function RecipeForm({
   onClose,
   onRecipeCreated,
   existingRecipe,
   onRecipeUpdated,
+  onRecipeDeleted,
 }) {
   // ----------------------------------------------------
   // 1. Component State to hold form data
@@ -570,10 +576,26 @@ function RecipeCreateForm({
 
   const isEditing = Boolean(existingRecipe);
 
+  const handleDeleteRecipe = async () => {
+    if (!existingRecipe?.id) return;
+    if (
+      !window.confirm("Delete this recipe permanently? This cannot be undone.")
+    ) {
+      return;
+    }
+    const result = await deleteRecipe(existingRecipe.id);
+    if (result.error) {
+      window.alert(result.error);
+      return;
+    }
+    onRecipeDeleted?.(existingRecipe.id);
+    onClose();
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 pb-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 pb-32 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:pb-20 lg:text-4xl"
     >
       <h2 className="text-3xl font-bold lg:text-5xl">
         {isEditing ? "Edit Recipe" : "Create New Recipe"}
@@ -775,17 +797,17 @@ function RecipeCreateForm({
 
       {/* Tags */}
       <FormSection label="Tags" htmlFor="tags">
-        <div className="flex w-full flex-col lg:flex-row items-start gap-2 lg:gap-8">
-          <div className="flex-1 w-full shrink-0">
+        <div className="flex w-full flex-col items-start gap-2 lg:flex-row lg:gap-8">
+          <div className="w-full flex-1 shrink-0">
             <TagCombobox
               comboKey={comboKey}
               name="Add tag"
               options={availableOptions}
               onChange={handleSelect}
-              className="h-10 w-full rounded-md border-2 border-transparent bg-neutral-900 px-3 text-lg text-neutral-100 placeholder-neutral-500 focus:border-sky-600 focus:outline-none"
+              className="w-full grow rounded-md border-2 border-transparent bg-neutral-900 p-2 text-2xl text-neutral-100 focus:border-sky-600 focus:outline-none"
             />
           </div>
-          <div className="lg:w-2/3 w-full">
+          <div className="w-full lg:w-2/3">
             <TagChipTray
               tags={formData.tags}
               onRemoveTag={removeTag}
@@ -797,7 +819,7 @@ function RecipeCreateForm({
       </FormSection>
 
       {/* Visibility */}
-      <div className="flex flex-wrap items-center lg:items-start justify-between lg:justify-start lg:gap-8 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 lg:items-start lg:justify-start lg:gap-8">
         <span id="visibility-heading" className="font-medium text-neutral-300">
           Visibility
         </span>
@@ -819,7 +841,7 @@ function RecipeCreateForm({
             />
             <span
               aria-hidden="true"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-checked:[&>.radio-dot]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950 peer-checked:[&>.radio-dot]:opacity-100"
             >
               <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
             </span>
@@ -842,7 +864,7 @@ function RecipeCreateForm({
             />
             <span
               aria-hidden="true"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-checked:[&>.radio-dot]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950 peer-checked:[&>.radio-dot]:opacity-100"
             >
               <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
             </span>
@@ -926,24 +948,37 @@ function RecipeCreateForm({
       </div>
 
       {/* Form Submission Buttons */}
-      <div className="flex justify-end gap-4 py-4 text-lg font-medium">
-        <button
-          type="button"
-          onClick={onClose}
-          className="cursor-pointer rounded-md bg-neutral-300 px-4 py-2 text-neutral-800 transition-all hover:bg-neutral-100 focus:outline-none active:scale-95"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-neutral-100 transition-all hover:bg-sky-500 focus:outline-none hover:text-white active:scale-95"
-        >
-          {isEditing ? "Edit Recipe" : "Create Recipe"}
-        </button>
+      <div className="flex flex-col items-end gap-12">
+        <div className="flex flex-wrap gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer rounded-md bg-neutral-300 px-4 py-2 text-neutral-800 transition-all hover:bg-neutral-100 focus:outline-none active:scale-95"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-neutral-100 transition-all hover:bg-sky-500 hover:text-white focus:outline-none active:scale-95"
+          >
+            {isEditing ? "Edit Recipe" : "Create Recipe"}
+          </button>
+        </div>
+        <div>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={handleDeleteRecipe}
+              className="cursor-pointer rounded-md border border-red-500/60 bg-transparent px-4 py-2 text-red-300 transition-all hover:bg-red-950/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-95"
+            >
+              Delete recipe
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );
 }
 
-export default RecipeCreateForm;
+export default RecipeForm;
