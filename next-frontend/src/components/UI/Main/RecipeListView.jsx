@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Recipe from "@/components/UI/Main/Recipe";
 import RecipeListItem from "@/components/UI/Main/RecipeListItem";
@@ -12,7 +12,7 @@ import { fetchRecipeById } from "@/api/recipes";
 import { fetchTags } from "@/api/tags";
 import { useAppNav } from "@/hooks/useAppNav";
 
-export default function RecipeListView({ fetchFn, profileUserId = null }) {
+function RecipeListViewContent({ fetchFn, profileUserId = null }) {
   const router = useRouter();
   const { isAuthenticated, loginHref } = useAppNav();
   const [recipes, setRecipes] = useState([]);
@@ -208,5 +208,17 @@ export default function RecipeListView({ fetchFn, profileUserId = null }) {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RecipeListView(props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800" />
+      }
+    >
+      <RecipeListViewContent {...props} />
+    </Suspense>
   );
 }
