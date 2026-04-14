@@ -132,8 +132,8 @@ export default function CollectionsSection({
           <div className="pointer-events-auto">
             <AddButton
               onClick={() => setNewCollectionOpen(true)}
-              parentClassName="h-12 w-12 lg:h-14 lg:w-14"
-              className="h-12 w-12 bg-sky-500 text-white hover:bg-sky-400 lg:h-14 lg:w-14"
+              parentClassName="h-10 w-10 lg:h-12 lg:w-12"
+              className="h-10 w-10 bg-indigo-500 text-white hover:bg-indigo-400 lg:h-12 lg:w-12"
               title="New collection"
             />
           </div>

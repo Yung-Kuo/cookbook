@@ -21,7 +21,7 @@ export default function RecipeListSearchBar({
   );
 
   return (
-    <div className="relative z-0 isolate flex shrink-0 flex-col gap-2 bg-neutral-800 px-4 py-3 shadow-md shadow-neutral-900/50 lg:px-6">
+    <div className="relative isolate z-10 flex shrink-0 flex-col gap-2 bg-neutral-800 px-4 py-3 shadow-md shadow-neutral-900/50 lg:px-6">
       <div className="grid grid-cols-2 gap-2">
         <input
           type="text"

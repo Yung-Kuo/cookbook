@@ -1,12 +1,16 @@
 "use client";
 
-export default function SplitPageLayout({ leftPanel, rightPanel = null, overlay = null }) {
+export default function SplitPageLayout({
+  leftPanel,
+  rightPanel = null,
+  overlay = null,
+}) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-neutral-800 text-4xl text-neutral-100">
       {rightPanel != null ? (
         <>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-            <div className="hidden h-full min-h-0 w-full flex-col overflow-hidden border-neutral-700 lg:flex lg:w-2/5 lg:border-r">
+            <div className="hidden h-full min-h-0 w-full flex-col overflow-hidden lg:flex lg:w-2/5">
               <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:pt-14">
                 {leftPanel}
               </div>
@@ -28,7 +32,7 @@ export default function SplitPageLayout({ leftPanel, rightPanel = null, overlay 
           </div>
 
           {overlay != null && (
-            <div className="fixed inset-0 min-h-0 lg:hidden">{overlay}</div>
+            <div className="fixed inset-0 z-30 min-h-0 lg:hidden">{overlay}</div>
           )}
         </>
       ) : (
@@ -48,7 +52,7 @@ export default function SplitPageLayout({ leftPanel, rightPanel = null, overlay 
           </div>
 
           {overlay != null && (
-            <div className="fixed inset-0 min-h-0 lg:hidden">{overlay}</div>
+            <div className="fixed inset-0 z-30 min-h-0 lg:hidden">{overlay}</div>
           )}
         </>
       )}

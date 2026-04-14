@@ -22,7 +22,7 @@ export default function ProfilePanel({ profile }) {
   } = profile;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-neutral-900/40">
       <div className="lg:pt-14">
         <ProfileHeader profileUserId={profileUserId} />
 
