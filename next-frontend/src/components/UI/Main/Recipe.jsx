@@ -57,8 +57,8 @@ function Recipe({
       className={`${className} fixed inset-0 z-30 flex min-h-0 flex-col overflow-hidden bg-neutral-900 lg:absolute lg:inset-0 lg:pb-4`}
     >
       {/* Mobile: strip with owner + edit/close — hidden on lg */}
-      <div className="fixed top-0 left-0 z-30 flex w-full shrink-0 items-center justify-between bg-neutral-800/40 p-2 backdrop-blur-xs lg:hidden">
-        <div className="min-w-0 flex-1 basis-0">
+      <div className="fixed top-0 left-0 z-30 flex w-full shrink-0 items-center justify-between bg-neutral-800/40 px-4 py-2 backdrop-blur-xs lg:hidden">
+        <div className="w-min min-w-0">
           {selectedRecipe.owner_id != null && (
             <UserProfileIdentity
               userId={selectedRecipe.owner_id}
