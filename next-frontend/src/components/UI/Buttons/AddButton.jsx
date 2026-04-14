@@ -11,7 +11,7 @@ function AddButton({
       <button
         type="button"
         className={`z-10 flex h-full w-full cursor-pointer appearance-none items-center justify-center rounded-full transition-all focus:outline-none active:scale-90 ${className}`}
-        aria-label="Add new recipe"
+        aria-label={title}
         title={title}
       >
         <AddIcon className="box-border h-full w-full rounded-full" />

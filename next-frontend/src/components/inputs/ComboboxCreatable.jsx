@@ -30,18 +30,18 @@ function ComboboxCreate({
   return (
     <Combobox value={value} onChange={onChange} onClose={() => setQuery("")}>
       <div className="grid grid-cols-1 grid-rows-1">
-        <ComboboxButton className="group z-20 col-start-1 row-start-1"></ComboboxButton>
+        <ComboboxButton className="group z-[2] col-start-1 row-start-1"></ComboboxButton>
         <ComboboxInput
           aria-label="Assignee"
           displayValue={(option) => option?.name}
           onChange={(event) => setQuery(event.target.value)}
-          className={`z-10 col-start-1 row-start-1 placeholder-neutral-500 ${className}`}
+          className={`z-[1] col-start-1 row-start-1 placeholder-neutral-500 ${className}`}
           placeholder={name}
         />
       </div>
 
       <div className="relative w-full">
-        <ComboboxOptions className="absolute text-2xl z-20 mt-2 max-h-72 w-full overflow-hidden overflow-y-auto rounded-md border-2 border-sky-600 bg-neutral-900 empty:invisible">
+        <ComboboxOptions className="absolute z-[3] mt-2 max-h-72 w-full overflow-hidden overflow-y-auto rounded-md border-2 border-sky-600 bg-neutral-900 text-2xl empty:invisible">
           {!noCreate &&
             query.length > 0 &&
             !filteredOptions.some(

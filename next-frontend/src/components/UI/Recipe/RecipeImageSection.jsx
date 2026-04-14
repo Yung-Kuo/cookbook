@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 /**
  * Hero + thumbnail strip. Preview selection is local (does not change the recipe cover).
@@ -37,13 +38,15 @@ export default function RecipeImageSection({ recipe }) {
   return (
     <div className="flex flex-col -mx-4">
       {heroImageUrl && (
-        <div className="overflow-hidden">
-          <img
+        <div className="relative h-64 w-full overflow-hidden lg:h-96">
+          <Image
             key={`${recipe.id}-${heroImageUrl}`}
             src={heroImageUrl}
             alt={recipe.title}
-            className="h-64 w-full object-cover lg:h-96"
-            decoding="async"
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 60vw"
+            priority
           />
         </div>
       )}
@@ -62,17 +65,18 @@ export default function RecipeImageSection({ recipe }) {
                     ? "Show cover photo in preview"
                     : "Preview this photo"
                 }
-                className={`h-24 w-36 cursor-pointer flex-shrink-0 overflow-hidden rounded-md border-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 ${
+                className={`relative h-24 w-36 cursor-pointer flex-shrink-0 overflow-hidden rounded-md border-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 ${
                   isActive ? "border-amber-500" : "border-transparent"
                 }`}
               >
                 {img.image_url && (
-                  <img
+                  <Image
                     key={`${recipe.id}-${img.id}`}
                     src={img.image_url}
                     alt=""
-                    className="h-full w-full object-cover"
-                    decoding="async"
+                    fill
+                    className="object-cover"
+                    sizes="144px"
                   />
                 )}
               </button>

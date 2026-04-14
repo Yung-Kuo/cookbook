@@ -7,6 +7,7 @@ import {
   fetchRecipeById,
   deleteRecipe,
 } from "../../api/recipes";
+import { pinRecipe, unpinRecipe } from "@/api/pinned";
 import { fetchTags, createTag } from "../../api/tags";
 import {
   uploadRecipeImage,
@@ -23,6 +24,7 @@ import FormSection from "./FormSection";
 import { useTagPicker } from "@/components/tags/useTagPicker";
 import AutoGrowTextarea from "./AutoGrowTextarea";
 import RecipeFormPhotoItem from "./RecipeFormPhotoItem";
+import { useAuth } from "@/context/AuthContext";
 
 const UNITS = [
   { id: 0, name: "g" },
@@ -126,6 +128,7 @@ function recipeToFormData(recipe) {
     tags: recipe.tags?.length ? [...recipe.tags] : [],
     recipe_ingredients: recipeIngredients,
     is_public: recipe.is_public !== false,
+    pin_to_profile: recipe.is_pinned === true,
   };
 }
 
@@ -154,6 +157,7 @@ const EMPTY_FORM = {
     },
   ],
   is_public: true,
+  pin_to_profile: false,
 };
 
 function RecipeForm({
@@ -163,6 +167,8 @@ function RecipeForm({
   onRecipeUpdated,
   onRecipeDeleted,
 }) {
+  const { user } = useAuth();
+
   // ----------------------------------------------------
   // 1. Component State to hold form data
   //    Matches the structure expected by RecipeWriteSerializer
@@ -539,7 +545,28 @@ function RecipeForm({
           submissionData,
         );
         if (data) {
-          onRecipeUpdated?.(data);
+          const ownRecipe =
+            existingRecipe.owner_id != null &&
+            user?.pk === existingRecipe.owner_id;
+          let merged = { ...data };
+          if (ownRecipe) {
+            const wantPin = formData.pin_to_profile;
+            const wasPinned = existingRecipe.is_pinned === true;
+            if (wantPin !== wasPinned) {
+              try {
+                if (wantPin) {
+                  await pinRecipe(data.id);
+                  merged = { ...merged, is_pinned: true };
+                } else {
+                  await unpinRecipe(data.id);
+                  merged = { ...merged, is_pinned: false };
+                }
+              } catch (pinErr) {
+                console.error("Pin sync failed:", pinErr);
+              }
+            }
+          }
+          onRecipeUpdated?.(merged);
           clearForm();
         }
         if (error) {
@@ -556,11 +583,26 @@ function RecipeForm({
                 await uploadRecipeImage(data.id, item.file, item.isCover);
               }
             }
+            if (formData.pin_to_profile) {
+              try {
+                await pinRecipe(data.id);
+              } catch (pinErr) {
+                console.error("Pin failed:", pinErr);
+              }
+            }
             const finalRecipe = await fetchRecipeById(data.id);
             onRecipeCreated(finalRecipe);
           } catch (uploadErr) {
             console.error("Recipe created but image upload failed:", uploadErr);
-            onRecipeCreated(data);
+            if (formData.pin_to_profile) {
+              try {
+                await pinRecipe(data.id);
+              } catch (pinErr) {
+                console.error("Pin failed:", pinErr);
+              }
+            }
+            const finalRecipe = await fetchRecipeById(data.id);
+            onRecipeCreated(finalRecipe);
           }
           clearForm();
           onClose();
@@ -878,6 +920,30 @@ function RecipeForm({
           </label>
         </div>
       </div>
+
+      {/* Pin to profile (your recipes only) */}
+      {(!existingRecipe || user?.pk === existingRecipe.owner_id) && (
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="font-medium text-neutral-300">Profile</span>
+          <label className="flex cursor-pointer items-center gap-3 text-2xl">
+            <input
+              type="checkbox"
+              checked={formData.pin_to_profile}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  pin_to_profile: e.target.checked,
+                }))
+              }
+              className="h-5 w-5 rounded border-neutral-500 text-red-300 focus:ring-red-300"
+            />
+            <span className="text-neutral-300">
+              Pin to my profile{" "}
+              <span className="text-neutral-500">(show in Pinned tab)</span>
+            </span>
+          </label>
+        </div>
+      )}
 
       {/* prep time, cook time (stored as total minutes on the API) */}
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">

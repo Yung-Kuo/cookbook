@@ -2,13 +2,13 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { CloseButton } from "../Buttons/CloseButton";
-import LikeButton from "../Buttons/LikeButton";
-import CollectionButton from "../Buttons/CollectionButton";
-import RoundedButton from "../Buttons/RoundedButton";
+import { CloseButton } from "@/components/UI/Buttons/CloseButton";
+import LikeButton from "@/components/UI/Buttons/LikeButton";
+import CollectionButton from "@/components/UI/Buttons/CollectionButton";
+import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 import Tag from "@/components/tags/Tag";
-import RecipeImageSection from "./RecipeImageSection";
-import UserProfileIdentity from "./UserProfileIdentity";
+import RecipeImageSection from "@/components/UI/Recipe/RecipeImageSection";
+import AvatarName from "@/components/UI/Profile/AvatarName";
 import { useAppNav } from "@/hooks/useAppNav";
 
 function Recipe({
@@ -60,11 +60,10 @@ function Recipe({
       <div className="fixed top-0 left-0 z-30 flex w-full shrink-0 items-center justify-between bg-neutral-800/40 px-4 py-2 backdrop-blur-xs lg:hidden">
         <div className="w-min min-w-0">
           {selectedRecipe.owner_id != null && (
-            <UserProfileIdentity
+            <AvatarName
               userId={selectedRecipe.owner_id}
               avatarUrl={selectedRecipe.owner_avatar_url}
               displayName={ownerLabel}
-              size="recipeOwner"
             />
           )}
         </div>
@@ -106,9 +105,7 @@ function Recipe({
             <RecipeImageSection recipe={selectedRecipe} />
           )}
           {/* title, tags, description */}
-          <div
-            className={`flex flex-col gap-4 ${selectedRecipe.images?.length === 0 ? "pt-6 lg:pt-4" : ""}`}
-          >
+          <div className="flex flex-col gap-8">
             {/* title */}
             <Link
               href={`/users/${selectedRecipe.owner_id ?? "_"}/recipes/${selectedRecipe.id}`}
@@ -128,11 +125,10 @@ function Recipe({
             {/* Desktop: owner in flow (mobile uses top strip) */}
             {selectedRecipe.owner_id != null && (
               <div className="hidden lg:block">
-                <UserProfileIdentity
+                <AvatarName
                   userId={selectedRecipe.owner_id}
                   avatarUrl={selectedRecipe.owner_avatar_url}
                   displayName={ownerLabel}
-                  size="recipeOwner"
                   truncateDisplayName={false}
                 />
               </div>

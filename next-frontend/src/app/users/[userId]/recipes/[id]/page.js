@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 import { fetchRecipeById } from "@/api/recipes";
-import Recipe from "@/components/UI/Main/Recipe";
+import Recipe from "@/components/UI/Recipe/Recipe";
 
 export default function RecipeDetailPage() {
   const { userId, id } = useParams();

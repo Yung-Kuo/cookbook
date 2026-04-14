@@ -54,6 +54,16 @@ export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
   }
 };
 
+/** Returns current user's recipes (for pin picker, etc.) */
+export async function fetchPersonalRecipesList(params = {}) {
+  const query = recipeListQueryString({ personal: "true", ...params });
+  const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!response.ok) throw new Error("Failed to load recipes");
+  return response.json();
+}
+
 export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
   try {
     const query = recipeListQueryString({

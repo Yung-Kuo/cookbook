@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchCollectionById } from "@/api/collections";
@@ -11,21 +12,19 @@ export default function CollectionDetailPage() {
   const { userId, collectionId } = useParams();
   const uid = Array.isArray(userId) ? userId[0] : userId;
   const cid = Array.isArray(collectionId) ? collectionId[0] : collectionId;
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [collection, setCollection] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (authLoading || !isAuthenticated || !cid) {
-      setLoading(false);
-      return;
-    }
-    if (user?.pk !== Number(uid)) {
+    if (authLoading || !cid) {
       setLoading(false);
       return;
     }
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     fetchCollectionById(cid)
       .then((data) => {
         if (!cancelled) {
@@ -42,38 +41,12 @@ export default function CollectionDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, user, uid, cid]);
+  }, [authLoading, cid]);
 
   if (authLoading) {
     return (
       <div className="flex h-full items-center justify-center bg-neutral-800 text-neutral-400">
         Loading…
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
-        <RoundedButton
-          href="/login"
-          className="cursor-pointer bg-red-300 text-neutral-800 hover:bg-red-400"
-        >
-          Login
-        </RoundedButton>
-      </div>
-    );
-  }
-
-  if (user?.pk !== Number(uid)) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
-        <RoundedButton
-          href={`/users/${user.pk}/collections`}
-          className="cursor-pointer bg-sky-600 text-neutral-100 hover:bg-sky-500"
-        >
-          My collections
-        </RoundedButton>
       </div>
     );
   }
@@ -91,10 +64,10 @@ export default function CollectionDetailPage() {
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
         <p>{error || "Collection not found"}</p>
         <RoundedButton
-          href={`/users/${uid}/collections`}
+          href={`/users/${uid}?tab=collections`}
           className="cursor-pointer bg-neutral-700 text-neutral-100 hover:bg-neutral-600"
         >
-          Back to collections
+          Back to profile
         </RoundedButton>
       </div>
     );
@@ -107,10 +80,10 @@ export default function CollectionDetailPage() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
-            href={`/users/${uid}/collections`}
+            href={`/users/${uid}?tab=collections`}
             className="mb-2 inline-block text-sm text-sky-400 hover:text-sky-300"
           >
-            ← Collections
+            ← Profile · Collections
           </Link>
           <h1 className="text-4xl font-bold text-red-300">{collection.name}</h1>
           {collection.description && (
@@ -131,11 +104,15 @@ export default function CollectionDetailPage() {
                 className="flex flex-wrap items-center gap-4 hover:text-red-300"
               >
                 {entry.recipe.cover_image_url && (
-                  <img
-                    src={entry.recipe.cover_image_url}
-                    alt=""
-                    className="h-16 w-16 flex-shrink-0 rounded object-cover"
-                  />
+                  <span className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded">
+                    <Image
+                      src={entry.recipe.cover_image_url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
+                  </span>
                 )}
                 <div>
                   <h2 className="text-2xl">{entry.recipe.title}</h2>

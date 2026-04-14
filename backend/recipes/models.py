@@ -74,6 +74,10 @@ class Collection(models.Model):
     )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    is_public = models.BooleanField(default=False)
+    cover_image = CloudinaryField(
+        'cover_image', folder='cookbook/collections', blank=True, null=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -81,6 +85,28 @@ class Collection(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.user_id})"
+
+
+class PinnedRecipe(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='pinned_recipes',
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='pinned_by',
+    )
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'recipe')
+        ordering = ['order', '-created_at']
+
+    def __str__(self):
+        return f"{self.user_id} pinned recipe {self.recipe_id}"
 
 
 class CollectionRecipe(models.Model):

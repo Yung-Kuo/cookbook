@@ -11,7 +11,6 @@ export default function Navbar() {
     loginHref,
     personalHref,
     likedHref,
-    collectionsHref,
     user,
     isAuthenticated,
     logout,
@@ -22,8 +21,9 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Public" },
     { href: personalHref, label: "Personal" },
-    { href: likedHref, label: "Liked" },
-    { href: collectionsHref, label: "Collections" },
+    ...(isAuthenticated && uid != null
+      ? [{ href: likedHref, label: "Liked" }]
+      : []),
   ];
 
   const linkClass = (active) =>

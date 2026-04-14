@@ -1,15 +1,23 @@
 "use client";
 
+import { Suspense } from "react";
 import { useParams } from "next/navigation";
-import RecipeListView from "@/components/UI/Main/RecipeListView";
-import RoundedButton from "@/components/UI/Buttons/RoundedButton";
-import { fetchLikedRecipes } from "@/api/recipes";
 import { useAuth } from "@/context/AuthContext";
+import { useAppNav } from "@/hooks/useAppNav";
+import { useRecipeList } from "@/hooks/useRecipeList";
+import { fetchLikedRecipes } from "@/api/recipes";
+import RecipeListPanel from "@/components/UI/RecipeList/RecipeListPanel";
+import Recipe from "@/components/UI/Recipe/Recipe";
+import SplitPageLayout from "@/components/UI/Layout/SplitPageLayout";
+import RoundedButton from "@/components/UI/Buttons/RoundedButton";
 
-export default function LikedPage() {
-  const { userId } = useParams();
-  const id = Array.isArray(userId) ? userId[0] : userId;
+function LikedPageContent({ profileUserId }) {
   const { user, isAuthenticated, loading } = useAuth();
+  const { loginHref } = useAppNav();
+  const recipeList = useRecipeList({
+    fetchFn: fetchLikedRecipes,
+    publicCatalogOnly: false,
+  });
 
   if (loading) {
     return (
@@ -33,7 +41,7 @@ export default function LikedPage() {
     );
   }
 
-  if (user?.pk !== Number(id)) {
+  if (user?.pk !== profileUserId) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 p-8 text-center text-neutral-200">
         <p>This page only shows your own liked recipes.</p>
@@ -47,5 +55,55 @@ export default function LikedPage() {
     );
   }
 
-  return <RecipeListView fetchFn={fetchLikedRecipes} />;
+  return (
+    <SplitPageLayout
+      leftPanel={
+        <RecipeListPanel
+          recipeList={recipeList}
+          isAuthenticated={isAuthenticated}
+          loginHref={loginHref}
+        >
+          {recipeList.recipeListItems}
+        </RecipeListPanel>
+      }
+      overlay={
+        recipeList.selectedRecipe != null ? (
+          <Recipe
+            selectedRecipe={recipeList.selectedRecipe}
+            onClose={() => recipeList.setSelectedRecipe(null)}
+            onEdit={() => recipeList.setRecipeToEdit(recipeList.selectedRecipe)}
+            onRecipeChange={recipeList.handleRecipeChange}
+          />
+        ) : null
+      }
+    />
+  );
+}
+
+function LikedPageInner() {
+  const { userId } = useParams();
+  const id = Array.isArray(userId) ? userId[0] : userId;
+  const numericId = Number(id);
+
+  if (!Number.isFinite(numericId)) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-800 p-8 text-neutral-200">
+        Invalid profile link.
+      </div>
+    );
+  }
+
+  return <LikedPageContent profileUserId={numericId} />;
+}
+
+export default function LikedPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800" />
+      }
+    >
+      <LikedPageInner />
+    </Suspense>
+  );
 }

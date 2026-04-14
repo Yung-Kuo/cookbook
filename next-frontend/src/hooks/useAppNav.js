@@ -6,7 +6,6 @@ import {
   getLoginHref,
   getPersonalHref,
   getLikedHref,
-  getCollectionsHref,
 } from "@/lib/appNav";
 
 export function useAppNav() {
@@ -17,7 +16,6 @@ export function useAppNav() {
   const loginHref = getLoginHref(pathname, searchParams);
   const personalHref = getPersonalHref(user, isAuthenticated, loginHref);
   const likedHref = getLikedHref(user, isAuthenticated, loginHref);
-  const collectionsHref = getCollectionsHref(user, isAuthenticated, loginHref);
 
   return {
     pathname,
@@ -25,7 +23,6 @@ export function useAppNav() {
     loginHref,
     personalHref,
     likedHref,
-    collectionsHref,
     user,
     isAuthenticated,
     logout,

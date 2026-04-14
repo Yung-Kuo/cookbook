@@ -9,6 +9,7 @@ from ..models import (
     RecipeImage,
     UserProfile,
     Collection,
+    PinnedRecipe,
 )
 
 
@@ -75,6 +76,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return None
 
 
+def _recipe_cover_url_from_images(recipe):
+    """Return cover URL for a recipe (cover image or first image)."""
+    cover = recipe.images.filter(is_cover=True).first()
+    if cover and cover.image:
+        return cover.image.url
+    first = recipe.images.first()
+    if first and first.image:
+        return first.image.url
+    return None
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     recipe_ingredients = serializers.SerializerMethodField(method_name='get_recipe_ingredients')
@@ -87,12 +99,16 @@ class RecipeSerializer(serializers.ModelSerializer):
     cover_image_url = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    is_pinned = serializers.SerializerMethodField()
 
     def get_like_count(self, obj):
         return getattr(obj, 'like_count', 0)
 
     def get_is_liked(self, obj):
         return getattr(obj, 'is_liked', False)
+
+    def get_is_pinned(self, obj):
+        return getattr(obj, 'is_pinned', False)
 
     def get_recipe_ingredients(self, obj):
         return RecipeIngredientSerializer(obj.recipeingredient_set.all(), many=True).data
@@ -101,13 +117,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return RecipeInstructionSerializer(obj.recipeinstruction_set.all(), many=True).data
 
     def get_cover_image_url(self, obj):
-        cover = obj.images.filter(is_cover=True).first()
-        if cover and cover.image:
-            return cover.image.url
-        first = obj.images.first()
-        if first and first.image:
-            return first.image.url
-        return None
+        return _recipe_cover_url_from_images(obj)
 
     def get_owner_display_name(self, obj):
         owner = obj.owner
@@ -135,7 +145,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'tags', 'recipe_ingredients',
             'owner_username', 'owner_id', 'owner_display_name', 'owner_avatar_url',
             'is_public', 'images', 'cover_image_url',
-            'like_count', 'is_liked',
+            'like_count', 'is_liked', 'is_pinned',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner_username', 'owner_id', 'created_at']
@@ -224,15 +234,19 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 class CollectionSerializer(serializers.ModelSerializer):
     recipe_count = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
+    recipe_cover_urls = serializers.SerializerMethodField()
     contains_recipe = serializers.SerializerMethodField()
 
     class Meta:
         model = Collection
         fields = [
-            'id', 'name', 'description', 'created_at',
-            'recipe_count', 'cover_image_url', 'contains_recipe',
+            'id', 'name', 'description', 'is_public', 'created_at',
+            'recipe_count', 'cover_image_url', 'recipe_cover_urls', 'contains_recipe',
         ]
-        read_only_fields = ['id', 'created_at', 'recipe_count', 'cover_image_url', 'contains_recipe']
+        read_only_fields = [
+            'id', 'created_at', 'recipe_count', 'cover_image_url',
+            'recipe_cover_urls', 'contains_recipe',
+        ]
 
     def get_recipe_count(self, obj):
         return getattr(obj, 'recipe_count', 0)
@@ -240,7 +254,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     def get_contains_recipe(self, obj):
         return getattr(obj, 'contains_recipe', False)
 
-    def get_cover_image_url(self, obj):
+    def _visible_entries(self, obj):
         request = self.context.get('request')
         user = request.user if request and request.user.is_authenticated else None
         entries = getattr(obj, '_prefetched_objects_cache', {}).get('entries')
@@ -250,16 +264,33 @@ class CollectionSerializer(serializers.ModelSerializer):
                 .prefetch_related('recipe__images')
                 .order_by('-added_at')
             )
+        out = []
         for entry in entries:
             r = entry.recipe
             if r.is_public or (user and r.owner_id == user.pk):
-                cover = r.images.filter(is_cover=True).first()
-                if cover and cover.image:
-                    return cover.image.url
-                first = r.images.first()
-                if first and first.image:
-                    return first.image.url
+                out.append(entry)
+        return out
+
+    def get_cover_image_url(self, obj):
+        if obj.cover_image:
+            return obj.cover_image.url
+        for entry in self._visible_entries(obj):
+            url = _recipe_cover_url_from_images(entry.recipe)
+            if url:
+                return url
         return None
+
+    def get_recipe_cover_urls(self, obj):
+        urls = []
+        for entry in self._visible_entries(obj):
+            url = _recipe_cover_url_from_images(entry.recipe)
+            if url:
+                urls.append(url)
+            if len(urls) >= 4:
+                break
+        while len(urls) < 4:
+            urls.append(None)
+        return urls[:4]
 
 
 class CollectionDetailSerializer(serializers.ModelSerializer):
@@ -267,7 +298,7 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ['id', 'name', 'description', 'created_at', 'entries']
+        fields = ['id', 'name', 'description', 'is_public', 'created_at', 'entries']
         read_only_fields = ['id', 'name', 'description', 'created_at', 'entries']
 
     def get_entries(self, collection):
@@ -303,3 +334,23 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
                     'recipe': None,
                 })
         return out
+
+
+class PinnedRecipeSerializer(serializers.ModelSerializer):
+    """Pinned recipe row for profile; nested recipe card fields."""
+
+    recipe = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PinnedRecipe
+        fields = ['order', 'recipe']
+
+    def get_recipe(self, obj):
+        r = obj.recipe
+        return {
+            'id': r.id,
+            'title': r.title,
+            'cover_image_url': _recipe_cover_url_from_images(r),
+            'is_public': r.is_public,
+            'owner_id': r.owner_id,
+        }

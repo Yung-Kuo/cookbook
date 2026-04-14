@@ -7,13 +7,31 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
  * @param {number | string | undefined} recipeId - when set, each collection includes contains_recipe
  */
 export async function fetchCollections(recipeId) {
-  const q =
-    recipeId != null && recipeId !== ""
-      ? `?recipe_id=${encodeURIComponent(String(recipeId))}`
-      : "";
-  const response = await apiFetch(`${API_URL}/collections/${q}`, {
+  const sp = new URLSearchParams();
+  if (recipeId != null && recipeId !== "") {
+    sp.set("recipe_id", String(recipeId));
+  }
+  const q = sp.toString();
+  const url = q
+    ? `${API_URL}/collections/?${q}`
+    : `${API_URL}/collections/`;
+  const response = await apiFetch(url, {
     headers: { ...getAuthHeaders() },
   });
+  if (!response.ok) throw new Error("Failed to load collections");
+  return response.json();
+}
+
+/**
+ * @param {number | string} userId - profile user whose collections to list
+ */
+export async function fetchUserCollections(userId) {
+  const response = await apiFetch(
+    `${API_URL}/collections/?user_id=${encodeURIComponent(String(userId))}`,
+    {
+      headers: { ...getAuthHeaders() },
+    },
+  );
   if (!response.ok) throw new Error("Failed to load collections");
   return response.json();
 }
@@ -26,14 +44,18 @@ export async function fetchCollectionById(id) {
   return response.json();
 }
 
-export async function createCollection({ name, description = "" }) {
+export async function createCollection({
+  name,
+  description = "",
+  is_public = false,
+}) {
   const response = await apiFetch(`${API_URL}/collections/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeaders(),
     },
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify({ name, description, is_public }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -84,4 +106,52 @@ export async function deleteCollection(collectionId) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.detail || "Delete failed");
   }
+}
+
+export async function toggleCollectionVisibility(collectionId) {
+  const response = await apiFetch(
+    `${API_URL}/collections/${collectionId}/visibility/`,
+    {
+      method: "PATCH",
+      headers: { ...getAuthHeaders() },
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Could not update visibility");
+  }
+  return response.json();
+}
+
+export async function uploadCollectionCover(collectionId, file) {
+  const body = new FormData();
+  body.append("image", file);
+  const response = await apiFetch(
+    `${API_URL}/collections/${collectionId}/cover/`,
+    {
+      method: "POST",
+      headers: { ...getAuthHeaders() },
+      body,
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Upload failed");
+  }
+  return response.json();
+}
+
+export async function deleteCollectionCover(collectionId) {
+  const response = await apiFetch(
+    `${API_URL}/collections/${collectionId}/cover/`,
+    {
+      method: "DELETE",
+      headers: { ...getAuthHeaders() },
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Could not remove cover");
+  }
+  return response.json();
 }

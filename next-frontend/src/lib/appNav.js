@@ -34,15 +34,14 @@ export function getPersonalHref(user, isAuthenticated, loginHref) {
   return isAuthenticated && user?.pk != null ? `/users/${user.pk}` : loginHref;
 }
 
+/**
+ * @param {{ pk?: number | null } | null} user
+ * @param {boolean} isAuthenticated
+ * @param {string} loginHref
+ */
 export function getLikedHref(user, isAuthenticated, loginHref) {
   return isAuthenticated && user?.pk != null
     ? `/users/${user.pk}/liked`
-    : loginHref;
-}
-
-export function getCollectionsHref(user, isAuthenticated, loginHref) {
-  return isAuthenticated && user?.pk != null
-    ? `/users/${user.pk}/collections`
     : loginHref;
 }
 
@@ -62,9 +61,6 @@ export function isNavLinkActive(pathname, href, userPk) {
   }
   if (base && href === `${base}/liked`) {
     return pathname.startsWith(`${base}/liked`);
-  }
-  if (base && href === `${base}/collections`) {
-    return pathname.startsWith(`${base}/collections`);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

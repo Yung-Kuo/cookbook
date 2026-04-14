@@ -7,24 +7,17 @@ export default function RecipeListItem({ recipe, isSelected, onSelect }) {
   return (
     <div
       onClick={onSelect}
-      className={`relative flex w-full overflow-hidden hover:bg-neutral-600 bg-neutral-700 break-words whitespace-pre-wrap cursor-pointer pt-2 py-1 items-center justify-center border-b-4 pr-4 transition-all ${
-        isSelected ? " border-neutral-100 text-red-300" : "border-transparent"
+      className={`relative flex w-full cursor-pointer items-center justify-center overflow-hidden border-b-4 bg-neutral-700 py-1 pt-2 pr-4 break-words whitespace-pre-wrap transition-all hover:bg-neutral-600 ${
+        isSelected ? "border-neutral-100 text-red-300" : "border-transparent"
       }`}
     >
       {showLikedCorner && (
         <span
-          className="pointer-events-none absolute top-0 right-0 z-10 h-6 w-6 rounded-bl-full bg-red-400"
+          className="pointer-events-none absolute top-0 right-0 h-6 w-6 rounded-bl-full bg-red-400"
           aria-label="You liked this recipe"
           title="Liked"
         />
       )}
-      {/* {recipe.cover_image_url && (
-        <img
-          src={recipe.cover_image_url}
-          alt=""
-          className="h-16 w-16 flex-shrink-0 object-cover lg:h-20 lg:w-20"
-        />
-      )} */}
       <div
         className={`flex h-full items-center justify-center transition-all ${isSelected ? "px-4" : "px-2"}`}
       >

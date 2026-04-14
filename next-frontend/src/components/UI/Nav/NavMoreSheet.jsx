@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { useAppNav } from "@/hooks/useAppNav";
@@ -23,14 +22,7 @@ function usePrefersReducedMotion() {
 }
 
 export default function NavMoreSheet({ open, onClose }) {
-  const {
-    loginHref,
-    likedHref,
-    collectionsHref,
-    user,
-    isAuthenticated,
-    logout,
-  } = useAppNav();
+  const { loginHref, user, isAuthenticated, logout } = useAppNav();
 
   const prefersReducedMotion = usePrefersReducedMotion();
   const [translateY, setTranslateY] = useState(0);
@@ -42,9 +34,6 @@ export default function NavMoreSheet({ open, onClose }) {
     startY: 0,
     samples: [],
   });
-
-  const rowClass =
-    "flex w-full items-center px-4 py-3.5 text-left text-lg font-bold text-neutral-100 transition-colors hover:bg-neutral-700/80";
 
   const handleLogout = async () => {
     onClose();
@@ -101,7 +90,7 @@ export default function NavMoreSheet({ open, onClose }) {
         onClose();
       }
     },
-    [onClose]
+    [onClose],
   );
 
   const handlePointerDown = (e) => {
@@ -193,16 +182,7 @@ export default function NavMoreSheet({ open, onClose }) {
           >
             <span className="h-1.5 w-10 shrink-0 rounded-full bg-neutral-500" />
           </div>
-          <DialogTitle className="sr-only">More navigation</DialogTitle>
-
-          <nav className="flex flex-col border-b border-neutral-700 pb-2">
-            <Link href={likedHref} className={rowClass} onClick={onClose}>
-              Liked
-            </Link>
-            <Link href={collectionsHref} className={rowClass} onClick={onClose}>
-              Collections
-            </Link>
-          </nav>
+          <DialogTitle className="sr-only">Account</DialogTitle>
 
           <div className="flex flex-col gap-3 px-4 py-4">
             {isAuthenticated ? (
