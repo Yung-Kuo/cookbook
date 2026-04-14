@@ -108,7 +108,11 @@ export const fetchRecipeById = async (id) => {
       headers: { ...getAuthHeaders() },
     });
     if (!response.ok) {
-      throw new Error("Failed to fetch recipe");
+      const detail =
+        response.status === 404
+          ? "Recipe not found (or not visible without login)."
+          : `Failed to fetch recipe (${response.status})`;
+      throw new Error(detail);
     }
     return await response.json();
   } catch (error) {
