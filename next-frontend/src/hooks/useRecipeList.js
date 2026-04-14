@@ -131,6 +131,25 @@ export function useRecipeList({
     return recipes;
   }, [publicCatalogOnly, isAuthenticated, recipes]);
 
+  const selectRecipeForOverlay = useCallback(
+    (recipe) => {
+      if (!recipe?.id) return;
+      if (selectedRecipe?.id === recipe.id) {
+        setSelectedRecipe(null);
+        return;
+      }
+      setSelectedRecipe(recipe);
+      fetchRecipeById(recipe.id)
+        .then((full) => {
+          setSelectedRecipe((prev) =>
+            prev?.id === recipe.id ? full : prev,
+          );
+        })
+        .catch(() => {});
+    },
+    [selectedRecipe?.id],
+  );
+
   const recipeListItems = useMemo(
     () =>
       recipesForList.map((recipe) => (
@@ -141,24 +160,11 @@ export function useRecipeList({
           <RecipeListItem
             recipe={recipe}
             isSelected={selectedRecipe?.id === recipe.id}
-            onSelect={() => {
-              if (selectedRecipe?.id === recipe.id) {
-                setSelectedRecipe(null);
-                return;
-              }
-              setSelectedRecipe(recipe);
-              fetchRecipeById(recipe.id)
-                .then((full) => {
-                  setSelectedRecipe((prev) =>
-                    prev?.id === recipe.id ? full : prev,
-                  );
-                })
-                .catch(() => {});
-            }}
+            onSelect={() => selectRecipeForOverlay(recipe)}
           />
         </div>
       )),
-    [recipesForList, selectedRecipe?.id],
+    [recipesForList, selectedRecipe?.id, selectRecipeForOverlay],
   );
 
   return {
@@ -182,5 +188,6 @@ export function useRecipeList({
     handleRecipeChange,
     recipesForList,
     recipeListItems,
+    selectRecipeForOverlay,
   };
 }

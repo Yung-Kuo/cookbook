@@ -13,6 +13,7 @@ import { fetchPinnedRecipes } from "@/api/pinned";
  *   isOwner: boolean,
  *   isActive: boolean,
  *   refreshKey?: number,
+ *   onRecipeOpen?: (recipe: object) => void,
  *   className?: string,
  * }} props
  */
@@ -21,6 +22,7 @@ export default function PinnedSection({
   isOwner,
   isActive,
   refreshKey = 0,
+  onRecipeOpen,
   className = "",
 }) {
   const [pinnedRows, setPinnedRows] = useState([]);
@@ -92,7 +94,9 @@ export default function PinnedSection({
               <RecipeCard
                 recipe={r}
                 showPrivateBadge={isOwner}
-                href={`/users/${ownerId}/recipes/${r.id}`}
+                {...(onRecipeOpen
+                  ? { onClick: () => onRecipeOpen(r) }
+                  : { href: `/users/${ownerId}/recipes/${r.id}` })}
               />
             </li>
           );

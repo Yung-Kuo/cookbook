@@ -48,6 +48,7 @@ export default function ProfileTabContent({
           isOwner={isOwnProfile}
           isActive={shouldLoadPinned}
           refreshKey={pinnedRefreshKey}
+          onRecipeOpen={recipeList.selectRecipeForOverlay}
           className="px-4 pt-2 pb-24 lg:px-6"
         />
       </TabPaneVisibility>
