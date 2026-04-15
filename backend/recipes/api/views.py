@@ -26,6 +26,7 @@ from ..models import (
     CollectionRecipe,
     PinnedRecipe,
 )
+from .filters import RecipeFilter
 from .serializers import (
     RecipeSerializer,
     RecipeWriteSerializer,
@@ -157,7 +158,7 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    filterset_fields = ['tags', 'owner', 'owner__username']
+    filterset_class = RecipeFilter
     search_fields = ['title', 'description']
 
     def get_serializer_class(self):

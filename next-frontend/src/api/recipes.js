@@ -3,7 +3,7 @@ import { apiFetch } from "@/api/client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-/** Builds query string; repeats `tags` for each id (django-filter). */
+/** Builds query string; repeats `tags` so the API ANDs them (recipes must match every tag). */
 export function recipeListQueryString(params = {}) {
   const { tags, ...rest } = params;
   const sp = new URLSearchParams();
