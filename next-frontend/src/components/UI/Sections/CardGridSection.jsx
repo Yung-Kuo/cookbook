@@ -21,7 +21,9 @@ export default function CardGridSection({
   return (
     <div className={className}>
       {actionBar}
-      {loading && <p className="text-neutral-400">Loading…</p>}
+      {loading && (
+        <p className="text-lg text-neutral-400 lg:text-2xl">Loading…</p>
+      )}
       {!loading && itemCount === 0 && (
         <p className="text-lg text-neutral-500 lg:text-2xl">{emptyMessage}</p>
       )}

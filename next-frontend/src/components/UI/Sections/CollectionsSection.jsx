@@ -100,7 +100,7 @@ export default function CollectionsSection({
           <input
             value={newCollectionName}
             onChange={(e) => setNewCollectionName(e.target.value)}
-            className="h-10 w-full rounded-md border-2 border-neutral-700 bg-neutral-800 px-3 text-lg text-neutral-100 focus:border-sky-600 focus:outline-none"
+            className="h-10 w-full rounded-md border border-neutral-600 bg-neutral-800 px-3 text-lg text-neutral-100 focus:border-sky-600 focus:ring-1 focus:ring-sky-600 focus:outline-none"
             placeholder="Name"
             required
           />
@@ -133,7 +133,7 @@ export default function CollectionsSection({
             <AddButton
               onClick={() => setNewCollectionOpen(true)}
               parentClassName="h-10 w-10 lg:h-12 lg:w-12"
-              className="h-10 w-10 bg-indigo-500 text-white hover:bg-indigo-400 lg:h-12 lg:w-12"
+              className="h-10 w-10 bg-sky-500/80 text-white hover:bg-sky-400/80 lg:h-12 lg:w-12"
               title="New collection"
             />
           </div>

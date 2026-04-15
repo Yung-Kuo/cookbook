@@ -72,7 +72,7 @@ export default function PinnedSection({
             <AddButton
               onClick={() => setPinPickerOpen(true)}
               parentClassName="h-10 w-10 lg:h-12 lg:w-12"
-              className="h-10 w-10 bg-indigo-500 text-white hover:bg-indigo-400 lg:h-12 lg:w-12"
+              className="h-10 w-10 bg-sky-500/80 text-white hover:bg-sky-400/80 lg:h-12 lg:w-12"
               title="Add pins"
             />
           </div>

@@ -59,7 +59,7 @@ export default function CollectionCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-lg border border-neutral-600 bg-neutral-900 transition-colors hover:border-sky-500 ${className}`}
+      className={`relative overflow-hidden rounded-lg border border-neutral-600 bg-neutral-900 transition-colors hover:border-sky-600 hover:ring-1 hover:ring-sky-600 ${className}`}
     >
       <Link href={href} className="flex h-full flex-col text-left">
         <div className="relative aspect-square w-full overflow-hidden rounded-t-lg bg-neutral-700">
@@ -87,7 +87,7 @@ export default function CollectionCard({
             e.preventDefault();
             onCoverClick();
           }}
-          className="absolute left-2 top-2 rounded bg-neutral-900/80 px-2 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800"
+          className="absolute top-2 left-2 rounded bg-neutral-900/80 px-2 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800"
         >
           Cover
         </button>

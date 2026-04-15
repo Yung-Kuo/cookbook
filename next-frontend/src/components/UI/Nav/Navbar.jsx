@@ -69,24 +69,6 @@ export default function Navbar() {
           )}
         </div>
       </div>
-
-      {/* Mobile: slim top bar */}
-      <div className="z-40 col-start-1 row-start-1 flex h-full w-full items-center justify-between px-6 lg:hidden">
-        <Link
-          href="/"
-          className="text-neutral-100 transition-colors hover:text-red-300"
-        >
-          Cookbook
-        </Link>
-        {!isAuthenticated && (
-          <RoundedButton
-            href={loginHref}
-            className="cursor-pointer bg-red-300 !text-base !font-bold text-neutral-800 hover:bg-red-400"
-          >
-            Login
-          </RoundedButton>
-        )}
-      </div>
     </nav>
   );
 }

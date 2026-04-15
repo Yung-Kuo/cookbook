@@ -17,13 +17,16 @@ import {
 import { fetchIngredients, createIngredient } from "../../api/ingredients";
 import AddButton from "../UI/Buttons/AddButton";
 import DeleteButton from "../UI/Buttons/DeleteButton";
+import FormActionButton from "../UI/Buttons/FormActionButton";
 import ComboboxCreate from "@/components/inputs/ComboboxCreatable";
+import CheckboxLabel from "@/components/inputs/CheckboxLabel";
 import TagChipTray from "@/components/tags/TagChipTray";
 import TagCombobox from "@/components/tags/TagCombobox";
-import FormSection from "./FormSection";
+import FormSection from "@/components/inputs/FormSection";
 import { useTagPicker } from "@/components/tags/useTagPicker";
-import AutoGrowTextarea from "./AutoGrowTextarea";
+import AutoGrowTextarea from "@/components/inputs/AutoGrowTextarea";
 import RecipeFormPhotoItem from "./RecipeFormPhotoItem";
+import FormRadioOption from "@/components/inputs/FormRadioOption";
 import { useAuth } from "@/context/AuthContext";
 
 const UNITS = [
@@ -862,7 +865,10 @@ function RecipeForm({
 
       {/* Visibility */}
       <div className="flex flex-wrap items-center justify-between gap-4 lg:items-start lg:justify-start lg:gap-8">
-        <span id="visibility-heading" className="font-medium text-neutral-300">
+        <span
+          id="visibility-heading"
+          className="font-medium text-neutral-300 lg:w-40"
+        >
           Visibility
         </span>
         <div
@@ -870,78 +876,49 @@ function RecipeForm({
           role="radiogroup"
           aria-labelledby="visibility-heading"
         >
-          <label className="flex cursor-pointer items-center gap-4 rounded-md focus-within:outline-none">
-            <input
-              type="radio"
-              name="visibility"
-              value="public"
-              checked={formData.is_public}
-              onChange={() =>
-                setFormData((prev) => ({ ...prev, is_public: true }))
-              }
-              className="peer sr-only"
-            />
-            <span
-              aria-hidden="true"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950 peer-checked:[&>.radio-dot]:opacity-100"
-            >
-              <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
-            </span>
-
-            <div className="text-2xl">
-              <span className="text-neutral-300">Public </span>
-              <span className="text-neutral-500">(visible to everyone)</span>
-            </div>
-          </label>
-          <label className="flex cursor-pointer items-center gap-4 rounded-md focus-within:outline-none">
-            <input
-              type="radio"
-              name="visibility"
-              value="private"
-              checked={!formData.is_public}
-              onChange={() =>
-                setFormData((prev) => ({ ...prev, is_public: false }))
-              }
-              className="peer sr-only"
-            />
-            <span
-              aria-hidden="true"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-950 peer-checked:[&>.radio-dot]:opacity-100"
-            >
-              <span className="radio-dot h-4 w-4 rounded-full bg-red-300 opacity-0 transition-opacity" />
-            </span>
-
-            <div className="text-2xl">
-              <span className="text-neutral-300">Private </span>
-              <span className="text-neutral-500">
-                (only you can see this recipe)
-              </span>
-            </div>
-          </label>
+          <FormRadioOption
+            name="visibility"
+            value="public"
+            checked={formData.is_public}
+            onChange={() =>
+              setFormData((prev) => ({ ...prev, is_public: true }))
+            }
+            title="Public"
+            description="(visible to everyone)"
+          />
+          <FormRadioOption
+            name="visibility"
+            value="private"
+            checked={!formData.is_public}
+            onChange={() =>
+              setFormData((prev) => ({ ...prev, is_public: false }))
+            }
+            title="Private"
+            description="(only you can see this recipe)"
+          />
         </div>
       </div>
 
       {/* Pin to profile (your recipes only) */}
       {(!existingRecipe || user?.pk === existingRecipe.owner_id) && (
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="font-medium text-neutral-300">Profile</span>
-          <label className="flex cursor-pointer items-center gap-3 text-2xl">
-            <input
-              type="checkbox"
-              checked={formData.pin_to_profile}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  pin_to_profile: e.target.checked,
-                }))
-              }
-              className="h-5 w-5 rounded border-neutral-500 text-red-300 focus:ring-red-300"
-            />
-            <span className="text-neutral-300">
+        <div className="flex flex-wrap items-center gap-4 lg:gap-8">
+          <span className="font-medium text-neutral-300 lg:w-40">Profile</span>
+          <CheckboxLabel
+            checked={formData.pin_to_profile}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                pin_to_profile: e.target.checked,
+              }))
+            }
+            size="md"
+            labelClassName="gap-4 border"
+          >
+            <span className="text-2xl text-neutral-300">
               Pin to my profile{" "}
               <span className="text-neutral-500">(show in Pinned tab)</span>
             </span>
-          </label>
+          </CheckboxLabel>
         </div>
       )}
 
@@ -1013,33 +990,32 @@ function RecipeForm({
         </FormSection>
       </div>
 
-      {/* Form Submission Buttons */}
-      <div className="flex flex-col items-end gap-12">
+      <div className="flex flex-col items-end gap-12 text-lg lg:flex-row-reverse lg:justify-between lg:text-2xl">
         <div className="flex flex-wrap gap-4">
-          <button
+          <FormActionButton
             type="button"
             onClick={onClose}
-            className="cursor-pointer rounded-md bg-neutral-300 px-4 py-2 text-neutral-800 transition-all hover:bg-neutral-100 focus:outline-none active:scale-95"
+            className="bg-neutral-300 text-neutral-800 hover:bg-neutral-100"
           >
             Cancel
-          </button>
-          <button
+          </FormActionButton>
+          <FormActionButton
             type="button"
             onClick={handleSubmit}
-            className="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-neutral-100 transition-all hover:bg-sky-500 hover:text-white focus:outline-none active:scale-95"
+            className="bg-sky-600 text-neutral-100 hover:bg-sky-500 hover:text-white"
           >
             {isEditing ? "Edit Recipe" : "Create Recipe"}
-          </button>
+          </FormActionButton>
         </div>
         <div>
           {isEditing && (
-            <button
+            <FormActionButton
               type="button"
               onClick={handleDeleteRecipe}
-              className="cursor-pointer rounded-md border border-red-500/60 bg-transparent px-4 py-2 text-red-300 transition-all hover:bg-red-950/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-95"
+              className="border border-red-500/60 bg-transparent text-red-300 hover:bg-red-950/50 focus-visible:ring-2 focus-visible:ring-red-400/50"
             >
               Delete recipe
-            </button>
+            </FormActionButton>
           )}
         </div>
       </div>

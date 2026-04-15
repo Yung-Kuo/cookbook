@@ -9,6 +9,7 @@ import {
 } from "@/api/collections";
 import RoundedButton from "./RoundedButton";
 import BookmarkIcon from "../../Icons/BookmarkIcon";
+import CheckboxLabel from "@/components/inputs/CheckboxLabel";
 
 /**
  * Dropdown to add/remove recipe from collections.
@@ -138,37 +139,15 @@ export default function CollectionButton({
           <ul className="max-h-48 space-y-1 overflow-y-auto">
             {collections.map((col) => (
               <li key={col.id}>
-                <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-neutral-800 has-[:disabled]:cursor-not-allowed focus-within:outline-none">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(col.contains_recipe)}
-                    disabled={busyId === col.id}
-                    onChange={() => toggleCollection(col)}
-                    className="peer sr-only"
-                  />
-                  <span
-                    aria-hidden="true"
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-neutral-500 bg-transparent peer-checked:border-red-300 peer-checked:[&>svg]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-red-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-neutral-900 peer-disabled:opacity-50"
-                  >
-                    <svg
-                      className="h-4 w-4 text-red-300 opacity-0 transition-opacity"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M2.5 6L5 8.5L9.5 3"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
+                <CheckboxLabel
+                  checked={Boolean(col.contains_recipe)}
+                  disabled={busyId === col.id}
+                  onChange={() => toggleCollection(col)}
+                >
                   <span className="truncate text-lg text-neutral-200">
                     {col.name}
                   </span>
-                </label>
+                </CheckboxLabel>
               </li>
             ))}
           </ul>
