@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchCollectionById } from "@/api/collections";
 import RoundedButton from "@/components/UI/Buttons/RoundedButton";
+import RecipeCard from "@/components/UI/Cards/RecipeCard";
+import CardGridSection from "@/components/UI/Sections/CardGridSection";
+import BackArrowIcon from "@/components/Icons/BackArrowIcon";
 import { useAuth } from "@/context/AuthContext";
 
 export default function CollectionDetailPage() {
@@ -76,67 +78,66 @@ export default function CollectionDetailPage() {
   const entries = collection.entries || [];
 
   return (
-    <div className="h-full overflow-y-auto bg-neutral-800 p-6 text-neutral-100">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Link
-            href={`/users/${uid}?tab=collections`}
-            className="mb-2 inline-block text-sm text-sky-400 hover:text-sky-300"
-          >
-            ← Profile · Collections
-          </Link>
-          <h1 className="text-4xl font-bold text-red-300">{collection.name}</h1>
-          {collection.description && (
-            <p className="mt-2 text-neutral-400">{collection.description}</p>
-          )}
-        </div>
+    <div className="h-full overflow-y-auto bg-neutral-800 p-2 pb-24 text-neutral-100 lg:px-6 lg:pt-14">
+      <div className="mb-8">
+        <Link
+          href={`/users/${uid}?tab=collections`}
+          className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-700 text-neutral-100 transition-all hover:bg-neutral-600 active:scale-90"
+          aria-label="Back to collections"
+          title="Back to collections"
+        >
+          <BackArrowIcon className="h-5 w-5" />
+        </Link>
       </div>
 
-      <ul className="flex flex-col gap-3">
-        {entries.map((entry) => (
-          <li
-            key={`${entry.recipe_id}-${entry.added_at}`}
-            className="rounded-lg border border-neutral-600 bg-neutral-900 p-4"
-          >
-            {entry.is_available && entry.recipe ? (
-              <Link
-                href={`/users/${entry.recipe.owner_id ?? uid}/recipes/${entry.recipe.id}`}
-                className="flex flex-wrap items-center gap-4 hover:text-red-300"
-              >
-                {entry.recipe.cover_image_url && (
-                  <span className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded">
-                    <Image
-                      src={entry.recipe.cover_image_url}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
-                  </span>
-                )}
-                <div>
-                  <h2 className="text-2xl">{entry.recipe.title}</h2>
-                  <p className="text-sm text-neutral-500">
-                    Added {new Date(entry.added_at).toLocaleDateString()}
-                  </p>
+      <div className="flex flex-col gap-8">
+        <h1 className="text-4xl font-bold text-red-300">{collection.name}</h1>
+        {collection.description && (
+          <p className="mt-2 text-neutral-400">{collection.description}</p>
+        )}
+        <CardGridSection
+          preset="5"
+          loading={false}
+          itemCount={entries.length}
+          emptyMessage="No recipes in this collection yet."
+        >
+          {entries.map((entry) => {
+            const key = `${entry.recipe_id}-${entry.added_at}`;
+            if (entry.is_available && entry.recipe) {
+              const r = entry.recipe;
+              const ownerId = r.owner_id ?? uid;
+              return (
+                <li key={key}>
+                  <RecipeCard
+                    recipe={r}
+                    href={`/users/${ownerId}/recipes/${r.id}`}
+                  />
+                </li>
+              );
+            }
+            return (
+              <li key={key}>
+                <div className="flex h-full flex-col overflow-hidden rounded-lg border border-neutral-600 bg-neutral-900 text-left">
+                  <div className="relative aspect-square w-full overflow-hidden rounded-t-lg bg-neutral-700">
+                    <div className="flex h-full items-center justify-center p-4 text-center text-sm text-neutral-500">
+                      Unavailable
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1 p-3 text-left">
+                    <p className="text-base font-semibold text-neutral-400">
+                      This recipe is no longer available.
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      Recipe #{entry.recipe_id} · added{" "}
+                      {new Date(entry.added_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-              </Link>
-            ) : (
-              <div className="text-neutral-500">
-                <p className="text-lg">This recipe is no longer available.</p>
-                <p className="text-sm">
-                  Recipe #{entry.recipe_id} · added{" "}
-                  {new Date(entry.added_at).toLocaleDateString()}
-                </p>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {entries.length === 0 && (
-        <p className="text-neutral-500">No recipes in this collection yet.</p>
-      )}
+              </li>
+            );
+          })}
+        </CardGridSection>
+      </div>
     </div>
   );
 }

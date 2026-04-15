@@ -79,6 +79,7 @@ export default function PinnedSection({
         </div>
       )}
       <CardGridSection
+        preset="4"
         loading={pinnedLoading}
         itemCount={pinnedRows.length}
         emptyMessage={

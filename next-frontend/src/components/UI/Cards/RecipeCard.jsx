@@ -28,7 +28,7 @@ export default function RecipeCard({
             alt=""
             fill
             className="object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            // sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-neutral-500">
@@ -47,7 +47,7 @@ export default function RecipeCard({
     </>
   );
 
-  const cardClass = `flex h-full flex-col overflow-hidden rounded-lg border border-neutral-600 bg-neutral-900 text-left transition-colors hover:border-sky-500 ${className}`;
+  const cardClass = `flex h-full min-w-0 w-full flex-col overflow-hidden rounded-lg border border-neutral-600 bg-neutral-900 text-left transition-colors hover:border-sky-500 ${className}`;
 
   if (href) {
     return (
@@ -58,11 +58,7 @@ export default function RecipeCard({
   }
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cardClass}
-    >
+    <button type="button" onClick={onClick} className={cardClass}>
       {inner}
     </button>
   );

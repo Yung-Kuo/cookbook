@@ -55,7 +55,7 @@ export default function ProfileHeader({ profileUserId }) {
       {profile && !loading && !error && (
         <>
           <AvatarName
-            variant="profile"
+            size="lg"
             userId={profileUserId}
             avatarUrl={profile.avatar_url}
             displayName={displayLabel}

@@ -50,13 +50,13 @@ export default function CollectionsSection({
     };
   }, [isActive, profileUserId]);
 
-  const onVisibilityToggle = async (e, collectionId) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleVisibilitySet = async (collectionId, wantPublic) => {
+    const c = collections.find((x) => x.id === collectionId);
+    if (!c || c.is_public === wantPublic) return;
     try {
       const updated = await toggleCollectionVisibility(collectionId);
       setCollections((prev) =>
-        prev.map((c) => (c.id === collectionId ? { ...c, ...updated } : c)),
+        prev.map((col) => (col.id === collectionId ? { ...col, ...updated } : col)),
       );
     } catch {
       /* ignore */
@@ -140,6 +140,7 @@ export default function CollectionsSection({
         </div>
       )}
       <CardGridSection
+        preset="4"
         loading={collectionsLoading}
         itemCount={collections.length}
         emptyMessage="No collections yet."
@@ -167,17 +168,12 @@ export default function CollectionsSection({
               showPrivateBadge={isOwner}
               isOwner={isOwner}
               onCoverClick={() => coverInputRefs.current[c.id]?.click()}
+              onVisibilitySet={
+                isOwner
+                  ? (wantPublic) => handleVisibilitySet(c.id, wantPublic)
+                  : undefined
+              }
             />
-            {isOwner && (
-              <button
-                type="button"
-                title={c.is_public ? "Public collection" : "Private"}
-                onClick={(e) => onVisibilityToggle(e, c.id)}
-                className="absolute top-10 right-2 z-10 rounded bg-neutral-900/90 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800"
-              >
-                {c.is_public ? "Public" : "Private"}
-              </button>
-            )}
           </li>
         ))}
       </CardGridSection>
