@@ -21,7 +21,7 @@ export default function ProfileTabBar({
           key={tab}
           type="button"
           onClick={() => onTabChange(tab)}
-          className={`shrink-0 flex-grow cursor-pointer border-b-2 py-2 text-lg font-bold transition-colors lg:px-4 lg:py-3 lg:text-2xl ${
+          className={`flex flex-1 flex-grow cursor-pointer items-center justify-center border-b-2 py-2 text-lg font-bold transition-colors lg:py-3 lg:text-2xl ${
             activeTab === tab
               ? "border-red-300 bg-neutral-900/50 text-red-300"
               : "border-transparent text-neutral-400 hover:text-neutral-200"
