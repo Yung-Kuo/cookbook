@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
       >
         <AuthProvider>
           <BackendKeepalive />
-          <div className="flex h-dvh max-h-dvh min-h-0 w-screen flex-col overflow-hidden bg-neutral-800">
+          <div className="flex h-dvh max-h-dvh min-h-0 w-screen flex-col bg-neutral-800">
             <Suspense
               fallback={
                 <div className="h-14 w-full shrink-0 bg-neutral-800/40 backdrop-blur-xs" />
@@ -41,7 +41,7 @@ export default function RootLayout({ children }) {
             >
               <Navbar />
             </Suspense>
-            <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+            <div className="min-h-0 flex-1">{children}</div>
             <Suspense fallback={null}>
               <MobileBottomNav />
             </Suspense>

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { toggleLike } from "@/api/likes";
 import RoundedButton from "./RoundedButton";
+import ExpandableCircleButton from "./ExpandableCircleButton";
+import { recipeActionCircleIconClass } from "@/components/UI/Recipe/RecipeActionRailIcons";
 
 function HeartIcon({ filled, className = "" }) {
   return (
@@ -10,8 +12,8 @@ function HeartIcon({ filled, className = "" }) {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.5"
+      stroke={filled ? "none" : "currentColor"}
+      strokeWidth="2"
       className={className}
       aria-hidden
     >
@@ -33,6 +35,8 @@ export default function LikeButton({
   isAuthenticated,
   isOwnRecipe,
   onRecipeChange,
+  /** Recipe detail right column: circle that expands to show label on hover */
+  expandCircle = false,
 }) {
   const [busy, setBusy] = useState(false);
   const [optimistic, setOptimistic] = useState(null);
@@ -70,21 +74,43 @@ export default function LikeButton({
 
   const disabled = !isAuthenticated || isOwnRecipe || busy;
 
+  const titleText =
+    !isAuthenticated
+      ? "Log in to like recipes"
+      : isOwnRecipe
+        ? "Your recipe"
+        : isLiked
+          ? "Unlike"
+          : "Like this recipe";
+
+  const expandLabel = isOwnRecipe
+    ? "Your recipe"
+    : !isAuthenticated
+      ? "Log in to like"
+      : `${isLiked ? "Unlike" : "Like"}${likeCount > 0 ? ` · ${likeCount}` : ""}`;
+
+  if (expandCircle) {
+    /** Optical nudge: heart path sits high/right in 24×24 viewBox; red only when liked (not overridden by parent [&_svg] rules) */
+    const heartClass = `${recipeActionCircleIconClass} -translate-x-px translate-y-px${isLiked ? " text-red-300" : ""}`;
+    return (
+      <ExpandableCircleButton
+        type="button"
+        onClick={handleClick}
+        disabled={disabled}
+        title={titleText}
+        icon={<HeartIcon filled={isLiked} className={heartClass} />}
+        label={expandLabel}
+      />
+    );
+  }
+
   return (
     <RoundedButton
       type="button"
       onClick={handleClick}
       disabled={disabled}
-      className={`cursor-pointer overflow-hidden border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 !bg-red-950/40 text-red-400 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""} `}
-      title={
-        !isAuthenticated
-          ? "Log in to like recipes"
-          : isOwnRecipe
-            ? "Your recipe"
-            : isLiked
-              ? "Unlike"
-              : "Like this recipe"
-      }
+      className={`cursor-pointer overflow-hidden border border-neutral-600 bg-transparent text-neutral-300 transition-all hover:border-red-400/50 ${isLiked ? "border-red-400 !bg-red-950/40 text-red-300 hover:border-red-400" : ""} ${disabled ? "!cursor-not-allowed opacity-80" : ""} `}
+      title={titleText}
     >
       {/* <div className="flex items-center justify-center h-10 w-10 min-w-10 rounded-full"> */}
       <HeartIcon filled={isLiked} className="h-5 w-5 shrink-0" />

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import RecipeListItem from "@/components/UI/RecipeList/RecipeListItem";
 import { fetchRecipeById } from "@/api/recipes";
 import { fetchTags } from "@/api/tags";
@@ -25,6 +26,7 @@ export function useRecipeList({
   onAfterRecipeDeleted,
 }) {
   const { isAuthenticated } = useAppNav();
+  const router = useRouter();
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [isFormOpen, setFormOpen] = useState(false);
@@ -134,6 +136,15 @@ export function useRecipeList({
   const selectRecipeForOverlay = useCallback(
     (recipe) => {
       if (!recipe?.id) return;
+      const isDesktop =
+        typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 1024px)").matches;
+      if (!isDesktop && recipe.owner_id != null) {
+        router.push(
+          `/users/${recipe.owner_id}/recipes/${recipe.id}`,
+        );
+        return;
+      }
       if (selectedRecipe?.id === recipe.id) {
         setSelectedRecipe(null);
         return;
@@ -147,7 +158,7 @@ export function useRecipeList({
         })
         .catch(() => {});
     },
-    [selectedRecipe?.id],
+    [selectedRecipe?.id, router],
   );
 
   const recipeListItems = useMemo(

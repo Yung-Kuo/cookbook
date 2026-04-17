@@ -8,7 +8,12 @@ import {
   removeRecipeFromCollection,
 } from "@/api/collections";
 import RoundedButton from "./RoundedButton";
+import ExpandableCircleButton from "./ExpandableCircleButton";
 import BookmarkIcon from "../../Icons/BookmarkIcon";
+import { recipeActionCircleIconClass } from "@/components/UI/Recipe/RecipeActionRailIcons";
+
+/** Bookmark glyph sits slightly high in the artboard */
+const collectionRailIconClass = `${recipeActionCircleIconClass} translate-y-px`;
 import CheckboxLabel from "@/components/inputs/CheckboxLabel";
 
 /**
@@ -20,6 +25,7 @@ export default function CollectionButton({
   onMembershipChange,
   isAuthenticated = true,
   loginHref,
+  expandCircle = false,
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -107,6 +113,16 @@ export default function CollectionButton({
   };
 
   if (!isAuthenticated) {
+    if (expandCircle) {
+      return (
+        <ExpandableCircleButton
+          href={loginHref ?? "/login"}
+          title="Log in to save to collections"
+          icon={<BookmarkIcon className={collectionRailIconClass} />}
+          label="Collections"
+        />
+      );
+    }
     return (
       <RoundedButton
         href={loginHref ?? "/login"}
@@ -120,17 +136,28 @@ export default function CollectionButton({
 
   return (
     <div className="relative" ref={wrapRef}>
-      <RoundedButton
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 active:outline-none hover:text-sky-200"
-      >
-        {/* Bookmarks icon */}
-        <BookmarkIcon className="h-5 w-5 shrink-0" />
-        <span className="mr-1">collections</span>
-      </RoundedButton>
+      {expandCircle ? (
+        <ExpandableCircleButton
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          title="Add to collections"
+          icon={<BookmarkIcon className={collectionRailIconClass} />}
+          label="Collections"
+        />
+      ) : (
+        <RoundedButton
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="cursor-pointer border !text-lg !font-bold border-neutral-600 bg-neutral-800 text-neutral-200 hover:border-sky-500 active:outline-none hover:text-sky-200"
+        >
+          <BookmarkIcon className="h-5 w-5 shrink-0" />
+          <span className="mr-1">collections</span>
+        </RoundedButton>
+      )}
       {open && (
-        <div className="absolute left-0 mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl">
+        <div
+          className={`absolute mt-2 w-72 rounded-lg border border-neutral-600 bg-neutral-900 p-3 shadow-xl ${expandCircle ? "right-0 left-auto" : "left-0"}`}
+        >
           <p className="mb-2 text-xs font-medium text-neutral-500">
             Add this recipe to your collections
           </p>

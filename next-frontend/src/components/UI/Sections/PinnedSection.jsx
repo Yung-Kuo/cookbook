@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import RecipeCard from "@/components/UI/Cards/RecipeCard";
+import PinnedRecipeCard from "@/components/UI/Cards/PinnedRecipeCard";
 import PinPickerModal from "@/components/UI/Popups/PinPickerModal";
 import AddButton from "@/components/UI/Buttons/AddButton";
 import CardGridSection from "@/components/UI/Sections/CardGridSection";
-import { fetchPinnedRecipes } from "@/api/pinned";
+import { fetchPinnedRecipes, unpinRecipe } from "@/api/pinned";
 
 /**
  * @param {{
@@ -58,6 +58,19 @@ export default function PinnedSection({
       .catch(() => {});
   }, [profileUserId]);
 
+  const handleUnpinRecipe = useCallback(
+    async (recipe) => {
+      if (!recipe?.id) return;
+      try {
+        await unpinRecipe(recipe.id);
+        refreshPinned();
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    [refreshPinned],
+  );
+
   return (
     <div className={`relative ${className}`}>
       <PinPickerModal
@@ -92,9 +105,11 @@ export default function PinnedSection({
           const ownerId = r.owner_id ?? profileUserId;
           return (
             <li key={r.id}>
-              <RecipeCard
+              <PinnedRecipeCard
                 recipe={r}
                 showPrivateBadge={isOwner}
+                isOwner={isOwner}
+                onUnpin={isOwner ? handleUnpinRecipe : undefined}
                 {...(onRecipeOpen
                   ? { onClick: () => onRecipeOpen(r) }
                   : { href: `/users/${ownerId}/recipes/${r.id}` })}

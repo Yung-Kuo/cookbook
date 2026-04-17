@@ -32,7 +32,10 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="fixed top-0 right-0 left-0 z-40 hidden h-14 w-full grid-cols-1 grid-rows-1 text-lg font-bold lg:grid">
+    <nav
+      data-app-navbar=""
+      className="fixed top-0 right-0 left-0 z-40 hidden h-14 w-full grid-cols-1 grid-rows-1 text-lg font-bold lg:grid"
+    >
       <div className="col-start-1 row-start-1 h-full w-full bg-neutral-800/60 backdrop-blur-xs" />
 
       {/* Desktop */}

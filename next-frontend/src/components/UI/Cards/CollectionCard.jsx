@@ -1,9 +1,8 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import NavMoreIcon from "@/components/Icons/NavMoreIcon";
+import Image from "next/image"
+import BaseCard from "@/components/UI/Cards/BaseCard"
+import CardMoreMenu from "@/components/UI/Cards/CardMoreMenu"
 
 /**
  * @param {{
@@ -32,11 +31,9 @@ export default function CollectionCard({
   isOwner = false,
   className = "",
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   const urls = collection.recipe_cover_urls?.length
     ? collection.recipe_cover_urls
-    : [null, null, null, null];
+    : [null, null, null, null]
 
   const coverVisual = collection.cover_image_url ? (
     <Image
@@ -61,43 +58,40 @@ export default function CollectionCard({
         </div>
       ))}
     </div>
-  );
+  )
 
-  const showOwnerMenu = Boolean(isOwner && onVisibilitySet);
+  const showOwnerMenu = Boolean(isOwner && onVisibilitySet)
 
-  return (
-    <div
-      className={`relative overflow-hidden rounded-lg border border-neutral-600 bg-neutral-900 transition-colors hover:border-sky-600 hover:ring-1 hover:ring-sky-600 ${className}`}
-    >
-      <Link
-        href={href}
-        className="flex h-full w-full min-w-0 flex-col text-left"
-      >
-        <div className="relative aspect-square w-full overflow-hidden rounded-t-lg bg-neutral-700">
-          {coverVisual}
-        </div>
-        <div className="flex flex-col gap-1 p-3">
-          <h3 className="line-clamp-2 text-base font-semibold text-neutral-100">
-            {collection.name}
-          </h3>
-          <p className="text-xs text-neutral-500">
-            {collection.recipe_count ?? 0}{" "}
-            {(collection.recipe_count ?? 0) === 1 ? "recipe" : "recipes"}
-          </p>
-          {showPrivateBadge && collection.is_public === false && (
-            <span className="text-xs font-medium text-amber-400/90">
-              Private
-            </span>
-          )}
-        </div>
-      </Link>
+  const coverSlot = (
+    <div className="relative aspect-square w-full overflow-hidden rounded-t-lg bg-neutral-700">
+      {coverVisual}
+    </div>
+  )
+
+  const infoSlot = (
+    <div className="flex flex-col gap-1 p-3">
+      <h3 className="line-clamp-2 text-base font-semibold text-neutral-100">
+        {collection.name}
+      </h3>
+      <p className="text-xs text-neutral-500">
+        {collection.recipe_count ?? 0}{" "}
+        {(collection.recipe_count ?? 0) === 1 ? "recipe" : "recipes"}
+      </p>
+      {showPrivateBadge && collection.is_public === false && (
+        <span className="text-xs font-medium text-amber-400/90">Private</span>
+      )}
+    </div>
+  )
+
+  const overlaySlot = (
+    <>
       {isOwner && onCoverClick && (
         <button
           type="button"
           onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onCoverClick();
+            e.preventDefault()
+            e.stopPropagation()
+            onCoverClick()
           }}
           className="absolute top-2 left-2 z-10 rounded bg-neutral-900/80 px-2 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800"
         >
@@ -105,32 +99,11 @@ export default function CollectionCard({
         </button>
       )}
       {showOwnerMenu && (
-        <div
-          className="absolute top-2 right-2 z-20 text-base"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            aria-label="Collection options"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setMenuOpen((o) => !o);
-            }}
-            className="rounded-full border border-neutral-600 bg-neutral-900/90 p-1.5 text-neutral-200 shadow-sm hover:bg-neutral-800"
-          >
-            <NavMoreIcon className="h-5 w-5" />
-          </button>
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 z-30 mt-2 w-max rounded-lg border border-neutral-600 bg-neutral-900 py-1 text-base shadow-lg"
-            >
+        <CardMoreMenu
+          ariaLabel="Collection options"
+          menuClassName="min-w-0"
+          menuContent={({ close }) => (
+            <>
               <p className="px-3 py-1.5 font-medium text-neutral-500">
                 Visibility
               </p>
@@ -144,10 +117,10 @@ export default function CollectionCard({
                     : "text-neutral-300"
                 }`}
                 onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!collection.is_public) onVisibilitySet(true);
-                  setMenuOpen(false);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (!collection.is_public) onVisibilitySet?.(true)
+                  close()
                 }}
               >
                 <span>Public</span>
@@ -165,10 +138,10 @@ export default function CollectionCard({
                     : "text-neutral-300"
                 }`}
                 onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (collection.is_public) onVisibilitySet(false);
-                  setMenuOpen(false);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (collection.is_public) onVisibilitySet?.(false)
+                  close()
                 }}
               >
                 <span>Private</span>
@@ -176,10 +149,23 @@ export default function CollectionCard({
                   <span className="text-xs text-neutral-500">Current</span>
                 ) : null}
               </button>
-            </div>
+            </>
           )}
-        </div>
+        />
       )}
-    </div>
-  );
+    </>
+  )
+
+  return (
+    <BaseCard
+      withShell
+      as="link"
+      href={href}
+      variant="collection"
+      coverSlot={coverSlot}
+      infoSlot={infoSlot}
+      overlaySlot={overlaySlot}
+      className={className}
+    />
+  )
 }
