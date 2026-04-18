@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import ProfileHeader from "@/components/UI/Profile/ProfileHeader";
-import ProfileTabBar from "@/components/UI/Profile/ProfileTabBar";
-import ProfileTabContent from "@/components/UI/Profile/ProfileTabContent";
+import ProfileHeader from "@/components/UI/Profile/ProfileHeader"
+import ProfileTabBar from "@/components/UI/Profile/ProfileTabBar"
+import ProfileTabContent from "@/components/UI/Profile/ProfileTabContent"
 
 export default function ProfilePanel({ profile }) {
   const {
@@ -15,11 +15,10 @@ export default function ProfilePanel({ profile }) {
     visibleMobileTabs,
     visibleDesktopTabs,
     shouldLoadPinned,
-    pinnedRefreshKey,
     recipeList,
     isAuthenticated,
     loginHref,
-  } = profile;
+  } = profile
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-neutral-900/40">
@@ -51,11 +50,10 @@ export default function ProfilePanel({ profile }) {
         profileUserId={profileUserId}
         isOwnProfile={isOwnProfile}
         shouldLoadPinned={shouldLoadPinned}
-        pinnedRefreshKey={pinnedRefreshKey}
         recipeList={recipeList}
         isAuthenticated={isAuthenticated}
         loginHref={loginHref}
       />
     </div>
-  );
+  )
 }

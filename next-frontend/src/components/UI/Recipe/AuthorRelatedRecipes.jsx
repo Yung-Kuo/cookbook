@@ -1,11 +1,14 @@
-"use client";
+"use client"
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { fetchUserRecipes } from "@/api/recipes";
-import RecipeCard from "@/components/UI/Cards/RecipeCard";
+import { useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
+import Link from "next/link"
+import { fetchUserRecipesData } from "@/api/recipes"
+import RecipeCard from "@/components/UI/Cards/RecipeCard"
+import { queryKeys } from "@/lib/queryKeys"
+import { useAuth } from "@/context/AuthContext"
 
-const MAX_RECIPES = 5;
+const MAX_RECIPES = 5
 
 /**
  * Other recipes by the same author — horizontal scroll strip on all breakpoints.
@@ -15,36 +18,38 @@ export default function AuthorRelatedRecipes({
   currentRecipeId,
   ownerDisplayName = "Author",
 }) {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { isAuthenticated, loading: authLoading } = useAuth()
+  const ownerNumeric = Number(ownerId)
+  const viewerKey =
+    !authLoading && isAuthenticated ? "auth" : "anon"
 
-  useEffect(() => {
-    if (ownerId == null || !Number.isFinite(Number(ownerId))) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      await fetchUserRecipes(ownerId, (data) => {
-        if (!cancelled) {
-          setRecipes(Array.isArray(data) ? data : []);
-        }
-      });
-      if (!cancelled) setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [ownerId]);
+  const filters = useMemo(
+    () => ({
+      scope: "user",
+      ownerUserId: Number.isFinite(ownerNumeric) ? ownerNumeric : null,
+      search: "",
+      tagIds: [],
+      viewer: viewerKey,
+    }),
+    [ownerNumeric, viewerKey],
+  )
+
+  const { data: recipes = [], isPending: loading } = useQuery({
+    queryKey: queryKeys.recipes.list(filters),
+    queryFn: () => fetchUserRecipesData(ownerNumeric, {}),
+    enabled:
+      ownerId != null &&
+      Number.isFinite(ownerNumeric) &&
+      !authLoading,
+  })
 
   const others = useMemo(() => {
     return recipes
       .filter((r) => r.id !== currentRecipeId)
-      .slice(0, MAX_RECIPES);
-  }, [recipes, currentRecipeId]);
+      .slice(0, MAX_RECIPES)
+  }, [recipes, currentRecipeId])
 
-  if (ownerId == null) return null;
+  if (ownerId == null) return null
 
   return (
     <aside
@@ -82,5 +87,5 @@ export default function AuthorRelatedRecipes({
         ))}
       </div>
     </aside>
-  );
+  )
 }

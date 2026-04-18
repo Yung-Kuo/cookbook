@@ -1,15 +1,17 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import CollectionCard from "@/components/UI/Cards/CollectionCard";
-import AddButton from "@/components/UI/Buttons/AddButton";
-import CardGridSection from "@/components/UI/Sections/CardGridSection";
+import { useRef, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import CollectionCard from "@/components/UI/Cards/CollectionCard"
+import AddButton from "@/components/UI/Buttons/AddButton"
+import CardGridSection from "@/components/UI/Sections/CardGridSection"
 import {
   fetchUserCollections,
   toggleCollectionVisibility,
   uploadCollectionCover,
   createCollection,
-} from "@/api/collections";
+} from "@/api/collections"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * @param {{
@@ -25,70 +27,70 @@ export default function CollectionsSection({
   isActive,
   className = "",
 }) {
-  const [collections, setCollections] = useState([]);
-  const [collectionsLoading, setCollectionsLoading] = useState(false);
-  const [newCollectionOpen, setNewCollectionOpen] = useState(false);
-  const [newCollectionName, setNewCollectionName] = useState("");
-  const coverInputRefs = useRef({});
+  const queryClient = useQueryClient()
+  const [newCollectionOpen, setNewCollectionOpen] = useState(false)
+  const [newCollectionName, setNewCollectionName] = useState("")
+  const coverInputRefs = useRef({})
 
-  useEffect(() => {
-    if (!isActive) return;
-    let cancelled = false;
-    setCollectionsLoading(true);
-    fetchUserCollections(profileUserId)
-      .then((data) => {
-        if (!cancelled) setCollections(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setCollections([]);
-      })
-      .finally(() => {
-        if (!cancelled) setCollectionsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive, profileUserId]);
+  const { data: collections = [], isPending: collectionsLoading } = useQuery({
+    queryKey: queryKeys.collections.byUserId(profileUserId),
+    queryFn: () => fetchUserCollections(profileUserId),
+    enabled: isActive,
+    staleTime: 30 * 1000,
+  })
+
+  const invalidateCollections = () => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.collections.byUserId(profileUserId),
+    })
+  }
 
   const handleVisibilitySet = async (collectionId, wantPublic) => {
-    const c = collections.find((x) => x.id === collectionId);
-    if (!c || c.is_public === wantPublic) return;
+    const c = collections.find((x) => x.id === collectionId)
+    if (!c || c.is_public === wantPublic) return
     try {
-      const updated = await toggleCollectionVisibility(collectionId);
-      setCollections((prev) =>
-        prev.map((col) => (col.id === collectionId ? { ...col, ...updated } : col)),
-      );
+      const updated = await toggleCollectionVisibility(collectionId)
+      queryClient.setQueryData(
+        queryKeys.collections.byUserId(profileUserId),
+        (prev) =>
+          (prev ?? []).map((col) =>
+            col.id === collectionId ? { ...col, ...updated } : col,
+          ),
+      )
     } catch {
       /* ignore */
     }
-  };
+  }
 
   const onCoverFile = async (collectionId, file) => {
-    if (!file) return;
+    if (!file) return
     try {
-      const updated = await uploadCollectionCover(collectionId, file);
-      setCollections((prev) =>
-        prev.map((c) => (c.id === collectionId ? { ...c, ...updated } : c)),
-      );
+      const updated = await uploadCollectionCover(collectionId, file)
+      queryClient.setQueryData(
+        queryKeys.collections.byUserId(profileUserId),
+        (prev) =>
+          (prev ?? []).map((c) =>
+            c.id === collectionId ? { ...c, ...updated } : c,
+          ),
+      )
     } catch {
       /* ignore */
     }
-  };
+  }
 
   const handleCreateCollection = async (e) => {
-    e.preventDefault();
-    const name = newCollectionName.trim();
-    if (!name) return;
+    e.preventDefault()
+    const name = newCollectionName.trim()
+    if (!name) return
     try {
-      await createCollection({ name, is_public: false });
-      setNewCollectionName("");
-      setNewCollectionOpen(false);
-      const data = await fetchUserCollections(profileUserId);
-      setCollections(Array.isArray(data) ? data : []);
+      await createCollection({ name, is_public: false })
+      setNewCollectionName("")
+      setNewCollectionOpen(false)
+      invalidateCollections()
     } catch {
       /* ignore */
     }
-  };
+  }
 
   const actionBar =
     newCollectionOpen && isOwner ? (
@@ -110,7 +112,6 @@ export default function CollectionsSection({
             type="submit"
             className="h-8 cursor-pointer rounded-md bg-red-300 px-3 font-bold text-neutral-900 transition-colors hover:bg-red-400"
             disabled={!newCollectionName.trim()}
-            // onClick={handleCreateCollection}
           >
             Create
           </button>
@@ -123,7 +124,7 @@ export default function CollectionsSection({
           </button>
         </div>
       </form>
-    ) : null;
+    ) : null
 
   return (
     <div className={`relative ${className}`}>
@@ -150,16 +151,16 @@ export default function CollectionsSection({
           <li key={c.id} className="relative">
             <input
               ref={(el) => {
-                coverInputRefs.current[c.id] = el;
+                coverInputRefs.current[c.id] = el
               }}
               type="file"
               accept="image/*"
               className="hidden"
               aria-hidden
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                e.target.value = "";
-                if (f) onCoverFile(c.id, f);
+                const f = e.target.files?.[0]
+                e.target.value = ""
+                if (f) onCoverFile(c.id, f)
               }}
             />
             <CollectionCard
@@ -178,5 +179,5 @@ export default function CollectionsSection({
         ))}
       </CardGridSection>
     </div>
-  );
+  )
 }

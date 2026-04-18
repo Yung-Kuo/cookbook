@@ -19,6 +19,7 @@ export const getRecipeCardSlots = ({ recipe, showPrivateBadge = false }) => {
           alt=""
           fill
           className="object-cover"
+          sizes="(max-width: 1024px) 45vw, 240px"
         />
       ) : (
         <div className="flex h-full items-center justify-center text-sm text-neutral-500">

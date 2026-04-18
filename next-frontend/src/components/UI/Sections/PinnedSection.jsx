@@ -1,18 +1,19 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import PinnedRecipeCard from "@/components/UI/Cards/PinnedRecipeCard";
-import PinPickerModal from "@/components/UI/Popups/PinPickerModal";
-import AddButton from "@/components/UI/Buttons/AddButton";
-import CardGridSection from "@/components/UI/Sections/CardGridSection";
-import { fetchPinnedRecipes, unpinRecipe } from "@/api/pinned";
+import { useCallback, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import PinnedRecipeCard from "@/components/UI/Cards/PinnedRecipeCard"
+import PinPickerModal from "@/components/UI/Popups/PinPickerModal"
+import AddButton from "@/components/UI/Buttons/AddButton"
+import CardGridSection from "@/components/UI/Sections/CardGridSection"
+import { fetchPinnedRecipes, unpinRecipe } from "@/api/pinned"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * @param {{
  *   profileUserId: number,
  *   isOwner: boolean,
  *   isActive: boolean,
- *   refreshKey?: number,
  *   onRecipeOpen?: (recipe: object) => void,
  *   className?: string,
  * }} props
@@ -21,55 +22,45 @@ export default function PinnedSection({
   profileUserId,
   isOwner,
   isActive,
-  refreshKey = 0,
   onRecipeOpen,
   className = "",
 }) {
-  const [pinnedRows, setPinnedRows] = useState([]);
-  const [pinnedLoading, setPinnedLoading] = useState(false);
-  const [pinPickerOpen, setPinPickerOpen] = useState(false);
+  const queryClient = useQueryClient()
+  const [pinPickerOpen, setPinPickerOpen] = useState(false)
 
-  useEffect(() => {
-    if (!isActive) return;
-    let cancelled = false;
-    setPinnedLoading(true);
-    fetchPinnedRecipes(profileUserId)
-      .then((data) => {
-        if (!cancelled) setPinnedRows(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setPinnedRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setPinnedLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive, profileUserId, refreshKey]);
-
-  const pinnedIds = useMemo(() => {
-    return new Set(pinnedRows.map((row) => row.recipe?.id).filter(Boolean));
-  }, [pinnedRows]);
+  const { data: pinnedRows = [], isPending: pinnedLoading } = useQuery({
+    queryKey: queryKeys.pinned.byUserId(profileUserId),
+    queryFn: () => fetchPinnedRecipes(profileUserId),
+    enabled: isActive,
+    staleTime: 30 * 1000,
+  })
 
   const refreshPinned = useCallback(() => {
-    fetchPinnedRecipes(profileUserId)
-      .then((data) => setPinnedRows(Array.isArray(data) ? data : []))
-      .catch(() => {});
-  }, [profileUserId]);
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.pinned.byUserId(profileUserId),
+    })
+  }, [queryClient, profileUserId])
+
+  const unpinMutation = useMutation({
+    mutationFn: (recipeId) => unpinRecipe(recipeId),
+    onSuccess: () => refreshPinned(),
+  })
 
   const handleUnpinRecipe = useCallback(
     async (recipe) => {
-      if (!recipe?.id) return;
+      if (!recipe?.id) return
       try {
-        await unpinRecipe(recipe.id);
-        refreshPinned();
+        await unpinMutation.mutateAsync(recipe.id)
       } catch (e) {
-        console.error(e);
+        console.error(e)
       }
     },
-    [refreshPinned],
-  );
+    [unpinMutation],
+  )
+
+  const pinnedIds = new Set(
+    pinnedRows.map((row) => row.recipe?.id).filter(Boolean),
+  )
 
   return (
     <div className={`relative ${className}`}>
@@ -100,9 +91,9 @@ export default function PinnedSection({
         }
       >
         {pinnedRows.map((row) => {
-          const r = row.recipe;
-          if (!r) return null;
-          const ownerId = r.owner_id ?? profileUserId;
+          const r = row.recipe
+          if (!r) return null
+          const ownerId = r.owner_id ?? profileUserId
           return (
             <li key={r.id}>
               <PinnedRecipeCard
@@ -115,9 +106,9 @@ export default function PinnedSection({
                   : { href: `/users/${ownerId}/recipes/${r.id}` })}
               />
             </li>
-          );
+          )
         })}
       </CardGridSection>
     </div>
-  );
+  )
 }

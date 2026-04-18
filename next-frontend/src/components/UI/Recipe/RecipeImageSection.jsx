@@ -6,7 +6,11 @@ import Image from "next/image";
 /**
  * Hero + thumbnail strip. Preview selection is local (does not change the recipe cover).
  */
-export default function RecipeImageSection({ recipe }) {
+export default function RecipeImageSection({
+  recipe,
+  /** When true, hint LCP for the hero (full recipe page only). */
+  heroPriority = false,
+}) {
   const [previewImageId, setPreviewImageId] = useState(null);
 
   useEffect(() => {
@@ -46,7 +50,7 @@ export default function RecipeImageSection({ recipe }) {
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 100vw, 60vw"
-            priority
+            priority={heroPriority}
           />
         </div>
       )}

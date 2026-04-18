@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import QueryProvider from "@/providers/QueryProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import BackendKeepalive from "@/components/BackendKeepalive";
 import Navbar from "@/components/UI/Nav/Navbar";
@@ -31,7 +32,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
           <BackendKeepalive />
           <div className="flex h-dvh max-h-dvh min-h-0 w-screen flex-col bg-neutral-800">
             <Suspense
@@ -46,7 +48,8 @@ export default function RootLayout({ children }) {
               <MobileBottomNav />
             </Suspense>
           </div>
-        </AuthProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

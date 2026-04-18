@@ -21,33 +21,36 @@ export function recipeListQueryString(params = {}) {
   return sp.toString();
 }
 
+/** @param {Record<string, unknown>} params */
+export async function fetchRecipesData(params = {}) {
+  const query = recipeListQueryString(params);
+  const url = query ? `${API_URL}/recipes/?${query}` : `${API_URL}/recipes/`;
+  const response = await apiFetch(url, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+  return response.json();
+}
+
 export const fetchRecipes = async (setRecipes, params = {}) => {
   try {
-    const query = recipeListQueryString(params);
-    const url = query ? `${API_URL}/recipes/?${query}` : `${API_URL}/recipes/`;
-    const response = await apiFetch(url, {
-      headers: { ...getAuthHeaders() },
-    });
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
+    const data = await fetchRecipesData(params);
     setRecipes(data);
   } catch (error) {
     console.error("Error fetching data:", error);
   }
 };
 
+/** @param {Record<string, unknown>} params */
+export async function fetchPersonalRecipesData(params = {}) {
+  return fetchRecipesData({ personal: "true", ...params });
+}
+
 export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
   try {
-    const query = recipeListQueryString({ personal: "true", ...params });
-    const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
-      headers: { ...getAuthHeaders() },
-    });
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
+    const data = await fetchPersonalRecipesData(params);
     setRecipes(data);
   } catch (error) {
     console.error("Error fetching personal recipes:", error);
@@ -56,46 +59,37 @@ export const fetchPersonalRecipes = async (setRecipes, params = {}) => {
 
 /** Returns current user's recipes (for pin picker, etc.) */
 export async function fetchPersonalRecipesList(params = {}) {
-  const query = recipeListQueryString({ personal: "true", ...params });
-  const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
-    headers: { ...getAuthHeaders() },
+  return fetchPersonalRecipesData(params);
+}
+
+/**
+ * @param {string|number} userId
+ * @param {Record<string, unknown>} params
+ */
+export async function fetchUserRecipesData(userId, params = {}) {
+  return fetchRecipesData({
+    owner_id: String(userId),
+    ...params,
   });
-  if (!response.ok) throw new Error("Failed to load recipes");
-  return response.json();
 }
 
 export const fetchUserRecipes = async (userId, setRecipes, params = {}) => {
   try {
-    const query = recipeListQueryString({
-      owner_id: String(userId),
-      ...params,
-    });
-    const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
-      headers: { ...getAuthHeaders() },
-    });
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
+    const data = await fetchUserRecipesData(userId, params);
     setRecipes(data);
   } catch (error) {
     console.error("Error fetching user recipes:", error);
   }
 };
 
+/** @param {Record<string, unknown>} params */
+export async function fetchLikedRecipesData(params = {}) {
+  return fetchRecipesData({ liked: "true", ...params });
+}
+
 export const fetchLikedRecipes = async (setRecipes, params = {}) => {
   try {
-    const query = recipeListQueryString({
-      liked: "true",
-      ...params,
-    });
-    const response = await apiFetch(`${API_URL}/recipes/?${query}`, {
-      headers: { ...getAuthHeaders() },
-    });
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
+    const data = await fetchLikedRecipesData(params);
     setRecipes(data);
   } catch (error) {
     console.error("Error fetching liked recipes:", error);

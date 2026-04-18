@@ -1,8 +1,9 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { fetchProfileByUserId } from "@/api/profiles";
-import AvatarName from "@/components/UI/Profile/AvatarName";
+import { useQuery } from "@tanstack/react-query"
+import { fetchProfileByUserId } from "@/api/profiles"
+import AvatarName from "@/components/UI/Profile/AvatarName"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Profile page header: loads profile data and shows avatar, name, @handle, bio.
@@ -10,35 +11,22 @@ import AvatarName from "@/components/UI/Profile/AvatarName";
  * @param {{ profileUserId: number }} props
  */
 export default function ProfileHeader({ profileUserId }) {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetchProfileByUserId(profileUserId)
-      .then((data) => {
-        if (!cancelled) setProfile(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError("Could not load profile");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [profileUserId]);
+  const {
+    data: profile,
+    isPending: loading,
+    isError,
+  } = useQuery({
+    queryKey: queryKeys.profiles.byUserId(profileUserId),
+    queryFn: () => fetchProfileByUserId(profileUserId),
+    staleTime: 2 * 60 * 1000,
+  })
 
   const displayLabel =
-    profile?.display_name?.trim() || profile?.username || "User";
+    profile?.display_name?.trim() || profile?.username || "User"
   const handleLine =
     profile?.username && profile?.display_name?.trim()
       ? profile.username
-      : null;
+      : null
 
   return (
     <div className="flex flex-col gap-4 px-4 py-8 text-neutral-100 lg:px-6 lg:pt-4">
@@ -47,12 +35,12 @@ export default function ProfileHeader({ profileUserId }) {
           Loading profile…
         </p>
       )}
-      {error && !loading && (
+      {isError && !loading && (
         <p className="text-lg text-red-300" role="alert">
-          {error}
+          Could not load profile
         </p>
       )}
-      {profile && !loading && !error && (
+      {profile && !loading && !isError && (
         <>
           <AvatarName
             size="lg"
@@ -70,5 +58,5 @@ export default function ProfileHeader({ profileUserId }) {
         </>
       )}
     </div>
-  );
+  )
 }

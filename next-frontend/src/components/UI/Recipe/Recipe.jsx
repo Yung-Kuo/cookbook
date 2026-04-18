@@ -146,10 +146,8 @@ function Recipe({
 
       {/* recipe content */}
       <div
-        className={`flex min-h-0 flex-col gap-12 px-4 text-xl lg:text-2xl ${
-          isPage
-            ? "overflow-visible pt-14 pb-8 lg:pt-14"
-            : "overflow-y-auto pt-18 pb-24 lg:pb-4"
+        className={`flex min-h-0 flex-col gap-12 px-4 pt-14 text-xl lg:text-2xl ${
+          isPage ? "overflow-visible pb-8" : "overflow-y-auto pb-24 lg:pb-4"
         }`}
       >
         {/* recipe title and cover */}
@@ -157,7 +155,7 @@ function Recipe({
           {/* cover and other images */}
           {/* hide when there's no image */}
           {selectedRecipe.images?.length > 0 && (
-            <RecipeImageSection recipe={selectedRecipe} />
+            <RecipeImageSection recipe={selectedRecipe} heroPriority={isPage} />
           )}
           {/* title, tags, description */}
           <div className="flex flex-col gap-4">

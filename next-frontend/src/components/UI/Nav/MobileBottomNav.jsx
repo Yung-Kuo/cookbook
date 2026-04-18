@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useAppNav } from "@/hooks/useAppNav";
+import { useUiStore } from "@/stores/uiStore";
 import { isNavLinkActive } from "@/lib/appNav";
 import NavGlobeIcon from "@/components/Icons/NavGlobeIcon";
 import NavUserIcon from "@/components/Icons/NavUserIcon";
@@ -13,7 +13,8 @@ import NavMoreSheet from "@/components/UI/Nav/NavMoreSheet";
 export default function MobileBottomNav() {
   const { pathname, personalHref, likedHref, user, isAuthenticated } =
     useAppNav();
-  const [moreOpen, setMoreOpen] = useState(false);
+  const moreOpen = useUiStore((s) => s.mobileMoreOpen);
+  const setMobileMoreOpen = useUiStore((s) => s.setMobileMoreOpen);
 
   if (pathname === "/login") {
     return null;
@@ -76,7 +77,10 @@ export default function MobileBottomNav() {
           )}
         </div>
       </nav>
-      <NavMoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
+      <NavMoreSheet
+        open={moreOpen}
+        onClose={() => setMobileMoreOpen(false)}
+      />
     </>
   );
 }

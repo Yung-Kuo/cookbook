@@ -1,10 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import RecipeListSearchBar from "@/components/UI/RecipeList/RecipeListSearchBar";
 import AddRecipeButton from "@/components/UI/Buttons/AddRecipeButton";
-import RecipeFormModal from "@/components/UI/Popups/RecipeFormModal";
 import { useAuth } from "@/context/AuthContext";
+
+const RecipeFormModal = dynamic(
+  () => import("@/components/UI/Popups/RecipeFormModal"),
+  { ssr: false },
+);
 
 export default function RecipeListPanel({
   recipeList,
@@ -41,11 +46,13 @@ export default function RecipeListPanel({
     else router.push(loginHref);
   };
 
+  const showModal = withModal && (isFormOpen || !!recipeToEdit);
+
   return (
     <>
-      {withModal && (
+      {showModal && (
         <RecipeFormModal
-          show={isFormOpen || !!recipeToEdit}
+          show
           onClose={handleCloseForm}
           onRecipeCreated={handleRecipeCreated}
           existingRecipe={recipeToEdit}

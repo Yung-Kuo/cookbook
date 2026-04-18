@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import RecipeForm from "../../Forms/RecipeForm";
-import { CloseButton } from "../Buttons/CloseButton";
+import RecipeForm from "../../Forms/RecipeForm"
+import { CloseButton } from "../Buttons/CloseButton"
 
 function RecipeFormModal({
   show,
@@ -11,11 +11,10 @@ function RecipeFormModal({
   onRecipeUpdated,
   onRecipeDeleted,
 }) {
+  if (!show) return null
+
   return (
-    <div
-      className={`fixed top-0 left-0 z-40 flex h-screen w-screen items-center justify-center overflow-hidden ${show ? "" : "hidden"}`}
-      aria-hidden={!show}
-    >
+    <div className="fixed top-0 left-0 z-40 flex h-screen w-screen items-center justify-center overflow-hidden">
       {/* mask */}
       <div
         onClick={onClose}
@@ -40,7 +39,7 @@ function RecipeFormModal({
         />
       </div>
     </div>
-  );
+  )
 }
 
-export default RecipeFormModal;
+export default RecipeFormModal

@@ -1,53 +1,24 @@
-"use client";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
+import { fetchTags } from "@/api/tags"
+import { queryKeys } from "@/lib/queryKeys"
+import PublicPageClient from "@/app/PublicPageClient"
 
-import { Suspense } from "react";
-import { useAppNav } from "@/hooks/useAppNav";
-import { useRecipeList } from "@/hooks/useRecipeList";
-import { fetchRecipes } from "@/api/recipes";
-import RecipeListPanel from "@/components/UI/RecipeList/RecipeListPanel";
-import Recipe from "@/components/UI/Recipe/Recipe";
-import SplitPageLayout from "@/components/UI/Layout/SplitPageLayout";
+export default async function HomePage() {
+  const queryClient = new QueryClient()
 
-function PublicPageContent() {
-  const { isAuthenticated, loginHref } = useAppNav();
-  const recipeList = useRecipeList({
-    fetchFn: fetchRecipes,
-    publicCatalogOnly: true,
-  });
+  try {
+    /** Do not prefetch public recipe lists here: the server has no auth token, so is_liked is always false and would hydrate the wrong viewer state for logged-in users. */
+    await queryClient.prefetchQuery({
+      queryKey: queryKeys.tags.list(),
+      queryFn: fetchTags,
+    })
+  } catch {
+    /* client-side Query will fetch */
+  }
 
   return (
-    <SplitPageLayout
-      leftPanel={
-        <RecipeListPanel
-          recipeList={recipeList}
-          isAuthenticated={isAuthenticated}
-          loginHref={loginHref}
-        >
-          {recipeList.recipeListItems}
-        </RecipeListPanel>
-      }
-      overlay={
-        recipeList.selectedRecipe != null ? (
-          <Recipe
-            selectedRecipe={recipeList.selectedRecipe}
-            onClose={() => recipeList.setSelectedRecipe(null)}
-            onEdit={() => recipeList.setRecipeToEdit(recipeList.selectedRecipe)}
-            onRecipeChange={recipeList.handleRecipeChange}
-          />
-        ) : null
-      }
-    />
-  );
-}
-
-export default function PublicPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="grid h-full min-h-0 w-full grid-cols-1 grid-rows-1 overflow-hidden bg-neutral-800" />
-      }
-    >
-      <PublicPageContent />
-    </Suspense>
-  );
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <PublicPageClient />
+    </HydrationBoundary>
+  )
 }

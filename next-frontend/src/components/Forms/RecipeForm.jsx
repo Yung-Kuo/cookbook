@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createRecipe,
   updateRecipe,
@@ -28,6 +29,7 @@ import AutoGrowTextarea from "@/components/inputs/AutoGrowTextarea";
 import RecipeFormPhotoItem from "./RecipeFormPhotoItem";
 import FormRadioOption from "@/components/inputs/FormRadioOption";
 import { useAuth } from "@/context/AuthContext";
+import { queryKeys } from "@/lib/queryKeys";
 
 const UNITS = [
   { id: 0, name: "g" },
@@ -171,6 +173,26 @@ function RecipeForm({
   onRecipeDeleted,
 }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const tagsQuery = useQuery({
+    queryKey: queryKeys.tags.list(),
+    queryFn: fetchTags,
+    staleTime: 30 * 60 * 1000,
+  });
+  const ingredientsQuery = useQuery({
+    queryKey: queryKeys.ingredients.list(),
+    queryFn: fetchIngredients,
+    staleTime: 30 * 60 * 1000,
+  });
+  const allTags = tagsQuery.data ?? [];
+  const ingredients = ingredientsQuery.data ?? [];
+  const loadingDropdowns =
+    tagsQuery.isPending || ingredientsQuery.isPending;
+  const dropdownError =
+    tagsQuery.isError || ingredientsQuery.isError
+      ? "Failed to load tags or ingredients."
+      : null;
 
   // ----------------------------------------------------
   // 1. Component State to hold form data
@@ -190,36 +212,6 @@ function RecipeForm({
     });
     setFormData({ ...EMPTY_FORM });
   };
-
-  // ----------------------------------------------------
-  // 2. State for dropdown data (Categories, Ingredients)
-  // ----------------------------------------------------
-  const [allTags, setAllTags] = useState([]);
-  const [ingredients, setIngredients] = useState([]);
-  const [loadingDropdowns, setLoadingDropdowns] = useState(true);
-  const [dropdownError, setDropdownError] = useState(null);
-
-  // ----------------------------------------------------
-  // 3. useEffect to fetch dropdown data on component mount
-  // ----------------------------------------------------
-  useEffect(() => {
-    const loadDropdownData = async () => {
-      try {
-        const fetchedTags = await fetchTags();
-        setAllTags(fetchedTags);
-
-        const fetchedIngredients = await fetchIngredients();
-        setIngredients(fetchedIngredients);
-      } catch (err) {
-        setDropdownError("Failed to load tags or ingredients.");
-        console.error("Error loading dropdown data:", err);
-      } finally {
-        setLoadingDropdowns(false);
-      }
-    };
-
-    loadDropdownData();
-  }, []);
 
   useEffect(() => {
     if (existingRecipe) {
@@ -446,7 +438,10 @@ function RecipeForm({
         } else if (t.name?.trim()) {
           const created = await createTag({ name: t.name.trim() });
           resolved.push(created.id);
-          setAllTags((prev) => [...prev, created]);
+          queryClient.setQueryData(queryKeys.tags.list(), (prev) => [
+            ...(prev ?? []),
+            created,
+          ]);
         }
       }
       tagIds = [...new Set(resolved)];
@@ -467,6 +462,13 @@ function RecipeForm({
             createIngredient({ name: ri.ingredient.name }),
           ),
         );
+        createdIngredients.forEach((ing) => {
+          queryClient.setQueryData(queryKeys.ingredients.list(), (prev) => {
+            const list = prev ?? [];
+            if (list.some((x) => x.id === ing.id)) return list;
+            return [...list, ing];
+          });
+        });
         const nameToIngredient = {};
         createdIngredients.forEach((ingredient) => {
           nameToIngredient[ingredient.name] = ingredient;
@@ -636,6 +638,22 @@ function RecipeForm({
     onRecipeDeleted?.(existingRecipe.id);
     onClose();
   };
+
+  if (loadingDropdowns) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-8 text-2xl text-neutral-400">
+        Loading form…
+      </div>
+    );
+  }
+
+  if (dropdownError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-8 text-center text-2xl text-red-300">
+        <p>{dropdownError}</p>
+      </div>
+    );
+  }
 
   return (
     <form
