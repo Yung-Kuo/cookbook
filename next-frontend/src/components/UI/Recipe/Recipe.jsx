@@ -12,6 +12,7 @@ import AvatarName from "@/components/UI/Profile/AvatarName";
 import RecipeNavBackButton from "@/components/UI/Recipe/RecipeNavBackButton";
 import RecipeShareButton from "@/components/UI/Recipe/RecipeShareButton";
 import { useAppNav } from "@/hooks/useAppNav";
+import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes";
 
 function PrintIcon({ className }) {
   return (
@@ -146,17 +147,19 @@ function Recipe({
 
       {/* recipe content */}
       <div
-        className={`flex min-h-0 flex-col gap-12 px-4 pt-14 text-xl lg:text-2xl ${
+        className={`flex min-h-0 flex-col gap-12 px-4 text-xl lg:pt-14 lg:text-2xl ${
           isPage ? "overflow-visible pb-8" : "overflow-y-auto pb-24 lg:pb-4"
         }`}
       >
-        {/* recipe title and cover */}
-        <div className="flex flex-col gap-12">
-          {/* cover and other images */}
-          {/* hide when there's no image */}
-          {selectedRecipe.images?.length > 0 && (
-            <RecipeImageSection recipe={selectedRecipe} heroPriority={isPage} />
-          )}
+        {/* cover and other images */}
+        {/* hide when there's no image */}
+        {selectedRecipe.images?.length > 0 && (
+          <RecipeImageSection recipe={selectedRecipe} heroPriority={isPage} />
+        )}
+        {/* title, tags, description */}
+        <div
+          className={`flex flex-col gap-12 ${selectedRecipe.images?.length > 0 ? "" : "mt-12"}`}
+        >
           {/* title, tags, description */}
           <div className="flex flex-col gap-4">
             {/* title */}
@@ -166,7 +169,7 @@ function Recipe({
               </h1>
             ) : (
               <Link
-                href={`/users/${selectedRecipe.owner_id ?? "_"}/recipes/${selectedRecipe.id}`}
+                href={`/users/${selectedRecipe.owner_id ?? 0}/recipes/${selectedRecipe.id}`}
               >
                 <h1 className="text-6xl break-words whitespace-pre-wrap transition-colors hover:text-red-300 lg:text-8xl">
                   {selectedRecipe.title}
@@ -204,7 +207,7 @@ function Recipe({
         </div>
         {/* action buttons (like, collection, share, print). Page view hides this row at lg+ (RecipeActionPanel). Overlay has no side rail — show at all breakpoints. */}
         <div
-          className={`flex flex-wrap items-center justify-end gap-4 lg:justify-between ${isPage ? "lg:hidden" : ""}`}
+          className={`flex flex-wrap items-center justify-end gap-8 lg:justify-between ${isPage ? "lg:hidden" : ""}`}
           data-recipe-social-actions=""
         >
           {/* like and collection buttons */}

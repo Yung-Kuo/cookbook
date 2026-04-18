@@ -10,6 +10,7 @@ import CardGridSection from "@/components/UI/Sections/CardGridSection"
 import BackArrowIcon from "@/components/Icons/BackArrowIcon"
 import { useAuth } from "@/context/AuthContext"
 import { queryKeys } from "@/lib/queryKeys"
+import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes"
 
 export default function CollectionDetailPageClient() {
   const { userId, collectionId } = useParams()
@@ -90,12 +91,17 @@ export default function CollectionDetailPageClient() {
             const key = `${entry.recipe_id}-${entry.added_at}`
             if (entry.is_available && entry.recipe) {
               const r = entry.recipe
-              const ownerId = r.owner_id ?? uid
+              const ownerForHref =
+                r.owner_id != null
+                  ? r.owner_id
+                  : r.owner_id === null
+                    ? OWNERLESS_RECIPE_USER_SEGMENT
+                    : uid
               return (
                 <li key={key}>
                   <RecipeCard
                     recipe={r}
-                    href={`/users/${ownerId}/recipes/${r.id}`}
+                    href={`/users/${ownerForHref}/recipes/${r.id}`}
                   />
                 </li>
               )

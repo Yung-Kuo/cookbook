@@ -6,6 +6,7 @@ import PinnedRecipeCard from "@/components/UI/Cards/PinnedRecipeCard"
 import PinPickerModal from "@/components/UI/Popups/PinPickerModal"
 import AddButton from "@/components/UI/Buttons/AddButton"
 import CardGridSection from "@/components/UI/Sections/CardGridSection"
+import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes"
 import { fetchPinnedRecipes, unpinRecipe } from "@/api/pinned"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -93,7 +94,12 @@ export default function PinnedSection({
         {pinnedRows.map((row) => {
           const r = row.recipe
           if (!r) return null
-          const ownerId = r.owner_id ?? profileUserId
+          const ownerForHref =
+            r.owner_id != null
+              ? r.owner_id
+              : r.owner_id === null
+                ? OWNERLESS_RECIPE_USER_SEGMENT
+                : profileUserId
           return (
             <li key={r.id}>
               <PinnedRecipeCard
@@ -103,7 +109,7 @@ export default function PinnedSection({
                 onUnpin={isOwner ? handleUnpinRecipe : undefined}
                 {...(onRecipeOpen
                   ? { onClick: () => onRecipeOpen(r) }
-                  : { href: `/users/${ownerId}/recipes/${r.id}` })}
+                  : { href: `/users/${ownerForHref}/recipes/${r.id}` })}
               />
             </li>
           )

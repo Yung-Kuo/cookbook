@@ -20,6 +20,7 @@ import {
 import { fetchTags } from "@/api/tags"
 import { useAuth } from "@/context/AuthContext"
 import { queryKeys } from "@/lib/queryKeys"
+import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes"
 
 /**
  * @param {import('@/lib/queryKeys').RecipeListFilters} filters
@@ -260,10 +261,14 @@ export function useRecipeList({
       const isDesktop =
         typeof window !== "undefined" &&
         window.matchMedia("(min-width: 1024px)").matches
-      const ownerForNav =
+      const ownerFromRecipeOrListContext =
         recipe.owner_id != null ? recipe.owner_id : ownerUserId ?? null
-      if (!isDesktop && ownerForNav != null) {
-        router.push(`/users/${ownerForNav}/recipes/${recipe.id}`)
+      const userIdForRecipeUrl =
+        ownerFromRecipeOrListContext != null
+          ? ownerFromRecipeOrListContext
+          : OWNERLESS_RECIPE_USER_SEGMENT
+      if (!isDesktop) {
+        router.push(`/users/${userIdForRecipeUrl}/recipes/${recipe.id}`)
         return
       }
       if (selectedRecipe?.id === recipe.id) {

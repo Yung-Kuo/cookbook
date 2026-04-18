@@ -14,6 +14,7 @@ import RecipeNavBackButton from "@/components/UI/Recipe/RecipeNavBackButton"
 import { useAuth } from "@/context/AuthContext"
 import { useAppNav } from "@/hooks/useAppNav"
 import { queryKeys } from "@/lib/queryKeys"
+import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes"
 import "./recipe-detail-print.css"
 
 const RecipeFormModal = dynamic(
@@ -81,7 +82,9 @@ export default function RecipeDetailPageClient() {
 
   const handleRecipeDeleted = useCallback(() => {
     setRecipeToEdit(null)
-    router.push(`/users/${uid}`)
+    const uidNum = Number(uid)
+    if (uidNum === 0) router.push("/")
+    else router.push(`/users/${uid}`)
   }, [router, uid])
 
   const ownerLabel =
@@ -90,12 +93,15 @@ export default function RecipeDetailPageClient() {
   const isOwnRecipe =
     user?.pk != null && recipe?.owner_id != null && user.pk === recipe.owner_id
 
+  const backFromDetailHref =
+    uid === OWNERLESS_RECIPE_USER_SEGMENT ? "/" : `/users/${uid}`
+
   if (isError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-800 text-neutral-100">
         <p className="text-2xl">Recipe not found</p>
         <RoundedButton
-          href={`/users/${uid}`}
+          href={backFromDetailHref}
           className="cursor-pointer bg-neutral-700 text-neutral-100 hover:bg-neutral-600"
         >
           Back to Recipes
