@@ -260,8 +260,10 @@ export function useRecipeList({
       const isDesktop =
         typeof window !== "undefined" &&
         window.matchMedia("(min-width: 1024px)").matches
-      if (!isDesktop && recipe.owner_id != null) {
-        router.push(`/users/${recipe.owner_id}/recipes/${recipe.id}`)
+      const ownerForNav =
+        recipe.owner_id != null ? recipe.owner_id : ownerUserId ?? null
+      if (!isDesktop && ownerForNav != null) {
+        router.push(`/users/${ownerForNav}/recipes/${recipe.id}`)
         return
       }
       if (selectedRecipe?.id === recipe.id) {
@@ -270,7 +272,7 @@ export function useRecipeList({
       }
       setSelectedRecipe(recipe)
     },
-    [selectedRecipe?.id, router],
+    [selectedRecipe?.id, router, ownerUserId],
   )
 
   const recipeListItems = useMemo(

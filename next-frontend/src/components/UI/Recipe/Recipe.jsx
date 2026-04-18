@@ -202,9 +202,9 @@ function Recipe({
             )}
           </div>
         </div>
-        {/* action buttons (like, collection, share, print) */}
+        {/* action buttons (like, collection, share, print). Page view hides this row at lg+ (RecipeActionPanel). Overlay has no side rail — show at all breakpoints. */}
         <div
-          className="flex flex-wrap items-center justify-end gap-4 lg:hidden"
+          className={`flex flex-wrap items-center justify-end gap-4 lg:justify-between ${isPage ? "lg:hidden" : ""}`}
           data-recipe-social-actions=""
         >
           {/* like and collection buttons */}
