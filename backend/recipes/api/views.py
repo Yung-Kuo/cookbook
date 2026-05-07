@@ -44,11 +44,14 @@ class TagViewSet(ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    http_method_names = ['get', 'post', 'head', 'options']
 
 
 class IngredientViewSet(ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    http_method_names = ['get', 'post', 'head', 'options']
 
 
 class UserProfileViewSet(GenericViewSet):
