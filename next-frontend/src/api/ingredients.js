@@ -1,4 +1,5 @@
 import { apiFetch } from "@/api/client";
+import { getAuthHeaders } from "@/api/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -26,6 +27,7 @@ export const createIngredient = async (ingredientData) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(ingredientData),
       },
