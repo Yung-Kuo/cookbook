@@ -1,7 +1,12 @@
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    BasePermission,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+    SAFE_METHODS,
+)
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from django.db.models import (
@@ -46,9 +51,21 @@ class TagViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
+class IngredientPermission(BasePermission):
+    """Allow shared ingredient creation, but keep destructive edits staff-only."""
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.method == "POST":
+            return request.user and request.user.is_authenticated
+        return request.user and request.user.is_staff
+
+
 class IngredientViewSet(ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    permission_classes = [IngredientPermission]
 
 
 class UserProfileViewSet(GenericViewSet):
