@@ -278,7 +278,12 @@ class RecipeViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        recipe = self.get_queryset().get(pk=serializer.instance.pk)
+        recipe = (
+            self._annotate_likes(Recipe.objects.filter(pk=serializer.instance.pk))
+            .select_related('owner', 'owner__profile')
+            .prefetch_related('images', 'tags')
+            .get()
+        )
         read_serializer = RecipeSerializer(recipe, context={'request': request})
         headers = self.get_success_headers(read_serializer.data)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)

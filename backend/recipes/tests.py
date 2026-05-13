@@ -86,6 +86,32 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(ids, {self.only_a.id, self.both.id})
 
 
+class RecipeCreateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="private-chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_authenticated_user_can_create_private_recipe(self):
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private Recipe",
+                "is_public": False,
+                "recipe_instructions": [
+                    {"text": "Keep it secret.", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(res.data["is_public"])
+        recipe = Recipe.objects.get(pk=res.data["id"])
+        self.assertEqual(recipe.owner, self.user)
+        self.assertFalse(recipe.is_public)
+
+
 class OwnerlessRecipePermissionTests(APITestCase):
     """Template/seed recipes without owners must not be user-editable."""
 
