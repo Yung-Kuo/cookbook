@@ -28,9 +28,10 @@ export default function PinnedSection({
 }) {
   const queryClient = useQueryClient()
   const [pinPickerOpen, setPinPickerOpen] = useState(false)
+  const viewerKey = isOwner ? "owner" : "public"
 
   const { data: pinnedRows = [], isPending: pinnedLoading } = useQuery({
-    queryKey: queryKeys.pinned.byUserId(profileUserId),
+    queryKey: queryKeys.pinned.byUserId(profileUserId, viewerKey),
     queryFn: () => fetchPinnedRecipes(profileUserId),
     enabled: isActive,
     staleTime: 30 * 1000,
@@ -38,9 +39,9 @@ export default function PinnedSection({
 
   const refreshPinned = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.pinned.byUserId(profileUserId),
+      queryKey: queryKeys.pinned.byUserId(profileUserId, viewerKey),
     })
-  }, [queryClient, profileUserId])
+  }, [queryClient, profileUserId, viewerKey])
 
   const unpinMutation = useMutation({
     mutationFn: (recipeId) => unpinRecipe(recipeId),

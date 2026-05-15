@@ -16,7 +16,11 @@ export default function CollectionDetailPageClient() {
   const { userId, collectionId } = useParams()
   const uid = Array.isArray(userId) ? userId[0] : userId
   const cid = Array.isArray(collectionId) ? collectionId[0] : collectionId
-  const { loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const viewerKey =
+    user?.pk != null && String(user.pk) === String(uid)
+      ? "owner"
+      : "public"
 
   const {
     data: collection,
@@ -24,7 +28,7 @@ export default function CollectionDetailPageClient() {
     isPending,
     error,
   } = useQuery({
-    queryKey: queryKeys.collections.detail(cid),
+    queryKey: queryKeys.collections.detail(cid, viewerKey),
     queryFn: () => fetchCollectionById(cid),
     enabled: !authLoading && Boolean(cid),
   })

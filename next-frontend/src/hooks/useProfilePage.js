@@ -33,6 +33,7 @@ export function useProfilePage(profileUserId) {
   const { loginHref } = useAppNav()
 
   const isOwnProfile = isAuthenticated && user?.pk === Number(profileUserId)
+  const ownerScopedViewer = isOwnProfile ? "owner" : "public"
 
   const tabParam = searchParams.get("tab")
   const activeTab = useMemo(() => normalizeTab(tabParam), [tabParam])
@@ -54,9 +55,9 @@ export function useProfilePage(profileUserId) {
 
   const bumpPinned = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.pinned.byUserId(profileUserId),
+      queryKey: queryKeys.pinned.byUserId(profileUserId, ownerScopedViewer),
     })
-  }, [queryClient, profileUserId])
+  }, [queryClient, profileUserId, ownerScopedViewer])
 
   const recipeList = useRecipeList({
     listScope: isOwnProfile ? "personal" : "user",
