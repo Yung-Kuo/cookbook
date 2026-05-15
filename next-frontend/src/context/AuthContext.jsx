@@ -23,14 +23,22 @@ export function AuthProvider({ children }) {
   const socialLogin = useCallback(
     async (provider, code) => {
       await apiSocialLogin(provider, code)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
+      await queryClient.cancelQueries()
+      queryClient.clear()
+      const currentUser = await fetchCurrentUser()
+      queryClient.setQueryData(queryKeys.auth.me(), currentUser)
     },
     [queryClient],
   )
 
   const logout = useCallback(async () => {
-    await apiLogout()
-    queryClient.setQueryData(queryKeys.auth.me(), null)
+    try {
+      await apiLogout()
+    } finally {
+      await queryClient.cancelQueries()
+      queryClient.clear()
+      queryClient.setQueryData(queryKeys.auth.me(), null)
+    }
   }, [queryClient])
 
   const value = {

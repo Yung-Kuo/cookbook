@@ -31,9 +31,10 @@ export default function CollectionsSection({
   const [newCollectionOpen, setNewCollectionOpen] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState("")
   const coverInputRefs = useRef({})
+  const viewerKey = isOwner ? "owner" : "public"
 
   const { data: collections = [], isPending: collectionsLoading } = useQuery({
-    queryKey: queryKeys.collections.byUserId(profileUserId),
+    queryKey: queryKeys.collections.byUserId(profileUserId, viewerKey),
     queryFn: () => fetchUserCollections(profileUserId),
     enabled: isActive,
     staleTime: 30 * 1000,
@@ -41,7 +42,7 @@ export default function CollectionsSection({
 
   const invalidateCollections = () => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.collections.byUserId(profileUserId),
+      queryKey: queryKeys.collections.byUserId(profileUserId, viewerKey),
     })
   }
 
@@ -51,7 +52,7 @@ export default function CollectionsSection({
     try {
       const updated = await toggleCollectionVisibility(collectionId)
       queryClient.setQueryData(
-        queryKeys.collections.byUserId(profileUserId),
+        queryKeys.collections.byUserId(profileUserId, viewerKey),
         (prev) =>
           (prev ?? []).map((col) =>
             col.id === collectionId ? { ...col, ...updated } : col,
@@ -67,7 +68,7 @@ export default function CollectionsSection({
     try {
       const updated = await uploadCollectionCover(collectionId, file)
       queryClient.setQueryData(
-        queryKeys.collections.byUserId(profileUserId),
+        queryKeys.collections.byUserId(profileUserId, viewerKey),
         (prev) =>
           (prev ?? []).map((c) =>
             c.id === collectionId ? { ...c, ...updated } : c,

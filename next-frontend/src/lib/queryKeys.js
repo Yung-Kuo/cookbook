@@ -1,7 +1,7 @@
 /**
  * Canonical TanStack Query keys. Keep filters JSON-serializable and stable.
  *
- * @typedef {{ scope: string, ownerUserId: number | null, search: string, tagIds: number[], viewer?: 'auth' | 'anon' }} RecipeListFilters
+ * @typedef {{ scope: string, ownerUserId: number | null, search: string, tagIds: number[], viewer?: string }} RecipeListFilters
  */
 
 /** @param {number[] | undefined} ids */
@@ -35,8 +35,13 @@ export const queryKeys = {
     ],
     /**
      * @param {string|number|undefined|null} id
+     * @param {string} [viewer]
      */
-    detail: (id) => ["recipes", "detail", id],
+    detail: (id, viewer = "anon") => ["recipes", "detail", id, { viewer }],
+    /**
+     * @param {string|number|undefined|null} id
+     */
+    detailRoot: (id) => ["recipes", "detail", id],
   },
   tags: {
     all: () => ["tags"],
@@ -57,22 +62,46 @@ export const queryKeys = {
     all: () => ["pinned"],
     /**
      * @param {string|number} userId
+     * @param {string} [viewer]
      */
-    byUserId: (userId) => ["pinned", "byUserId", userId],
+    byUserId: (userId, viewer = "public") => [
+      "pinned",
+      "byUserId",
+      userId,
+      { viewer },
+    ],
   },
   collections: {
     all: () => ["collections"],
     /**
      * @param {string|number} userId
+     * @param {string} [viewer]
      */
-    byUserId: (userId) => ["collections", "byUserId", userId],
+    byUserId: (userId, viewer = "public") => [
+      "collections",
+      "byUserId",
+      userId,
+      { viewer },
+    ],
     /**
      * @param {string|number} id
+     * @param {string} [viewer]
      */
-    detail: (id) => ["collections", "detail", id],
+    detail: (id, viewer = "public") => [
+      "collections",
+      "detail",
+      id,
+      { viewer },
+    ],
     /**
      * @param {string|number|undefined|null} recipeId
+     * @param {string} [viewer]
      */
-    forRecipe: (recipeId) => ["collections", "forRecipe", recipeId],
+    forRecipe: (recipeId, viewer = "anon") => [
+      "collections",
+      "forRecipe",
+      recipeId,
+      { viewer },
+    ],
   },
 }

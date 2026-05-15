@@ -51,13 +51,15 @@ export default function RecipeDetailPageClient() {
   const [recipeToEdit, setRecipeToEdit] = useState(null)
 
   const rawId = Array.isArray(id) ? id[0] : id
+  const viewerKey =
+    isAuthenticated && user?.pk != null ? `user:${user.pk}` : "anon"
 
   const {
     data: recipe,
     isError,
     isPending,
   } = useQuery({
-    queryKey: queryKeys.recipes.detail(rawId),
+    queryKey: queryKeys.recipes.detail(rawId, viewerKey),
     queryFn: () => fetchRecipeById(rawId),
     enabled: Boolean(rawId),
   })
@@ -65,19 +67,23 @@ export default function RecipeDetailPageClient() {
   const patchRecipe = useCallback(
     (patch) => {
       if (!recipe?.id) return
-      queryClient.setQueryData(queryKeys.recipes.detail(recipe.id), (prev) =>
-        prev ? { ...prev, ...patch } : prev,
+      queryClient.setQueryData(
+        queryKeys.recipes.detail(recipe.id, viewerKey),
+        (prev) => (prev ? { ...prev, ...patch } : prev),
       )
     },
-    [queryClient, recipe?.id],
+    [queryClient, recipe?.id, viewerKey],
   )
 
   const handleRecipeUpdated = useCallback(
     (updated) => {
-      queryClient.setQueryData(queryKeys.recipes.detail(updated.id), updated)
+      queryClient.setQueryData(
+        queryKeys.recipes.detail(updated.id, viewerKey),
+        updated,
+      )
       setRecipeToEdit(null)
     },
-    [queryClient],
+    [queryClient, viewerKey],
   )
 
   const handleRecipeDeleted = useCallback(() => {

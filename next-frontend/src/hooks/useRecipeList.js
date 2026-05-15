@@ -92,7 +92,7 @@ export function useRecipeList({
   onAfterRecipeUpdated,
   onAfterRecipeDeleted,
 }) {
-  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const queryClient = useQueryClient()
   const router = useRouter()
 
@@ -118,7 +118,9 @@ export function useRecipeList({
   )
 
   const viewerKey =
-    !authLoading && isAuthenticated ? "auth" : "anon"
+    !authLoading && isAuthenticated && user?.pk != null
+      ? `user:${user.pk}`
+      : "anon"
 
   const listFilters = useMemo(
     () => ({
@@ -155,24 +157,36 @@ export function useRecipeList({
   })
 
   const overlayId = selectedRecipe?.id
+  const canUseSelectedRecipe =
+    selectedRecipe?.is_public !== false ||
+    (isAuthenticated &&
+      user?.pk != null &&
+      selectedRecipe?.owner_id === user.pk)
   const { data: detailRecipe } = useQuery({
-    queryKey: queryKeys.recipes.detail(overlayId),
+    queryKey: queryKeys.recipes.detail(overlayId, viewerKey),
     queryFn: () => fetchRecipeById(overlayId),
     enabled: Boolean(overlayId),
-    placeholderData: selectedRecipe ?? undefined,
+    placeholderData: canUseSelectedRecipe
+      ? (selectedRecipe ?? undefined)
+      : undefined,
   })
 
   const selectedRecipeForUi = useMemo(() => {
     if (!selectedRecipe?.id) return null
+    if (!canUseSelectedRecipe) return null
     if (detailRecipe?.id === selectedRecipe.id) return detailRecipe
     return selectedRecipe
-  }, [selectedRecipe, detailRecipe])
+  }, [selectedRecipe, detailRecipe, canUseSelectedRecipe])
 
   useEffect(() => {
-    if (!isAuthenticated && selectedRecipe?.is_public === false) {
+    if (selectedRecipe?.is_public === false && !canUseSelectedRecipe) {
       setSelectedRecipe(null)
     }
-  }, [isAuthenticated, selectedRecipe?.is_public, selectedRecipe?.id])
+  }, [
+    canUseSelectedRecipe,
+    selectedRecipe?.is_public,
+    selectedRecipe?.id,
+  ])
 
   const patchListCache = useCallback(
     (updater) => {
@@ -201,14 +215,15 @@ export function useRecipeList({
       patchListCache((prev) =>
         (prev ?? []).map((r) => (r.id === patch.id ? { ...r, ...patch } : r)),
       )
-      queryClient.setQueryData(queryKeys.recipes.detail(patch.id), (prev) =>
-        prev?.id === patch.id ? { ...prev, ...patch } : prev,
+      queryClient.setQueryData(
+        queryKeys.recipes.detail(patch.id, viewerKey),
+        (prev) => (prev?.id === patch.id ? { ...prev, ...patch } : prev),
       )
       setSelectedRecipe((prev) =>
         prev?.id === patch.id ? { ...prev, ...patch } : prev,
       )
     },
-    [patchListCache, queryClient],
+    [patchListCache, queryClient, viewerKey],
   )
 
   const handleRecipeCreated = useCallback(
@@ -225,17 +240,22 @@ export function useRecipeList({
       patchListCache((prev) =>
         (prev ?? []).map((r) => (r.id === updated.id ? updated : r)),
       )
-      queryClient.setQueryData(queryKeys.recipes.detail(updated.id), updated)
+      queryClient.setQueryData(
+        queryKeys.recipes.detail(updated.id, viewerKey),
+        updated,
+      )
       setSelectedRecipe((prev) => (prev?.id === updated.id ? updated : prev))
       onAfterRecipeUpdated?.(updated)
     },
-    [patchListCache, queryClient, onAfterRecipeUpdated],
+    [patchListCache, queryClient, onAfterRecipeUpdated, viewerKey],
   )
 
   const handleRecipeDeleted = useCallback(
     (recipeId) => {
       patchListCache((prev) => (prev ?? []).filter((r) => r.id !== recipeId))
-      queryClient.removeQueries({ queryKey: queryKeys.recipes.detail(recipeId) })
+      queryClient.removeQueries({
+        queryKey: queryKeys.recipes.detailRoot(recipeId),
+      })
       setSelectedRecipe((prev) => (prev?.id === recipeId ? null : prev))
       setRecipeToEdit((prev) => (prev?.id === recipeId ? null : prev))
       setFormOpen(false)
