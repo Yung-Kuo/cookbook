@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Ingredient, Like, Recipe, Tag
 
 User = get_user_model()
 
@@ -84,3 +84,85 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipePermissionRegressionTests(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass")
+        self.other = User.objects.create_user(username="other", password="pass")
+        self.owner_token = Token.objects.create(user=self.owner)
+        self.other_token = Token.objects.create(user=self.other)
+
+    def auth_as(self, user):
+        token = self.owner_token if user == self.owner else self.other_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_private_recipe_create_returns_created_recipe(self):
+        self.auth_as(self.owner)
+
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private draft",
+                "description": "hidden",
+                "is_public": False,
+                "recipe_instructions": [
+                    {"text": "Keep private", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "Private draft")
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.owner.id)
+
+    def test_ownerless_recipe_cannot_be_updated_or_deleted_by_authenticated_user(self):
+        recipe = Recipe.objects.create(title="Template recipe", owner=None, is_public=True)
+        self.auth_as(self.other)
+
+        patch_res = self.client.patch(
+            f"/api/recipes/{recipe.id}/",
+            {"title": "Vandalized"},
+            format="json",
+        )
+        delete_res = self.client.delete(f"/api/recipes/{recipe.id}/")
+
+        self.assertEqual(patch_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(delete_res.status_code, status.HTTP_403_FORBIDDEN)
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, "Template recipe")
+
+    def test_owner_can_like_own_private_recipe(self):
+        recipe = Recipe.objects.create(
+            title="Private favorite",
+            owner=self.owner,
+            is_public=False,
+        )
+        self.auth_as(self.owner)
+
+        res = self.client.post(f"/api/recipes/{recipe.id}/like/")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["liked"])
+        self.assertEqual(res.data["like_count"], 1)
+
+
+class TaxonomyPermissionRegressionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="taxonomist", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def test_tags_and_ingredients_cannot_be_deleted(self):
+        tag = Tag.objects.create(name="irreplaceable")
+        ingredient = Ingredient.objects.create(name="flour")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        tag_res = self.client.delete(f"/api/tags/{tag.id}/")
+        ingredient_res = self.client.delete(f"/api/ingredients/{ingredient.id}/")
+
+        self.assertEqual(tag_res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(ingredient_res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(Tag.objects.filter(pk=tag.pk).exists())
+        self.assertTrue(Ingredient.objects.filter(pk=ingredient.pk).exists())
