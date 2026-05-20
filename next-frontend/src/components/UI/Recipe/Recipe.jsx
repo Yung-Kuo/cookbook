@@ -76,6 +76,10 @@ function Recipe({
     selectedRecipe.owner_display_name?.trim() ||
     selectedRecipe.owner_username ||
     "Author";
+  const detailOwnerSegment =
+    selectedRecipe.owner_id != null
+      ? selectedRecipe.owner_id
+      : OWNERLESS_RECIPE_USER_SEGMENT;
 
   const rootClass = isPage
     ? `${className ?? ""} relative flex min-h-0 w-full flex-col bg-neutral-900`.trim()
@@ -169,7 +173,7 @@ function Recipe({
               </h1>
             ) : (
               <Link
-                href={`/users/${selectedRecipe.owner_id ?? 0}/recipes/${selectedRecipe.id}`}
+                href={`/users/${detailOwnerSegment}/recipes/${selectedRecipe.id}`}
               >
                 <h1 className="text-6xl break-words whitespace-pre-wrap transition-colors hover:text-red-300 lg:text-8xl">
                   {selectedRecipe.title}

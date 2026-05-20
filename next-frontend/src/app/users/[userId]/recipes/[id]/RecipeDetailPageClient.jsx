@@ -80,13 +80,6 @@ export default function RecipeDetailPageClient() {
     [queryClient],
   )
 
-  const handleRecipeDeleted = useCallback(() => {
-    setRecipeToEdit(null)
-    const uidNum = Number(uid)
-    if (uidNum === 0) router.push("/")
-    else router.push(`/users/${uid}`)
-  }, [router, uid])
-
   const ownerLabel =
     recipe?.owner_display_name?.trim() || recipe?.owner_username || "Author"
 
@@ -95,6 +88,16 @@ export default function RecipeDetailPageClient() {
 
   const backFromDetailHref =
     uid === OWNERLESS_RECIPE_USER_SEGMENT ? "/" : `/users/${uid}`
+
+  const handleRecipeDeleted = useCallback(() => {
+    setRecipeToEdit(null)
+    if (rawId) {
+      queryClient.removeQueries({ queryKey: queryKeys.recipes.detail(rawId) })
+    }
+    queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all() })
+    queryClient.invalidateQueries({ queryKey: queryKeys.pinned.all() })
+    router.push(backFromDetailHref)
+  }, [backFromDetailHref, queryClient, rawId, router])
 
   if (isError) {
     return (

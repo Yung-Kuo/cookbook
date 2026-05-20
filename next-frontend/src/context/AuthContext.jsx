@@ -31,6 +31,9 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await apiLogout()
     queryClient.setQueryData(queryKeys.auth.me(), null)
+    queryClient.removeQueries({ queryKey: queryKeys.recipes.all() })
+    queryClient.removeQueries({ queryKey: queryKeys.collections.all() })
+    queryClient.removeQueries({ queryKey: queryKeys.pinned.all() })
   }, [queryClient])
 
   const value = {

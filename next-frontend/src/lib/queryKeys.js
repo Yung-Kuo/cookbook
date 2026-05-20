@@ -10,6 +10,10 @@ function sortedTagIds(ids) {
   return [...ids].sort((a, b) => a - b)
 }
 
+function stableId(id) {
+  return id == null ? id : String(id)
+}
+
 export const queryKeys = {
   auth: {
     all: () => ["auth"],
@@ -36,7 +40,7 @@ export const queryKeys = {
     /**
      * @param {string|number|undefined|null} id
      */
-    detail: (id) => ["recipes", "detail", id],
+    detail: (id) => ["recipes", "detail", stableId(id)],
   },
   tags: {
     all: () => ["tags"],
