@@ -8,6 +8,7 @@ import AddButton from "@/components/UI/Buttons/AddButton"
 import CardGridSection from "@/components/UI/Sections/CardGridSection"
 import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes"
 import { fetchPinnedRecipes, unpinRecipe } from "@/api/pinned"
+import { useAuth } from "@/context/AuthContext"
 import { queryKeys } from "@/lib/queryKeys"
 import type { PinnedRecipeSummary, Recipe } from "@/types"
 
@@ -33,12 +34,13 @@ export default function PinnedSection({
 }: PinnedSectionProps) {
   const queryClient = useQueryClient()
   const [pinPickerOpen, setPinPickerOpen] = useState(false)
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const viewerScope = useMemo(
     () =>
-      isOwner
-        ? { viewer: "auth" as const, viewerUserId: Number(profileUserId) }
+      !authLoading && isAuthenticated
+        ? { viewer: "auth" as const, viewerUserId: user?.pk ?? null }
         : { viewer: "anon" as const, viewerUserId: null },
-    [isOwner, profileUserId],
+    [authLoading, isAuthenticated, user?.pk],
   )
   const pinnedQueryKey = useMemo(
     () => queryKeys.pinned.byUserId(profileUserId, viewerScope),
@@ -48,7 +50,7 @@ export default function PinnedSection({
   const { data: pinnedRows = [], isPending: pinnedLoading } = useQuery({
     queryKey: pinnedQueryKey,
     queryFn: () => fetchPinnedRecipes(profileUserId),
-    enabled: isActive,
+    enabled: isActive && !authLoading,
     staleTime: 30 * 1000,
   })
 

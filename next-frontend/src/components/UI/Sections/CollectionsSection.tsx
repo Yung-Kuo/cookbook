@@ -12,6 +12,7 @@ import {
   uploadCollectionCover,
   createCollection,
 } from "@/api/collections"
+import { useAuth } from "@/context/AuthContext"
 import { queryKeys } from "@/lib/queryKeys"
 import type { CollectionListItem } from "@/types"
 
@@ -32,12 +33,13 @@ export default function CollectionsSection({
   const [newCollectionOpen, setNewCollectionOpen] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState("")
   const coverInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const viewerScope = useMemo(
     () =>
-      isOwner
-        ? { viewer: "auth" as const, viewerUserId: Number(profileUserId) }
+      !authLoading && isAuthenticated
+        ? { viewer: "auth" as const, viewerUserId: user?.pk ?? null }
         : { viewer: "anon" as const, viewerUserId: null },
-    [isOwner, profileUserId],
+    [authLoading, isAuthenticated, user?.pk],
   )
   const collectionsQueryKey = useMemo(
     () => queryKeys.collections.byUserId(profileUserId, viewerScope),
@@ -49,7 +51,7 @@ export default function CollectionsSection({
   >({
     queryKey: collectionsQueryKey,
     queryFn: () => fetchUserCollections(profileUserId),
-    enabled: isActive,
+    enabled: isActive && !authLoading,
     staleTime: 30 * 1000,
   })
 
