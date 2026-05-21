@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -88,7 +89,8 @@ export type UseRecipeListOptions = {
 }
 
 /**
- * Shared recipe list state: TanStack Query for lists/tags, selection + overlay detail.
+ * Shared recipe list state: TanStack Query for lists/tags, selection + desktop overlay detail.
+ * Below lg, recipe opens via route navigation; overlay selection is cleared if viewport shrinks.
  */
 export const useRecipeList = ({
   listScope,
@@ -184,6 +186,29 @@ export const useRecipeList = ({
       setSelectedRecipe(null)
     }
   }, [isAuthenticated, selectedRecipe?.is_public, selectedRecipe?.id])
+
+  /** Overlay is desktop-only; below lg redirect to detail page and clear selection (resize / edge cases). */
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return
+    const mq = window.matchMedia("(min-width: 1024px)")
+    const redirectOverlayIfMobile = () => {
+      if (mq.matches) return
+      setSelectedRecipe((current) => {
+        if (!current?.id) return current
+        const ownerFromRecipe =
+          current.owner_id != null ? current.owner_id : ownerUserId ?? null
+        const userIdForRecipeUrl =
+          ownerFromRecipe != null
+            ? ownerFromRecipe
+            : OWNERLESS_RECIPE_USER_SEGMENT
+        router.push(`/users/${userIdForRecipeUrl}/recipes/${current.id}`)
+        return null
+      })
+    }
+    redirectOverlayIfMobile()
+    mq.addEventListener("change", redirectOverlayIfMobile)
+    return () => mq.removeEventListener("change", redirectOverlayIfMobile)
+  }, [router, ownerUserId])
 
   const patchListCache = useCallback(
     (

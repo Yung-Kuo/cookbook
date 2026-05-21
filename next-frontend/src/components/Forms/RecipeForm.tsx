@@ -775,7 +775,7 @@ function RecipeForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 pb-20 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:pb-20 lg:text-4xl"
+      className="flex h-full w-full flex-col gap-12 overflow-y-auto p-5 pb-12 text-2xl text-neutral-100 shadow-xl lg:gap-20 lg:p-10 lg:pb-20 lg:text-4xl"
     >
       <h2 className="text-3xl font-bold lg:text-5xl">
         {isEditing ? "Edit Recipe" : "Create New Recipe"}
@@ -1129,7 +1129,7 @@ function RecipeForm({
         </FormSection>
       </div>
 
-      <div className="flex flex-col items-end gap-12 text-lg lg:flex-row-reverse lg:justify-between lg:text-2xl">
+      <div className="flex flex-col items-end gap-12 pt-12 text-lg lg:flex-row-reverse lg:justify-between lg:text-2xl">
         <div className="flex flex-wrap gap-4">
           <FormActionButton
             type="button"

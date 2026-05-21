@@ -15,13 +15,51 @@ import RecipePrintButton from "@/components/UI/Recipe/RecipePrintButton";
 import { useAppNav } from "@/hooks/useAppNav";
 import type { Recipe as RecipeEntity } from "@/types";
 
+const RECIPE_EDIT_BUTTON_CLASSES =
+  "cursor-pointer border border-neutral-600 bg-neutral-800/60 !text-lg !font-bold text-neutral-200 backdrop-blur-xs hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95";
+
+type RecipeEditButtonProps = {
+  onEdit: () => void;
+};
+
+const RecipeEditButton = ({ onEdit }: RecipeEditButtonProps) => (
+  <RoundedButton
+    type="button"
+    onClick={onEdit}
+    className={RECIPE_EDIT_BUTTON_CLASSES}
+  >
+    Edit
+  </RoundedButton>
+);
+
+type RecipeOverlayDesktopChromeProps = {
+  onEdit?: (() => void) | null;
+  onClose?: (() => void) | null;
+  showEdit: boolean;
+};
+
+/** Floating edit + close on lg+ split-pane overlay only */
+const RecipeOverlayDesktopChrome = ({
+  onEdit,
+  onClose,
+  showEdit,
+}: RecipeOverlayDesktopChromeProps) => (
+  <div className="absolute top-4 right-4 z-30 hidden flex-wrap items-center justify-end gap-2 lg:top-18 lg:flex">
+    {showEdit && onEdit != null ? <RecipeEditButton onEdit={onEdit} /> : null}
+    {onClose != null ? <CloseButton onClose={onClose} /> : null}
+  </div>
+);
+
 type RecipeProps = {
   selectedRecipe: RecipeEntity | null;
   onClose?: (() => void) | null;
   onEdit?: (() => void) | null;
   onRecipeChange?: (patch: Partial<RecipeEntity> & { id: number }) => void;
   className?: string;
-  /** When true, render as in-flow page content (no overlay chrome). */
+  /**
+   * Detail route: in-flow column with back + mobile edit; at lg+ side rails live on the page shell.
+   * When false: desktop split-pane overlay (full-screen fixed below lg is redirected away by list hook).
+   */
   isPage?: boolean;
   shareTitle?: string;
   shareText?: string;
@@ -53,7 +91,7 @@ function Recipe({
       : null;
 
     const isUpdated =
-      updatedDate && updatedDate.getTime() !== createdDate.getTime();
+      updatedDate != null && updatedDate.getTime() !== createdDate.getTime();
 
     return { createdDate, updatedDate, isUpdated };
   }, [selectedRecipe]);
@@ -72,117 +110,74 @@ function Recipe({
     "Author";
 
   const rootClass = isPage
-    ? `${className ?? ""} relative flex min-h-0 w-full flex-col bg-neutral-900`.trim()
-    : `${className ?? ""} fixed inset-0 z-30 flex min-h-0 flex-col overflow-hidden bg-neutral-900 lg:absolute lg:inset-0`.trim();
+    ? `${className} relative flex min-h-0 w-full flex-col bg-neutral-900`.trim()
+    : `${className} fixed inset-0 z-30 flex min-h-0 flex-col overflow-hidden bg-neutral-900 lg:absolute lg:inset-0`.trim();
+
+  const bodyScrollClasses = isPage
+    ? "overflow-visible pb-8"
+    : "overflow-y-auto pb-8 lg:pb-4";
+
+  const showOverlayChrome = !isPage;
 
   return (
     <div className={rootClass} data-recipe-content="">
-      {isPage && (
-        <RecipeNavBackButton className="group fixed top-4 left-4 z-30 grid h-10 w-10 grid-cols-1 grid-rows-1 rounded-full transition-all lg:top-18 lg:hidden" />
-      )}
-
-      {isPage && onEdit && isOwnRecipe && (
-        <div
-          data-recipe-nav-edit=""
-          className="fixed top-4 right-4 z-30 lg:hidden"
-        >
-          <RoundedButton
-            type="button"
-            onClick={onEdit}
-            className="cursor-pointer border border-neutral-600 bg-neutral-800/60 !text-lg !font-bold text-neutral-200 backdrop-blur-xs hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95"
-          >
-            Edit
-          </RoundedButton>
-        </div>
-      )}
-
-      {/* Mobile: strip with owner + edit/close — hidden on lg or when isPage (page has its own bar) */}
-      <div
-        className={`fixed top-0 left-0 z-30 flex w-full shrink-0 items-center justify-between bg-neutral-800/40 px-4 py-2 backdrop-blur-xs lg:hidden ${isPage ? "hidden" : ""}`}
-      >
-        <div className="w-min min-w-0">
-          {selectedRecipe.owner_id != null && (
-            <AvatarName
-              userId={selectedRecipe.owner_id}
-              avatarUrl={selectedRecipe.owner_avatar_url}
-              displayName={ownerLabel}
-            />
-          )}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {onEdit && isOwnRecipe && (
-            <RoundedButton
-              type="button"
-              onClick={onEdit}
-              className="cursor-pointer border border-neutral-600 bg-neutral-800/60 !text-lg !font-bold text-neutral-200 backdrop-blur-xs hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95"
+      {/* Detail page: back + mobile-only edit */}
+      {isPage ? (
+        <>
+          <RecipeNavBackButton className="group fixed top-4 left-4 z-30 grid h-10 w-10 grid-cols-1 grid-rows-1 rounded-full transition-all lg:top-18 lg:hidden" />
+          {onEdit != null && isOwnRecipe ? (
+            <div
+              data-recipe-nav-edit=""
+              className="fixed top-4 right-4 z-30 lg:hidden"
             >
-              Edit
-            </RoundedButton>
-          )}
-          {onClose && <CloseButton onClose={onClose} />}
-        </div>
-      </div>
+              <RecipeEditButton onEdit={onEdit} />
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
-      {/* Desktop: floating edit/close only — hidden below lg or when isPage */}
-      <div
-        className={`absolute top-4 right-4 z-30 hidden flex-wrap items-center justify-end gap-2 lg:top-18 lg:flex ${isPage ? "!hidden" : ""}`}
-      >
-        {onEdit && isOwnRecipe && (
-          <RoundedButton
-            type="button"
-            onClick={onEdit}
-            className="cursor-pointer border border-neutral-600 bg-neutral-800/60 !text-lg !font-bold text-neutral-200 backdrop-blur-xs hover:border-neutral-400 hover:bg-neutral-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 active:scale-95"
-          >
-            Edit
-          </RoundedButton>
-        )}
-        {onClose && <CloseButton onClose={onClose} />}
-      </div>
+      {showOverlayChrome ? (
+        <RecipeOverlayDesktopChrome
+          onEdit={onEdit}
+          onClose={onClose}
+          showEdit={isOwnRecipe && onEdit != null}
+        />
+      ) : null}
 
-      {/* recipe content */}
       <div
-        className={`flex min-h-0 flex-col gap-16 px-4 text-xl lg:pt-14 lg:text-2xl ${
-          isPage ? "overflow-visible pb-8" : "overflow-y-auto pb-24 lg:pb-4"
-        }`}
+        className={`flex min-h-0 flex-col gap-16 px-4 text-xl lg:pt-14 lg:text-2xl ${bodyScrollClasses}`}
       >
-        {/* cover and other images */}
-        {/* hide when there's no image */}
-        {selectedRecipe.images?.length > 0 && (
+        {selectedRecipe.images?.length > 0 ? (
           <RecipeImageSection recipe={selectedRecipe} heroPriority={isPage} />
-        )}
-        {/* title, tags, description */}
-        <div
-          className={`flex flex-col gap-12 ${selectedRecipe.images?.length > 0 ? "" : "mt-12"}`}
+        ) : null}
+
+        <section
+          className={`flex flex-col gap-8 ${selectedRecipe.images?.length > 0 ? "" : "mt-12"}`}
         >
-          {/* title, tags, description */}
-          <div className="flex flex-col gap-4">
-            {/* title */}
-            {isPage ? (
-              <h1 className="py-4 text-6xl break-words whitespace-pre-wrap lg:text-8xl">
+          {isPage ? (
+            <h1 className="py-4 text-6xl break-words whitespace-pre-wrap lg:text-8xl">
+              {selectedRecipe.title}
+            </h1>
+          ) : (
+            <Link
+              href={`/users/${selectedRecipe.owner_id ?? 0}/recipes/${selectedRecipe.id}`}
+            >
+              <h1 className="text-6xl break-words whitespace-pre-wrap transition-colors hover:text-red-300 lg:text-8xl">
                 {selectedRecipe.title}
               </h1>
-            ) : (
-              <Link
-                href={`/users/${selectedRecipe.owner_id ?? 0}/recipes/${selectedRecipe.id}`}
-              >
-                <h1 className="text-6xl break-words whitespace-pre-wrap transition-colors hover:text-red-300 lg:text-8xl">
-                  {selectedRecipe.title}
-                </h1>
-              </Link>
-            )}
-            {/* tags */}
-            {recipeTags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {recipeTags.map((tag, idx) => (
-                  <Tag key={tag.id ?? `${tag.name}-${idx}`}>{tag.name}</Tag>
-                ))}
-              </div>
-            )}
-            {/* Desktop: owner in flow (mobile uses top strip); show on mobile when isPage */}
-            {selectedRecipe.owner_id != null && (
-              <div
-                className={`${isPage ? "block lg:hidden" : "hidden lg:block"}`}
-              >
+            </Link>
+          )}
+          {recipeTags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recipeTags.map((tag, idx) => (
+                <Tag key={tag.id ?? `${tag.name}-${idx}`}>{tag.name}</Tag>
+              ))}
+            </div>
+          ) : null}
+          {/* Detail route: ProfileCard shows author at lg+; overlay always shows inline author */}
+          {selectedRecipe.owner_id != null ? (
+            isPage ? (
+              <div className="lg:hidden">
                 <AvatarName
                   userId={selectedRecipe.owner_id}
                   avatarUrl={selectedRecipe.owner_avatar_url}
@@ -190,21 +185,27 @@ function Recipe({
                   truncateDisplayName={false}
                 />
               </div>
-            )}
-            {/* description */}
-            {selectedRecipe.description && (
-              <p className="py-8 whitespace-pre-wrap">
-                {selectedRecipe.description}
-              </p>
-            )}
-          </div>
-        </div>
-        {/* action buttons (like, collection, share, print). Page view hides this row at lg+ (RecipeActionPanel). Overlay has no side rail — show at all breakpoints. */}
+            ) : (
+              <AvatarName
+                userId={selectedRecipe.owner_id}
+                avatarUrl={selectedRecipe.owner_avatar_url}
+                displayName={ownerLabel}
+                truncateDisplayName={false}
+              />
+            )
+          ) : null}
+          {selectedRecipe.description ? (
+            <p className="py-8 whitespace-pre-wrap">
+              {selectedRecipe.description}
+            </p>
+          ) : null}
+        </section>
+
+        {/* Like / collection / share / print — detail route hides at lg+ (RecipeActionPanel). Overlay keeps row at all breakpoints. */}
         <div
           className={`flex flex-wrap items-center justify-end gap-8 lg:justify-between ${isPage ? "lg:hidden" : ""}`}
           data-recipe-social-actions=""
         >
-          {/* like and collection buttons */}
           <div className="flex items-center gap-2">
             <LikeButton
               recipe={selectedRecipe}
@@ -212,36 +213,34 @@ function Recipe({
               isOwnRecipe={isOwnRecipe}
               onRecipeChange={onRecipeChange}
             />
-            {selectedRecipe.id && (
+            {selectedRecipe.id ? (
               <CollectionButton
                 recipeId={selectedRecipe.id}
                 isAuthenticated={isAuthenticated}
                 loginHref={loginHref}
               />
-            )}
+            ) : null}
           </div>
-          {/* share and print buttons */}
           <div className="flex items-center gap-2">
             <RecipeShareButton title={shareTitle} text={shareText} />
-            {isPage && <RecipePrintButton />}
+            {isPage ? <RecipePrintButton /> : null}
           </div>
-          {selectedRecipe.is_public === false && (
+          {selectedRecipe.is_public === false ? (
             <span className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-neutral-700 px-4 text-base text-neutral-300">
               Private
             </span>
-          )}
+          ) : null}
         </div>
 
-        {/* ingredients */}
-        {selectedRecipe.recipe_ingredients && (
+        {selectedRecipe.recipe_ingredients ? (
           <div>
             <div className="mb-2 flex justify-between">
               <h2 className="text-3xl lg:text-4xl">Ingredients</h2>
-              {selectedRecipe.servings && (
+              {selectedRecipe.servings ? (
                 <h4 className="flex items-end text-neutral-500">
                   {selectedRecipe.servings} servings
                 </h4>
-              )}
+              ) : null}
             </div>
             <div className="border-t border-neutral-500 py-10">
               <div className="flex w-full flex-col gap-4 md:w-max md:min-w-2/3">
@@ -263,17 +262,16 @@ function Recipe({
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* instructions */}
         <div>
           <h2 className="mb-2 text-3xl lg:text-4xl">Instructions</h2>
-          {selectedRecipe.recipe_instructions && (
+          {selectedRecipe.recipe_instructions ? (
             <div className="flex flex-col border-t border-neutral-500 py-10">
               {selectedRecipe.recipe_instructions.map((instruction) => (
                 <div
                   key={instruction.id}
-                  className="flex p-4 even:bg-neutral-800 lg:p-4"
+                  className="flex p-4 even:bg-neutral-800"
                 >
                   <h4 className="flex w-1/6 text-neutral-500">
                     {instruction.order}
@@ -284,12 +282,11 @@ function Recipe({
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
         </div>
 
-        {/* prep time and cook time */}
         <div className="flex flex-col gap-4">
-          {selectedRecipe.prep_time && (
+          {selectedRecipe.prep_time ? (
             <h4 className="flex gap-2 text-neutral-500">
               Prep Time:
               <span className="text-neutral-100">
@@ -297,8 +294,8 @@ function Recipe({
               </span>
               minutes
             </h4>
-          )}
-          {selectedRecipe.cook_time && (
+          ) : null}
+          {selectedRecipe.cook_time ? (
             <h4 className="flex gap-2 text-neutral-500">
               Cook Time:
               <span className="text-neutral-100">
@@ -306,12 +303,11 @@ function Recipe({
               </span>
               minutes
             </h4>
-          )}
+          ) : null}
         </div>
 
-        {/* created date and updated date */}
         <div className="flex flex-col items-end pt-20 text-base lg:text-lg">
-          {createdDate && (
+          {createdDate ? (
             <h6 className="flex gap-2 text-neutral-500">
               Created at:
               <span className="text-neutral-100">
@@ -322,8 +318,8 @@ function Recipe({
                 })}
               </span>
             </h6>
-          )}
-          {updatedDate && isUpdated && (
+          ) : null}
+          {updatedDate != null && isUpdated ? (
             <h6 className="flex gap-2 text-neutral-500">
               Last updated:
               <span className="text-neutral-100">
@@ -334,7 +330,7 @@ function Recipe({
                 })}
               </span>
             </h6>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
