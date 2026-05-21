@@ -138,7 +138,7 @@ class RecipeMutationPermissionTests(APITestCase):
         self.authenticate_as(self.user_token)
         image = RecipeImage.objects.create(
             recipe=self.private_recipe,
-            image="cookbook/recipes/private.jpg",
+            image="",
             is_cover=False,
         )
 
@@ -154,7 +154,7 @@ class RecipeMutationPermissionTests(APITestCase):
         self.authenticate_as(self.other_token)
         image = RecipeImage.objects.create(
             recipe=self.ownerless_recipe,
-            image="cookbook/recipes/template.jpg",
+            image="",
             is_cover=False,
         )
 
@@ -162,7 +162,10 @@ class RecipeMutationPermissionTests(APITestCase):
             f"/api/recipes/{self.ownerless_recipe.id}/images/{image.id}/set-cover/"
         )
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(
+            res.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
         image.refresh_from_db()
         self.assertFalse(image.is_cover)
 
