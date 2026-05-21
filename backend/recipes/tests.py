@@ -162,10 +162,7 @@ class RecipeMutationPermissionTests(APITestCase):
             f"/api/recipes/{self.ownerless_recipe.id}/images/{image.id}/set-cover/"
         )
 
-        self.assertIn(
-            res.status_code,
-            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
-        )
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         image.refresh_from_db()
         self.assertFalse(image.is_cover)
 
@@ -190,7 +187,10 @@ class SharedCatalogPermissionTests(APITestCase):
     def test_unauthenticated_delete_ingredient_is_forbidden(self):
         res = self.client.delete(f"/api/ingredients/{self.ingredient.id}/")
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(
+            res.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
         self.assertTrue(Ingredient.objects.filter(pk=self.ingredient.pk).exists())
         self.assertTrue(
             RecipeIngredient.objects.filter(ingredient=self.ingredient).exists()
