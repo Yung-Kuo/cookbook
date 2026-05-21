@@ -3,7 +3,14 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import (
+    Ingredient,
+    Like,
+    Recipe,
+    RecipeImage,
+    RecipeIngredient,
+    Tag,
+)
 
 User = get_user_model()
 
@@ -84,3 +91,130 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeMutationPermissionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="alice", password="pass")
+        self.other = User.objects.create_user(username="mallory", password="pass")
+        self.user_token = Token.objects.create(user=self.user)
+        self.other_token = Token.objects.create(user=self.other)
+        self.ownerless_recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+        self.private_recipe = Recipe.objects.create(
+            title="Private",
+            owner=self.user,
+            is_public=False,
+        )
+
+    def authenticate_as(self, token):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_authenticated_user_cannot_update_ownerless_recipe(self):
+        self.authenticate_as(self.other_token)
+
+        res = self.client.patch(
+            f"/api/recipes/{self.ownerless_recipe.id}/",
+            {"title": "Defaced"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.ownerless_recipe.refresh_from_db()
+        self.assertEqual(self.ownerless_recipe.title, "Template")
+
+    def test_authenticated_user_cannot_delete_ownerless_recipe(self):
+        self.authenticate_as(self.other_token)
+
+        res = self.client.delete(f"/api/recipes/{self.ownerless_recipe.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.ownerless_recipe.pk).exists())
+
+    def test_owner_can_set_cover_image_on_private_recipe(self):
+        self.authenticate_as(self.user_token)
+        image = RecipeImage.objects.create(
+            recipe=self.private_recipe,
+            image="",
+            is_cover=False,
+        )
+
+        res = self.client.patch(
+            f"/api/recipes/{self.private_recipe.id}/images/{image.id}/set-cover/"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        image.refresh_from_db()
+        self.assertTrue(image.is_cover)
+
+    def test_ownerless_recipe_image_mutation_is_forbidden(self):
+        self.authenticate_as(self.other_token)
+        image = RecipeImage.objects.create(
+            recipe=self.ownerless_recipe,
+            image="",
+            is_cover=False,
+        )
+
+        res = self.client.patch(
+            f"/api/recipes/{self.ownerless_recipe.id}/images/{image.id}/set-cover/"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        image.refresh_from_db()
+        self.assertFalse(image.is_cover)
+
+
+class SharedCatalogPermissionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="alice", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.ingredient = Ingredient.objects.create(name="Salt")
+        self.recipe = Recipe.objects.create(
+            title="Seasoned",
+            owner=self.user,
+            is_public=True,
+        )
+        RecipeIngredient.objects.create(
+            recipe=self.recipe,
+            ingredient=self.ingredient,
+            quantity=1,
+            unit="tsp",
+        )
+
+    def test_unauthenticated_delete_ingredient_is_forbidden(self):
+        res = self.client.delete(f"/api/ingredients/{self.ingredient.id}/")
+
+        self.assertIn(
+            res.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+        self.assertTrue(Ingredient.objects.filter(pk=self.ingredient.pk).exists())
+        self.assertTrue(
+            RecipeIngredient.objects.filter(ingredient=self.ingredient).exists()
+        )
+
+    def test_authenticated_non_staff_delete_ingredient_is_forbidden(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.delete(f"/api/ingredients/{self.ingredient.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Ingredient.objects.filter(pk=self.ingredient.pk).exists())
+        self.assertTrue(
+            RecipeIngredient.objects.filter(ingredient=self.ingredient).exists()
+        )
+
+    def test_authenticated_user_can_create_ingredient(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.post(
+            "/api/ingredients/",
+            {"name": "Pepper"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Ingredient.objects.filter(name="Pepper").exists())

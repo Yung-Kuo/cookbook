@@ -56,9 +56,9 @@ export const useProfilePage = (profileUserId: string | number) => {
 
   const bumpPinned = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.pinned.byUserId(profileUserId),
+      queryKey: queryKeys.pinned.all(),
     })
-  }, [queryClient, profileUserId])
+  }, [queryClient])
 
   const recipeList = useRecipeList({
     listScope: isOwnProfile ? "personal" : "user",

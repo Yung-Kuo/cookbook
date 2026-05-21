@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import PinnedRecipeCard from "@/components/UI/Cards/PinnedRecipeCard"
 import PinPickerModal from "@/components/UI/Popups/PinPickerModal"
@@ -8,6 +8,7 @@ import AddButton from "@/components/UI/Buttons/AddButton"
 import CardGridSection from "@/components/UI/Sections/CardGridSection"
 import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes"
 import { fetchPinnedRecipes, unpinRecipe } from "@/api/pinned"
+import { useAuth } from "@/context/AuthContext"
 import { queryKeys } from "@/lib/queryKeys"
 import type { PinnedRecipeSummary, Recipe } from "@/types"
 
@@ -33,19 +34,31 @@ export default function PinnedSection({
 }: PinnedSectionProps) {
   const queryClient = useQueryClient()
   const [pinPickerOpen, setPinPickerOpen] = useState(false)
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
+  const viewerScope = useMemo(
+    () =>
+      !authLoading && isAuthenticated
+        ? { viewer: "auth" as const, viewerUserId: user?.pk ?? null }
+        : { viewer: "anon" as const, viewerUserId: null },
+    [authLoading, isAuthenticated, user?.pk],
+  )
+  const pinnedQueryKey = useMemo(
+    () => queryKeys.pinned.byUserId(profileUserId, viewerScope),
+    [profileUserId, viewerScope],
+  )
 
   const { data: pinnedRows = [], isPending: pinnedLoading } = useQuery({
-    queryKey: queryKeys.pinned.byUserId(profileUserId),
+    queryKey: pinnedQueryKey,
     queryFn: () => fetchPinnedRecipes(profileUserId),
-    enabled: isActive,
+    enabled: isActive && !authLoading,
     staleTime: 30 * 1000,
   })
 
   const refreshPinned = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.pinned.byUserId(profileUserId),
+      queryKey: pinnedQueryKey,
     })
-  }, [queryClient, profileUserId])
+  }, [queryClient, pinnedQueryKey])
 
   const unpinMutation = useMutation({
     mutationFn: (recipeId: string | number) => unpinRecipe(recipeId),

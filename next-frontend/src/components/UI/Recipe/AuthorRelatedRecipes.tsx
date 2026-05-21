@@ -26,10 +26,11 @@ export default function AuthorRelatedRecipes({
   currentRecipeId,
   ownerDisplayName = "Author",
 }: AuthorRelatedRecipesProps) {
-  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const ownerNumeric = Number(ownerId)
   const viewerKey: RecipeListViewer =
     !authLoading && isAuthenticated ? "auth" : "anon"
+  const viewerUserId = viewerKey === "auth" ? (user?.pk ?? null) : null
 
   const filters = useMemo((): RecipeListFilters => {
     return {
@@ -38,8 +39,9 @@ export default function AuthorRelatedRecipes({
       search: "",
       tagIds: [],
       viewer: viewerKey,
+      viewerUserId,
     }
-  }, [ownerNumeric, viewerKey])
+  }, [ownerNumeric, viewerKey, viewerUserId])
 
   const { data: listData, isPending: loading } = useQuery({
     queryKey: queryKeys.recipes.list(filters),
