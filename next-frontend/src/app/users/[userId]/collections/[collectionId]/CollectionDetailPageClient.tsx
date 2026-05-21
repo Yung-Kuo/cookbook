@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -16,7 +17,14 @@ export default function CollectionDetailPageClient() {
   const { userId, collectionId } = useParams()
   const uid = Array.isArray(userId) ? userId[0] : userId
   const cid = Array.isArray(collectionId) ? collectionId[0] : collectionId
-  const { loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const viewerScope = useMemo(
+    () => ({
+      viewer: !authLoading && user ? "auth" as const : "anon" as const,
+      viewerUserId: !authLoading && user ? user.pk : null,
+    }),
+    [authLoading, user],
+  )
 
   const {
     data: collection,
@@ -24,7 +32,7 @@ export default function CollectionDetailPageClient() {
     isPending,
     error,
   } = useQuery({
-    queryKey: queryKeys.collections.detail(cid ?? ""),
+    queryKey: queryKeys.collections.detail(cid ?? "", viewerScope),
     queryFn: () => fetchCollectionById(cid!),
     enabled: !authLoading && Boolean(cid),
   })

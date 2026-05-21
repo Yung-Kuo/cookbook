@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -47,44 +47,58 @@ export default function RecipeDetailPageClient() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const uid = Array.isArray(userId) ? userId[0] : userId
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { isAuthenticated, loginHref } = useAppNav()
   const [recipeToEdit, setRecipeToEdit] = useState<RecipeEntity | null>(null)
 
   const rawId = Array.isArray(id) ? id[0] : id
+  const viewerScope = useMemo(
+    () => ({
+      viewer: !authLoading && user ? "auth" as const : "anon" as const,
+      viewerUserId: !authLoading && user ? user.pk : null,
+    }),
+    [authLoading, user],
+  )
+  const detailQueryKey = useMemo(
+    () => queryKeys.recipes.detailForViewer(rawId, viewerScope),
+    [rawId, viewerScope],
+  )
 
   const {
     data: recipe,
     isError,
     isPending,
   } = useQuery({
-    queryKey: queryKeys.recipes.detail(rawId),
+    queryKey: detailQueryKey,
     queryFn: () => fetchRecipeById(rawId!),
-    enabled: Boolean(rawId),
+    enabled: Boolean(rawId) && !authLoading,
   })
 
   const patchRecipe = useCallback(
     (patch: Partial<RecipeEntity> & { id: number }) => {
       if (!recipe?.id) return
-      queryClient.setQueryData(queryKeys.recipes.detail(recipe.id), (prev) =>
-        prev ? { ...prev, ...patch } : prev,
+      queryClient.setQueryData(
+        queryKeys.recipes.detailForViewer(recipe.id, viewerScope),
+        (prev) => (prev ? { ...prev, ...patch } : prev),
       )
     },
-    [queryClient, recipe?.id],
+    [queryClient, recipe?.id, viewerScope],
   )
 
   const handleRecipeUpdated = useCallback(
     (updated: RecipeEntity) => {
-      queryClient.setQueryData(queryKeys.recipes.detail(updated.id), updated)
+      queryClient.setQueryData(
+        queryKeys.recipes.detailForViewer(updated.id, viewerScope),
+        updated,
+      )
       setRecipeToEdit(null)
     },
-    [queryClient],
+    [queryClient, viewerScope],
   )
 
   const handleRecipeDeleted = useCallback(() => {
     setRecipeToEdit(null)
-    const uidNum = Number(uid)
-    if (uidNum === 0) router.push("/")
+    if (uid === OWNERLESS_RECIPE_USER_SEGMENT) router.push("/")
     else router.push(`/users/${uid}`)
   }, [router, uid])
 

@@ -7,6 +7,7 @@ export type RecipeListFilters = {
   search: string
   tagIds: number[]
   viewer?: RecipeListViewer
+  viewerUserId?: number | null
 }
 
 export type Tag = {

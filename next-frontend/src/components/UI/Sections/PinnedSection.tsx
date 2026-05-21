@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import PinnedRecipeCard from "@/components/UI/Cards/PinnedRecipeCard"
 import PinPickerModal from "@/components/UI/Popups/PinPickerModal"
@@ -33,9 +33,20 @@ export default function PinnedSection({
 }: PinnedSectionProps) {
   const queryClient = useQueryClient()
   const [pinPickerOpen, setPinPickerOpen] = useState(false)
+  const viewerScope = useMemo(
+    () =>
+      isOwner
+        ? { viewer: "auth" as const, viewerUserId: Number(profileUserId) }
+        : { viewer: "anon" as const, viewerUserId: null },
+    [isOwner, profileUserId],
+  )
+  const pinnedQueryKey = useMemo(
+    () => queryKeys.pinned.byUserId(profileUserId, viewerScope),
+    [profileUserId, viewerScope],
+  )
 
   const { data: pinnedRows = [], isPending: pinnedLoading } = useQuery({
-    queryKey: queryKeys.pinned.byUserId(profileUserId),
+    queryKey: pinnedQueryKey,
     queryFn: () => fetchPinnedRecipes(profileUserId),
     enabled: isActive,
     staleTime: 30 * 1000,
@@ -43,9 +54,9 @@ export default function PinnedSection({
 
   const refreshPinned = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.pinned.byUserId(profileUserId),
+      queryKey: pinnedQueryKey,
     })
-  }, [queryClient, profileUserId])
+  }, [queryClient, pinnedQueryKey])
 
   const unpinMutation = useMutation({
     mutationFn: (recipeId: string | number) => unpinRecipe(recipeId),
