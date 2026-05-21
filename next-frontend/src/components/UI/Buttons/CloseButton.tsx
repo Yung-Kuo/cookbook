@@ -1,0 +1,19 @@
+import CloseIcon from "@/components/Icons/CloseIcon"
+
+type CloseButtonProps = {
+  onClose: () => void
+}
+
+export const CloseButton = ({ onClose }: CloseButtonProps) => {
+  return (
+    <button
+      type="button"
+      className="group grid h-10 w-10 cursor-pointer grid-cols-1 grid-rows-1 rounded-full transition-all"
+      onMouseDown={onClose}
+      title="Close"
+    >
+      <CloseIcon className="z-10 col-start-1 row-start-1 h-full w-full p-1 text-neutral-200" />
+      <div className="col-start-1 row-start-1 h-full w-full rounded-full bg-neutral-600/40 backdrop-blur-xs transition-all group-hover:bg-red-300/30" />
+    </button>
+  )
+}

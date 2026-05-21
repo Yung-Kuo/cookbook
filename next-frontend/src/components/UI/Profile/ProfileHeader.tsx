@@ -1,0 +1,64 @@
+"use client"
+
+import { useQuery } from "@tanstack/react-query"
+import { fetchProfileByUserId } from "@/api/profiles"
+import AvatarName from "@/components/UI/Profile/AvatarName"
+import { queryKeys } from "@/lib/queryKeys"
+
+type ProfileHeaderProps = {
+  profileUserId: number | string
+}
+
+/**
+ * Profile page header: loads profile data and shows avatar, name, @handle, bio.
+ */
+export default function ProfileHeader({ profileUserId }: ProfileHeaderProps) {
+  const {
+    data: profile,
+    isPending: loading,
+    isError,
+  } = useQuery({
+    queryKey: queryKeys.profiles.byUserId(profileUserId),
+    queryFn: () => fetchProfileByUserId(profileUserId),
+    staleTime: 2 * 60 * 1000,
+  })
+
+  const displayLabel =
+    profile?.display_name?.trim() || profile?.username || "User"
+  const handleLine =
+    profile?.username && profile?.display_name?.trim()
+      ? profile.username
+      : null
+
+  return (
+    <div className="flex flex-col gap-4 px-4 py-8 text-neutral-100 lg:px-6 lg:pt-4">
+      {loading && (
+        <p className="text-lg text-neutral-400" role="status">
+          Loading profile…
+        </p>
+      )}
+      {isError && !loading && (
+        <p className="text-lg text-red-300" role="alert">
+          Could not load profile
+        </p>
+      )}
+      {profile && !loading && !isError && (
+        <>
+          <AvatarName
+            size="lg"
+            userId={profileUserId}
+            avatarUrl={profile.avatar_url}
+            displayName={displayLabel}
+            handle={handleLine ?? undefined}
+            priority
+          />
+          {profile.bio?.trim() && (
+            <p className="text-lg leading-relaxed whitespace-pre-wrap text-neutral-300">
+              {profile.bio}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  )
+}

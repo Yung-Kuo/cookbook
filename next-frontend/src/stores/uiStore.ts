@@ -1,0 +1,15 @@
+import { create } from "zustand"
+
+type UiState = {
+  mobileMoreOpen: boolean
+  setMobileMoreOpen: (open: boolean) => void
+}
+
+/**
+ * Shared client-only UI state. Do not store API entities here — use TanStack Query.
+ * Used for chrome that spans multiple client islands (e.g. mobile nav sheet).
+ */
+export const useUiStore = create<UiState>((set) => ({
+  mobileMoreOpen: false,
+  setMobileMoreOpen: (open) => set({ mobileMoreOpen: Boolean(open) }),
+}))
