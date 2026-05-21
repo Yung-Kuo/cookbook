@@ -41,8 +41,7 @@ import type { Ingredient, Recipe, RecipeWritePayload, Tag } from "@/types";
 
 const isIngredientOption = (
   v: string | IngredientOption,
-): v is IngredientOption =>
-  typeof v === "object" && v !== null && "name" in v;
+): v is IngredientOption => typeof v === "object" && v !== null && "name" in v;
 
 const rowIngredientToCombo = (
   v: string | IngredientOption,
@@ -265,8 +264,7 @@ function RecipeForm({
   });
   const allTags = tagsQuery.data ?? [];
   const ingredients = ingredientsQuery.data ?? [];
-  const loadingDropdowns =
-    tagsQuery.isPending || ingredientsQuery.isPending;
+  const loadingDropdowns = tagsQuery.isPending || ingredientsQuery.isPending;
   const dropdownError =
     tagsQuery.isError || ingredientsQuery.isError
       ? "Failed to load tags or ingredients."
@@ -286,8 +284,7 @@ function RecipeForm({
   const clearForm = () => {
     setPhotoItems((prev) => {
       prev.forEach((p) => {
-        if ("preview" in p && p.preview)
-          URL.revokeObjectURL(p.preview);
+        if ("preview" in p && p.preview) URL.revokeObjectURL(p.preview);
       });
       return [];
     });
@@ -313,7 +310,9 @@ function RecipeForm({
   // ----------------------------------------------------
   // 4. Handle input changes (for text/number fields)
   // ----------------------------------------------------
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
@@ -524,16 +523,16 @@ function RecipeForm({
         if (t.id != null) {
           resolved.push(t.id);
         } else if (t.name?.trim()) {
-          const created = await createTag({ name: t.name.trim() })
+          const created = await createTag({ name: t.name.trim() });
           if (created.id == null) {
-            console.error("Created tag missing id")
-            return
+            console.error("Created tag missing id");
+            return;
           }
-          resolved.push(created.id)
-          queryClient.setQueryData(queryKeys.tags.list(), (prev: Tag[] | undefined) => [
-            ...(prev ?? []),
-            created,
-          ]);
+          resolved.push(created.id);
+          queryClient.setQueryData(
+            queryKeys.tags.list(),
+            (prev: Tag[] | undefined) => [...(prev ?? []), created],
+          );
         }
       }
       tagIds = [...new Set(resolved)];
@@ -551,23 +550,23 @@ function RecipeForm({
       try {
         const createdIngredients = await Promise.all(
           ingredientsToCreate.map((ri) => {
-            const ing = ri.ingredient
+            const ing = ri.ingredient;
             if (!isIngredientOption(ing)) {
-              throw new Error("Invalid ingredient row")
+              throw new Error("Invalid ingredient row");
             }
-            return createIngredient({ name: ing.name })
+            return createIngredient({ name: ing.name });
           }),
-        )
+        );
         createdIngredients.forEach((ing) => {
           queryClient.setQueryData(
             queryKeys.ingredients.list(),
             (prev: Ingredient[] | undefined) => {
-              const list = prev ?? []
-              if (list.some((x) => x.id === ing.id)) return list
-              return [...list, ing]
+              const list = prev ?? [];
+              if (list.some((x) => x.id === ing.id)) return list;
+              return [...list, ing];
             },
-          )
-        })
+          );
+        });
         const nameToIngredient: Record<string, Ingredient> = {};
         createdIngredients.forEach((ingredient) => {
           nameToIngredient[ingredient.name] = ingredient;
@@ -655,7 +654,7 @@ function RecipeForm({
       return;
     }
 
-    const { pin_to_profile: _pinToProfile, ...recipePayload } = submissionData
+    const { pin_to_profile: _pinToProfile, ...recipePayload } = submissionData;
 
     try {
       if (existingRecipe) {
@@ -819,11 +818,7 @@ function RecipeForm({
           {photoItems.map((item) => (
             <RecipeFormPhotoItem
               key={item.localId}
-              src={
-                "preview" in item
-                  ? item.preview
-                  : item.image_url
-              }
+              src={"preview" in item ? item.preview : item.image_url}
               isCover={item.isCover}
               onMakeCover={() => makeCover(item)}
               onRemove={() => removePhoto(item)}
@@ -1056,7 +1051,7 @@ function RecipeForm({
               }))
             }
             size="md"
-            labelClassName="gap-4 border"
+            labelClassName="gap-4"
           >
             <span className="text-2xl text-neutral-300">
               Pin to my profile{" "}
