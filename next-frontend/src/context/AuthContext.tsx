@@ -38,18 +38,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     retry: false,
   })
 
+  const clearUserScopedQueries = useCallback(async () => {
+    await Promise.all([
+      queryClient.resetQueries({ queryKey: queryKeys.recipes.all() }),
+      queryClient.resetQueries({ queryKey: queryKeys.collections.all() }),
+      queryClient.resetQueries({ queryKey: queryKeys.pinned.all() }),
+    ])
+  }, [queryClient])
+
   const socialLogin = useCallback(
     async (provider: string, code: string) => {
       await apiSocialLogin(provider, code)
+      await clearUserScopedQueries()
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
     },
-    [queryClient],
+    [clearUserScopedQueries, queryClient],
   )
 
   const logout = useCallback(async () => {
     await apiLogout()
     queryClient.setQueryData(queryKeys.auth.me(), null)
-  }, [queryClient])
+    await clearUserScopedQueries()
+  }, [clearUserScopedQueries, queryClient])
 
   const value: AuthContextValue = {
     user,

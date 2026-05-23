@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Ingredient, Like, Recipe, Tag
 
 User = get_user_model()
 
@@ -84,3 +84,62 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipePermissionRegressionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="owner", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def authenticate(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_private_recipe_create_returns_created_recipe(self):
+        self.authenticate()
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private dinner",
+                "is_public": False,
+                "recipe_instructions": [{"text": "Keep it quiet.", "order": 1}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(res.data["is_public"])
+        recipe = Recipe.objects.get(pk=res.data["id"])
+        self.assertEqual(recipe.owner, self.user)
+        self.assertFalse(recipe.is_public)
+
+    def test_authenticated_user_cannot_update_or_delete_ownerless_recipe(self):
+        self.authenticate()
+        template = Recipe.objects.create(
+            title="Template recipe",
+            owner=None,
+            is_public=True,
+        )
+
+        patch_res = self.client.patch(
+            f"/api/recipes/{template.id}/",
+            {"title": "Hijacked"},
+            format="json",
+        )
+        self.assertEqual(patch_res.status_code, status.HTTP_403_FORBIDDEN)
+        template.refresh_from_db()
+        self.assertEqual(template.title, "Template recipe")
+
+        delete_res = self.client.delete(f"/api/recipes/{template.id}/")
+        self.assertEqual(delete_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=template.pk).exists())
+
+    def test_anonymous_user_cannot_delete_ingredient(self):
+        ingredient = Ingredient.objects.create(name="Sugar")
+
+        res = self.client.delete(f"/api/ingredients/{ingredient.id}/")
+
+        self.assertIn(
+            res.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+        self.assertTrue(Ingredient.objects.filter(pk=ingredient.pk).exists())
