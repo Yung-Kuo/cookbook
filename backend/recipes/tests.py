@@ -84,3 +84,82 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeCreateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def test_private_recipe_create_returns_created_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        payload = {
+            "title": "Private draft",
+            "description": "For later",
+            "is_public": False,
+            "recipe_instructions": [
+                {"text": "Keep it private.", "order": 1},
+            ],
+        }
+
+        res = self.client.post("/api/recipes/", payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], payload["title"])
+        self.assertFalse(res.data["is_public"])
+        recipe = Recipe.objects.get(pk=res.data["id"])
+        self.assertEqual(recipe.owner, self.user)
+        self.assertFalse(recipe.is_public)
+
+
+class OwnerlessRecipeMutationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.template_recipe = Recipe.objects.create(
+            title="Template: Soup",
+            owner=None,
+            is_public=True,
+        )
+
+    def authenticate(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_authenticated_user_cannot_update_ownerless_recipe(self):
+        self.authenticate()
+
+        res = self.client.patch(
+            f"/api/recipes/{self.template_recipe.id}/",
+            {"title": "Hijacked"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.template_recipe.refresh_from_db()
+        self.assertEqual(self.template_recipe.title, "Template: Soup")
+
+    def test_authenticated_user_cannot_delete_ownerless_recipe(self):
+        self.authenticate()
+
+        res = self.client.delete(f"/api/recipes/{self.template_recipe.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.template_recipe.id).exists())
+
+    def test_authenticated_user_cannot_mutate_ownerless_recipe_images(self):
+        self.authenticate()
+        urls = [
+            f"/api/recipes/{self.template_recipe.id}/images/",
+            f"/api/recipes/{self.template_recipe.id}/images/999/",
+            f"/api/recipes/{self.template_recipe.id}/images/999/set-cover/",
+        ]
+
+        responses = [
+            self.client.post(urls[0], {}, format="multipart"),
+            self.client.delete(urls[1]),
+            self.client.patch(urls[2], {}, format="json"),
+        ]
+
+        self.assertTrue(
+            all(res.status_code == status.HTTP_403_FORBIDDEN for res in responses)
+        )
