@@ -15,6 +15,13 @@ import {
 import { queryKeys } from "@/lib/queryKeys"
 import type { AuthUser } from "@/types"
 
+const currentUserQueryOptions = {
+  queryKey: queryKeys.auth.me(),
+  queryFn: fetchCurrentUser,
+  staleTime: 60 * 1000,
+  retry: false,
+}
+
 type AuthContextValue = {
   user: AuthUser | null
   loading: boolean
@@ -32,22 +39,21 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const queryClient = useQueryClient()
   const { data: user = null, isPending: loading } = useQuery({
-    queryKey: queryKeys.auth.me(),
-    queryFn: fetchCurrentUser,
-    staleTime: 60 * 1000,
-    retry: false,
+    ...currentUserQueryOptions,
   })
 
   const socialLogin = useCallback(
     async (provider: string, code: string) => {
       await apiSocialLogin(provider, code)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
+      queryClient.clear()
+      await queryClient.fetchQuery(currentUserQueryOptions)
     },
     [queryClient],
   )
 
   const logout = useCallback(async () => {
     await apiLogout()
+    queryClient.clear()
     queryClient.setQueryData(queryKeys.auth.me(), null)
   }, [queryClient])
 
