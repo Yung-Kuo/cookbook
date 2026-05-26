@@ -166,7 +166,7 @@ class OwnerlessRecipeMutationTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.recipe.refresh_from_db()
         self.assertEqual(self.recipe.title, "Template")
 
