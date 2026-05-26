@@ -114,7 +114,7 @@ export type CollectionListItem = {
 export type CollectionEntry = {
   added_at: string
   is_available: boolean
-  recipe_id: number
+  recipe_id?: number
   recipe: Recipe | null
 }
 

@@ -1,9 +1,20 @@
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.api.serializers import RecipeWriteSerializer
+from recipes.models import (
+    Collection,
+    CollectionRecipe,
+    Ingredient,
+    Like,
+    Recipe,
+    RecipeIngredient,
+    RecipeInstruction,
+    Tag,
+)
 
 User = get_user_model()
 
@@ -84,3 +95,202 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipePrivateCreateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def test_authenticated_user_can_create_private_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private draft",
+                "description": "",
+                "is_public": False,
+                "recipe_instructions": [
+                    {"text": "Mix quietly", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.user.id)
+
+
+class PrivateRecipeActionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.recipe = Recipe.objects.create(
+            title="Private",
+            owner=self.user,
+            is_public=False,
+        )
+
+    def test_owner_can_like_own_private_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        res = self.client.post(f"/api/recipes/{self.recipe.id}/like/")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["liked"])
+        self.assertTrue(Like.objects.filter(user=self.user, recipe=self.recipe).exists())
+
+
+class OwnerlessRecipeMutationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+
+    def test_authenticated_user_cannot_update_ownerless_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        res = self.client.put(
+            f"/api/recipes/{self.recipe.id}/",
+            {
+                "title": "Vandalized",
+                "description": "",
+                "is_public": True,
+                "recipe_instructions": [
+                    {"text": "Rewrite", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.recipe.refresh_from_db()
+        self.assertEqual(self.recipe.title, "Template")
+
+
+class IngredientPermissionTests(APITestCase):
+    def test_anonymous_user_cannot_create_ingredient(self):
+        res = self.client.post(
+            "/api/ingredients/",
+            {"name": "Ghost pepper"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Ingredient.objects.filter(name="Ghost pepper").exists())
+
+    def test_authenticated_user_cannot_delete_shared_ingredient(self):
+        user = User.objects.create_user(username="chef", password="pass")
+        token = Token.objects.create(user=user)
+        ingredient = Ingredient.objects.create(name="Salt")
+        recipe = Recipe.objects.create(title="Soup", owner=user, is_public=True)
+        RecipeIngredient.objects.create(
+            recipe=recipe,
+            ingredient=ingredient,
+            quantity=1,
+            unit="tsp",
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        res = self.client.delete(f"/api/ingredients/{ingredient.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(Ingredient.objects.filter(id=ingredient.id).exists())
+        self.assertTrue(
+            RecipeIngredient.objects.filter(
+                recipe=recipe,
+                ingredient=ingredient,
+            ).exists()
+        )
+
+
+class CollectionPrivateRecipeVisibilityTests(APITestCase):
+    def setUp(self):
+        self.alice = User.objects.create_user(username="alice", password="pass")
+        self.bob = User.objects.create_user(username="bob", password="pass")
+        self.bob_token = Token.objects.create(user=self.bob)
+        self.private_recipe = Recipe.objects.create(
+            title="Alice private",
+            owner=self.alice,
+            is_public=False,
+        )
+        self.collection = Collection.objects.create(
+            user=self.bob,
+            name="Bob collection",
+            is_public=True,
+        )
+
+    def test_cannot_add_another_users_private_recipe_to_collection(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.bob_token.key}")
+        res = self.client.post(
+            f"/api/collections/{self.collection.id}/recipes/",
+            {"recipe_id": self.private_recipe.id},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertFalse(
+            CollectionRecipe.objects.filter(
+                collection=self.collection,
+                recipe=self.private_recipe,
+            ).exists()
+        )
+
+    def test_unavailable_collection_entry_does_not_expose_recipe_id(self):
+        CollectionRecipe.objects.create(
+            collection=self.collection,
+            recipe=self.private_recipe,
+        )
+
+        res = self.client.get(f"/api/collections/{self.collection.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data["entries"]), 1)
+        entry = res.data["entries"][0]
+        self.assertFalse(entry["is_available"])
+        self.assertNotIn("recipe_id", entry)
+        self.assertIsNone(entry["recipe"])
+
+
+class RecipeWriteAtomicityTests(APITestCase):
+    def test_update_rolls_back_nested_deletes_when_recreate_fails(self):
+        user = User.objects.create_user(username="chef", password="pass")
+        ingredient = Ingredient.objects.create(name="Salt")
+        recipe = Recipe.objects.create(title="Soup", owner=user, is_public=True)
+        RecipeIngredient.objects.create(
+            recipe=recipe,
+            ingredient=ingredient,
+            quantity=1,
+            unit="tsp",
+        )
+        RecipeInstruction.objects.create(recipe=recipe, text="Warm", order=1)
+        serializer = RecipeWriteSerializer(
+            recipe,
+            data={
+                "title": "Soup",
+                "description": "",
+                "is_public": True,
+                "recipe_ingredients": [
+                    {"ingredient": ingredient.id, "quantity": 1, "unit": "tsp"},
+                    {"ingredient": ingredient.id, "quantity": 2, "unit": "tbsp"},
+                ],
+                "recipe_instructions": [
+                    {"text": "Warm", "order": 1},
+                ],
+            },
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        with self.assertRaises(IntegrityError):
+            serializer.save()
+
+        self.assertEqual(
+            RecipeIngredient.objects.filter(recipe=recipe, ingredient=ingredient).count(),
+            1,
+        )
+        self.assertTrue(
+            RecipeInstruction.objects.filter(recipe=recipe, text="Warm", order=1).exists()
+        )

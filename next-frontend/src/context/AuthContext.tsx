@@ -6,7 +6,7 @@ import {
   useContext,
   type ReactNode,
 } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query"
 import {
   socialLogin as apiSocialLogin,
   logout as apiLogout,
@@ -29,6 +29,11 @@ type AuthProviderProps = {
   children: ReactNode
 }
 
+const clearViewerScopedCache = (queryClient: QueryClient) => {
+  queryClient.removeQueries({ queryKey: queryKeys.recipes.all() })
+  queryClient.removeQueries({ queryKey: queryKeys.collections.all() })
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const queryClient = useQueryClient()
   const { data: user = null, isPending: loading } = useQuery({
@@ -41,6 +46,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const socialLogin = useCallback(
     async (provider: string, code: string) => {
       await apiSocialLogin(provider, code)
+      clearViewerScopedCache(queryClient)
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
     },
     [queryClient],
@@ -49,6 +55,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(async () => {
     await apiLogout()
     queryClient.setQueryData(queryKeys.auth.me(), null)
+    clearViewerScopedCache(queryClient)
   }, [queryClient])
 
   const value: AuthContextValue = {
