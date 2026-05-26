@@ -87,8 +87,8 @@ export default function CollectionDetailPageClient() {
           itemCount={entries.length}
           emptyMessage="No recipes in this collection yet."
         >
-          {entries.map((entry) => {
-            const key = `${entry.recipe_id}-${entry.added_at}`
+          {entries.map((entry, index) => {
+            const key = `${entry.recipe_id ?? `unavailable-${index}`}-${entry.added_at}`
             if (entry.is_available && entry.recipe) {
               const r = entry.recipe
               const ownerForHref =
@@ -119,7 +119,7 @@ export default function CollectionDetailPageClient() {
                       This recipe is no longer available.
                     </p>
                     <p className="text-xs text-neutral-500">
-                      Recipe #{entry.recipe_id} · added{" "}
+                      Added{" "}
                       {new Date(entry.added_at).toLocaleDateString()}
                     </p>
                   </div>

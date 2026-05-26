@@ -1,4 +1,5 @@
 import json
+from django.db import transaction
 from rest_framework import serializers
 from ..models import (
     Recipe,
@@ -188,6 +189,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             return super().to_internal_value(mutable)
         return super().to_internal_value(data)
 
+    @transaction.atomic
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', [])
@@ -205,6 +207,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         tags_data = validated_data.pop('tags', None)
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', None)
@@ -330,7 +333,6 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
                 out.append({
                     'added_at': entry.added_at,
                     'is_available': False,
-                    'recipe_id': r.id,
                     'recipe': None,
                 })
         return out
