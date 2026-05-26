@@ -166,7 +166,7 @@ class OwnerlessRecipeMutationTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.recipe.refresh_from_db()
         self.assertEqual(self.recipe.title, "Template")
 
@@ -179,7 +179,7 @@ class IngredientPermissionTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertFalse(Ingredient.objects.filter(name="Ghost pepper").exists())
 
     def test_authenticated_user_cannot_delete_shared_ingredient(self):
