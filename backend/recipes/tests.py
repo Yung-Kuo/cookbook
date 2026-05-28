@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Like, Recipe, RecipeImage, Tag
 
 User = get_user_model()
 
@@ -42,6 +42,74 @@ class RecipeListIsLikedTests(APITestCase):
         row = next(r for r in res.data if r["id"] == self.recipe.id)
         self.assertTrue(row["is_liked"])
         self.assertEqual(row["like_count"], 2)
+
+
+class OwnerlessRecipeMutationPermissionTests(APITestCase):
+    """Public template recipes have no owner and must remain read-only via the API."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.ownerless = Recipe.objects.create(
+            title="Template: Read-only",
+            owner=None,
+            is_public=True,
+        )
+        self.owned = Recipe.objects.create(
+            title="Owned",
+            owner=self.user,
+            is_public=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_authenticated_user_cannot_patch_ownerless_recipe(self):
+        res = self.client.patch(
+            f"/api/recipes/{self.ownerless.id}/",
+            {"title": "Hijacked template"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.ownerless.refresh_from_db()
+        self.assertEqual(self.ownerless.title, "Template: Read-only")
+
+    def test_authenticated_user_cannot_delete_ownerless_recipe(self):
+        res = self.client.delete(f"/api/recipes/{self.ownerless.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.ownerless.id).exists())
+
+    def test_authenticated_user_cannot_modify_ownerless_recipe_images(self):
+        image = RecipeImage.objects.create(
+            recipe=self.ownerless,
+            image="cookbook/recipes/template.jpg",
+            is_cover=False,
+        )
+
+        upload_res = self.client.post(f"/api/recipes/{self.ownerless.id}/images/")
+        delete_res = self.client.delete(
+            f"/api/recipes/{self.ownerless.id}/images/{image.id}/",
+        )
+        cover_res = self.client.patch(
+            f"/api/recipes/{self.ownerless.id}/images/{image.id}/set-cover/",
+        )
+
+        self.assertEqual(upload_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(delete_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(cover_res.status_code, status.HTTP_403_FORBIDDEN)
+        image.refresh_from_db()
+        self.assertFalse(image.is_cover)
+
+    def test_owner_can_still_patch_owned_recipe(self):
+        res = self.client.patch(
+            f"/api/recipes/{self.owned.id}/",
+            {"title": "Updated owned recipe"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.owned.refresh_from_db()
+        self.assertEqual(self.owned.title, "Updated owned recipe")
 
 
 class RecipeTagFilterTests(APITestCase):
