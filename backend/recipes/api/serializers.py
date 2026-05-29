@@ -1,4 +1,5 @@
 import json
+from django.db import transaction
 from rest_framework import serializers
 from ..models import (
     Recipe,
@@ -193,15 +194,16 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', [])
         recipe_instructions_data = validated_data.pop('recipe_instructions', [])
 
-        recipe = Recipe.objects.create(**validated_data)
-        if tags_data:
-            recipe.tags.set(tags_data)
+        with transaction.atomic():
+            recipe = Recipe.objects.create(**validated_data)
+            if tags_data:
+                recipe.tags.set(tags_data)
 
-        for ingredient_data in recipe_ingredients_data:
-            RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
+            for ingredient_data in recipe_ingredients_data:
+                RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
 
-        for instruction_data in recipe_instructions_data:
-            RecipeInstruction.objects.create(recipe=recipe, **instruction_data)
+            for instruction_data in recipe_instructions_data:
+                RecipeInstruction.objects.create(recipe=recipe, **instruction_data)
 
         return recipe
 
@@ -210,23 +212,24 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', None)
         recipe_instructions_data = validated_data.pop('recipe_instructions', None)
 
-        instance = super().update(instance, validated_data)
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
 
-        if tags_data is not None:
-            instance.tags.set(tags_data)
+            if tags_data is not None:
+                instance.tags.set(tags_data)
 
-        if recipe_ingredients_data is not None:
-            instance.recipeingredient_set.all().delete()
-            for ingredient_data in recipe_ingredients_data:
-                RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
+            if recipe_ingredients_data is not None:
+                instance.recipeingredient_set.all().delete()
+                for ingredient_data in recipe_ingredients_data:
+                    RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
 
-        if recipe_instructions_data is not None:
-            instance.recipeinstruction_set.all().delete()
-            for instruction_data in recipe_instructions_data:
-                instruction_data = {
-                    k: v for k, v in instruction_data.items() if k != "id"
-                }
-                RecipeInstruction.objects.create(recipe=instance, **instruction_data)
+            if recipe_instructions_data is not None:
+                instance.recipeinstruction_set.all().delete()
+                for instruction_data in recipe_instructions_data:
+                    instruction_data = {
+                        k: v for k, v in instruction_data.items() if k != "id"
+                    }
+                    RecipeInstruction.objects.create(recipe=instance, **instruction_data)
 
         return instance
 

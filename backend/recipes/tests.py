@@ -1,9 +1,12 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.api.serializers import RecipeWriteSerializer
+from recipes.models import Like, Recipe, RecipeInstruction, Tag
 
 User = get_user_model()
 
@@ -84,3 +87,112 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeCreateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="owner", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def test_authenticated_user_can_create_private_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private draft",
+                "description": "Not ready to share",
+                "is_public": False,
+                "recipe_ingredients": [],
+                "recipe_instructions": [
+                    {"text": "Keep it private", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["owner_id"], self.user.id)
+        self.assertFalse(res.data["is_public"])
+        self.assertTrue(
+            Recipe.objects.filter(
+                id=res.data["id"],
+                owner=self.user,
+                is_public=False,
+            ).exists()
+        )
+
+
+class RecipeWriteSerializerAtomicTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.recipe = Recipe.objects.create(
+            title="Original",
+            description="Keep this recipe",
+            owner=self.user,
+            is_public=True,
+        )
+        RecipeInstruction.objects.create(
+            recipe=self.recipe,
+            text="Original step",
+            order=1,
+        )
+
+    def test_create_rolls_back_recipe_when_instruction_create_fails(self):
+        serializer = RecipeWriteSerializer(
+            data={
+                "title": "Partial create",
+                "description": "Should not persist",
+                "is_public": True,
+                "recipe_ingredients": [],
+                "recipe_instructions": [
+                    {"text": "New step", "order": 1},
+                ],
+            }
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        with patch(
+            "recipes.api.serializers.RecipeInstruction.objects.create",
+            side_effect=RuntimeError("boom"),
+        ):
+            with self.assertRaises(RuntimeError):
+                serializer.save(owner=self.user)
+
+        self.assertFalse(Recipe.objects.filter(title="Partial create").exists())
+
+    def test_update_rolls_back_recipe_and_instructions_when_replace_fails(self):
+        serializer = RecipeWriteSerializer(
+            self.recipe,
+            data={
+                "title": "Changed",
+                "description": "Changed description",
+                "is_public": False,
+                "recipe_ingredients": [],
+                "recipe_instructions": [
+                    {"text": "Replacement step", "order": 1},
+                ],
+            },
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        with patch(
+            "recipes.api.serializers.RecipeInstruction.objects.create",
+            side_effect=RuntimeError("boom"),
+        ):
+            with self.assertRaises(RuntimeError):
+                serializer.save()
+
+        self.recipe.refresh_from_db()
+        self.assertEqual(self.recipe.title, "Original")
+        self.assertEqual(self.recipe.description, "Keep this recipe")
+        self.assertTrue(self.recipe.is_public)
+        self.assertEqual(
+            list(
+                self.recipe.recipeinstruction_set.values_list(
+                    "text",
+                    "order",
+                )
+            ),
+            [("Original step", 1)],
+        )

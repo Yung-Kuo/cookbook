@@ -200,7 +200,7 @@ class RecipeViewSet(ModelViewSet):
 
         # Retrieve / update / delete by id: must allow the owner to load their private recipes.
         # Do not use queryset | queryset here — union breaks annotations + select_related on some DBs.
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+        if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
             if user.is_authenticated:
                 qs = Recipe.objects.filter(Q(is_public=True) | Q(owner=user))
             else:
