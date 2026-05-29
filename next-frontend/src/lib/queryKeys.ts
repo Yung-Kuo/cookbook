@@ -28,7 +28,7 @@ export const queryKeys = {
         },
       ] as const,
     detail: (id: string | number | undefined | null) =>
-      ["recipes", "detail", id] as const,
+      ["recipes", "detail", id == null ? null : String(id)] as const,
   },
   tags: {
     all: () => ["tags"] as const,
