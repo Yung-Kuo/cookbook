@@ -84,3 +84,39 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeCreateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def test_authenticated_user_can_create_private_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private Draft",
+                "description": "",
+                "is_public": False,
+                "recipe_instructions": [
+                    {"text": "Keep this private.", "order": 1},
+                ],
+                "recipe_ingredients": [],
+                "tags": [],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "Private Draft")
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.user.id)
+        self.assertTrue(
+            Recipe.objects.filter(
+                owner=self.user,
+                title="Private Draft",
+                is_public=False,
+            ).exists()
+        )
