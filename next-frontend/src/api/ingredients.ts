@@ -1,3 +1,4 @@
+import { getAuthHeaders } from "@/api/auth"
 import { apiFetch } from "@/api/client"
 import type { Ingredient, IngredientCreatePayload } from "@/types"
 
@@ -18,6 +19,7 @@ export const createIngredient = async (
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(ingredientData),
   })

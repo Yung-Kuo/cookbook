@@ -1,4 +1,5 @@
 import json
+from django.db import transaction
 from rest_framework import serializers
 from ..models import (
     Recipe,
@@ -188,6 +189,34 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             return super().to_internal_value(mutable)
         return super().to_internal_value(data)
 
+    def validate(self, attrs):
+        recipe_ingredients = attrs.get('recipe_ingredients')
+        if recipe_ingredients is not None:
+            ingredient_ids = [
+                item['ingredient'].pk
+                for item in recipe_ingredients
+                if item.get('ingredient') is not None
+            ]
+            if len(ingredient_ids) != len(set(ingredient_ids)):
+                raise serializers.ValidationError({
+                    'recipe_ingredients': 'Duplicate ingredients are not allowed.'
+                })
+
+        recipe_instructions = attrs.get('recipe_instructions')
+        if recipe_instructions is not None:
+            instruction_orders = [
+                item.get('order')
+                for item in recipe_instructions
+                if item.get('order') is not None
+            ]
+            if len(instruction_orders) != len(set(instruction_orders)):
+                raise serializers.ValidationError({
+                    'recipe_instructions': 'Duplicate instruction orders are not allowed.'
+                })
+
+        return attrs
+
+    @transaction.atomic
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', [])
@@ -205,6 +234,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         tags_data = validated_data.pop('tags', None)
         recipe_ingredients_data = validated_data.pop('recipe_ingredients', None)
