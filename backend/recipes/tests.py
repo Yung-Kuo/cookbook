@@ -165,7 +165,7 @@ class TaxonomyPermissionTests(APITestCase):
             {"name": "Pepper"},
             format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_authenticated_user_can_create_ingredient(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
