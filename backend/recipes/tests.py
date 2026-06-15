@@ -84,3 +84,67 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeMutationPermissionTests(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass")
+        self.other = User.objects.create_user(username="other", password="pass")
+        self.owner_token = Token.objects.create(user=self.owner)
+        self.other_token = Token.objects.create(user=self.other)
+        self.template_recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+
+    def test_authenticated_user_cannot_edit_ownerless_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.other_token.key}")
+        res = self.client.patch(
+            f"/api/recipes/{self.template_recipe.id}/",
+            {"title": "Hijacked"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.template_recipe.refresh_from_db()
+        self.assertEqual(self.template_recipe.title, "Template")
+
+    def test_authenticated_user_cannot_delete_ownerless_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.other_token.key}")
+        res = self.client.delete(f"/api/recipes/{self.template_recipe.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.template_recipe.pk).exists())
+
+    def test_authenticated_user_cannot_upload_image_to_ownerless_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.other_token.key}")
+        res = self.client.post(f"/api/recipes/{self.template_recipe.id}/images/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_private_recipe_returns_created_response(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.owner_token.key}")
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private Dinner",
+                "description": "For later",
+                "is_public": False,
+                "recipe_instructions": [{"text": "Cook", "order": 1}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "Private Dinner")
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.owner.pk)
+        self.assertEqual(
+            Recipe.objects.filter(
+                title="Private Dinner",
+                owner=self.owner,
+                is_public=False,
+            ).count(),
+            1,
+        )
