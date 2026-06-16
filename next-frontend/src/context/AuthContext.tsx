@@ -38,18 +38,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     retry: false,
   })
 
+  const resetSessionCache = useCallback(async () => {
+    await queryClient.cancelQueries()
+    queryClient.clear()
+  }, [queryClient])
+
   const socialLogin = useCallback(
     async (provider: string, code: string) => {
       await apiSocialLogin(provider, code)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
+      await resetSessionCache()
+      await queryClient.fetchQuery({
+        queryKey: queryKeys.auth.me(),
+        queryFn: fetchCurrentUser,
+        staleTime: 60 * 1000,
+        retry: false,
+      })
     },
-    [queryClient],
+    [queryClient, resetSessionCache],
   )
 
   const logout = useCallback(async () => {
-    await apiLogout()
-    queryClient.setQueryData(queryKeys.auth.me(), null)
-  }, [queryClient])
+    try {
+      await apiLogout()
+    } finally {
+      await resetSessionCache()
+      queryClient.setQueryData(queryKeys.auth.me(), null)
+    }
+  }, [queryClient, resetSessionCache])
 
   const value: AuthContextValue = {
     user,
