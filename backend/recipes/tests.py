@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Like, Recipe, RecipeImage, Tag
 
 User = get_user_model()
 
@@ -84,3 +84,94 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeMutationSafetyTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.other_user = User.objects.create_user(username="other", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.other_token = Token.objects.create(user=self.other_user)
+
+    def _recipe_payload(self, **overrides):
+        payload = {
+            "title": "Private soup",
+            "description": "Keep this private",
+            "is_public": False,
+            "recipe_instructions": [{"text": "Simmer", "order": 1}],
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_private_recipe_create_returns_saved_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.post(
+            "/api/recipes/",
+            self._recipe_payload(),
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["owner_id"], self.user.pk)
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(Recipe.objects.filter(owner=self.user).count(), 1)
+
+    def test_non_owner_cannot_edit_ownerless_recipe(self):
+        recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.patch(
+            f"/api/recipes/{recipe.pk}/",
+            {"title": "Hijacked"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, "Template")
+
+    def test_non_owner_cannot_delete_ownerless_recipe(self):
+        recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.delete(f"/api/recipes/{recipe.pk}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=recipe.pk).exists())
+
+    def test_non_owner_cannot_mutate_ownerless_recipe_images(self):
+        recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+        image = RecipeImage.objects.create(
+            recipe=recipe,
+            image="recipes/template.jpg",
+            is_cover=False,
+            order=1,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        upload_res = self.client.post(f"/api/recipes/{recipe.pk}/images/")
+        set_cover_res = self.client.patch(
+            f"/api/recipes/{recipe.pk}/images/{image.pk}/set-cover/",
+        )
+        delete_res = self.client.delete(
+            f"/api/recipes/{recipe.pk}/images/{image.pk}/",
+        )
+
+        self.assertEqual(upload_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(set_cover_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(delete_res.status_code, status.HTTP_403_FORBIDDEN)
+        image.refresh_from_db()
+        self.assertFalse(image.is_cover)

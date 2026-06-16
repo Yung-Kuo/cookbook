@@ -200,7 +200,7 @@ class RecipeViewSet(ModelViewSet):
 
         # Retrieve / update / delete by id: must allow the owner to load their private recipes.
         # Do not use queryset | queryset here — union breaks annotations + select_related on some DBs.
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+        if self.action in ('retrieve', 'create', 'update', 'partial_update', 'destroy'):
             if user.is_authenticated:
                 qs = Recipe.objects.filter(Q(is_public=True) | Q(owner=user))
             else:
@@ -271,6 +271,14 @@ class RecipeViewSet(ModelViewSet):
         else:
             serializer.save()
 
+    def _recipe_mutation_forbidden_response(self, recipe):
+        if self.request.user.is_authenticated and recipe.owner_id == self.request.user.pk:
+            return None
+        return Response(
+            {"detail": "You do not have permission to edit this recipe."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -283,11 +291,9 @@ class RecipeViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-        if instance.owner and instance.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        forbidden = self._recipe_mutation_forbidden_response(instance)
+        if forbidden:
+            return forbidden
         serializer = self.get_serializer(
             instance, data=request.data, partial=partial
         )
@@ -299,11 +305,9 @@ class RecipeViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.owner and instance.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to delete this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        forbidden = self._recipe_mutation_forbidden_response(instance)
+        if forbidden:
+            return forbidden
         return super().destroy(request, *args, **kwargs)
 
     @action(
@@ -315,11 +319,9 @@ class RecipeViewSet(ModelViewSet):
     def upload_image(self, request, pk=None):
         """POST multipart with field 'image' and optional 'is_cover' (true/false)."""
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        forbidden = self._recipe_mutation_forbidden_response(recipe)
+        if forbidden:
+            return forbidden
         image_file = request.FILES.get('image')
         if not image_file:
             return Response(
@@ -348,11 +350,9 @@ class RecipeViewSet(ModelViewSet):
     )
     def delete_image(self, request, pk=None, image_id=None):
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        forbidden = self._recipe_mutation_forbidden_response(recipe)
+        if forbidden:
+            return forbidden
         ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
         was_cover = ri.is_cover
         ri.delete()
@@ -370,11 +370,9 @@ class RecipeViewSet(ModelViewSet):
     )
     def set_cover_image(self, request, pk=None, image_id=None):
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        forbidden = self._recipe_mutation_forbidden_response(recipe)
+        if forbidden:
+            return forbidden
         ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
         recipe.images.update(is_cover=False)
         ri.is_cover = True
