@@ -115,6 +115,15 @@ type PhotoItem =
       isCover: boolean;
     };
 
+type ServerPhotoItem = Extract<PhotoItem, { serverId: number }>;
+type LocalPhotoItem = Extract<PhotoItem, { file: File }>;
+
+const isServerPhotoItem = (item: PhotoItem): item is ServerPhotoItem =>
+  "serverId" in item;
+
+const isLocalPhotoItem = (item: PhotoItem): item is LocalPhotoItem =>
+  "file" in item;
+
 type RecipeFormProps = {
   onClose: () => void;
   onRecipeCreated?: (r: Recipe) => void;
@@ -340,48 +349,22 @@ function RecipeForm({
     handleTagsChange,
   );
 
-  const refreshImagesFromServer = async (recipeId: number) => {
-    const fresh = await fetchRecipeById(recipeId);
-    setPhotoItems(
-      (fresh.images || []).map((img) => ({
-        localId: `srv-${img.id}`,
-        serverId: img.id,
-        image_url: img.image_url,
-        isCover: img.is_cover,
-      })),
-    );
-  };
-
   const addPhotoFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []) as File[];
     if (!files.length) return;
 
-    if (existingRecipe) {
-      try {
-        const hadPhotos = photoItems.length > 0;
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const isCover = !hadPhotos && i === 0;
-          await uploadRecipeImage(existingRecipe.id, file, isCover);
-        }
-        await refreshImagesFromServer(existingRecipe.id);
-      } catch (err) {
-        console.error("Failed to upload image:", err);
+    setPhotoItems((prev) => {
+      const added = files.map((file) => ({
+        localId: crypto.randomUUID(),
+        file,
+        preview: URL.createObjectURL(file),
+        isCover: false,
+      }));
+      if (prev.length === 0 && added.length > 0) {
+        added[0].isCover = true;
       }
-    } else {
-      setPhotoItems((prev) => {
-        const added = files.map((file) => ({
-          localId: crypto.randomUUID(),
-          file,
-          preview: URL.createObjectURL(file),
-          isCover: false,
-        }));
-        if (prev.length === 0 && added.length > 0) {
-          added[0].isCover = true;
-        }
-        return [...prev, ...added];
-      });
-    }
+      return [...prev, ...added];
+    });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -391,16 +374,7 @@ function RecipeForm({
     );
   };
 
-  const removePhoto = async (item: PhotoItem) => {
-    if ("serverId" in item && item.serverId != null && existingRecipe) {
-      try {
-        await deleteRecipeImage(existingRecipe.id, item.serverId);
-        await refreshImagesFromServer(existingRecipe.id);
-      } catch (err) {
-        console.error("Failed to delete image:", err);
-      }
-      return;
-    }
+  const removePhoto = (item: PhotoItem) => {
     setPhotoItems((prev) => {
       const next = prev.filter((p) => p.localId !== item.localId);
       if ("preview" in item && item.preview) {
@@ -413,16 +387,7 @@ function RecipeForm({
     });
   };
 
-  const makeCover = async (item: PhotoItem) => {
-    if ("serverId" in item && item.serverId != null && existingRecipe) {
-      try {
-        await setCoverImage(existingRecipe.id, item.serverId);
-        await refreshImagesFromServer(existingRecipe.id);
-      } catch (err) {
-        console.error("Failed to set cover:", err);
-      }
-      return;
-    }
+  const makeCover = (item: PhotoItem) => {
     setCoverLocal(item.localId);
   };
 
@@ -509,6 +474,35 @@ function RecipeForm({
           : instruction,
       ),
     }));
+  };
+
+  const syncEditedRecipeImages = async (recipeId: number) => {
+    if (!existingRecipe) return;
+
+    const currentServerIds = new Set(
+      photoItems.filter(isServerPhotoItem).map((item) => item.serverId),
+    );
+    const deletedServerImageIds = (existingRecipe.images || [])
+      .map((image) => image.id)
+      .filter((id) => !currentServerIds.has(id));
+    const pendingServerCover = photoItems.find(
+      (item): item is ServerPhotoItem =>
+        isServerPhotoItem(item) && item.isCover,
+    );
+
+    for (const imageId of deletedServerImageIds) {
+      await deleteRecipeImage(recipeId, imageId);
+    }
+
+    for (const item of photoItems) {
+      if (isLocalPhotoItem(item)) {
+        await uploadRecipeImage(recipeId, item.file, item.isCover);
+      }
+    }
+
+    if (pendingServerCover) {
+      await setCoverImage(recipeId, pendingServerCover.serverId);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -667,7 +661,6 @@ function RecipeForm({
           const ownRecipe =
             existingRecipe.owner_id != null &&
             user?.pk === existingRecipe.owner_id;
-          let merged = { ...data };
           if (ownRecipe) {
             const wantPin = formData.pin_to_profile;
             const wasPinned = existingRecipe.is_pinned === true;
@@ -675,17 +668,17 @@ function RecipeForm({
               try {
                 if (wantPin) {
                   await pinRecipe(data.id);
-                  merged = { ...merged, is_pinned: true };
                 } else {
                   await unpinRecipe(data.id);
-                  merged = { ...merged, is_pinned: false };
                 }
               } catch (pinErr) {
                 console.error("Pin sync failed:", pinErr);
               }
             }
           }
-          onRecipeUpdated?.(merged);
+          await syncEditedRecipeImages(data.id);
+          const refreshed = await fetchRecipeById(data.id);
+          onRecipeUpdated?.(refreshed);
           clearForm();
         }
         if ("error" in updateResult && updateResult.error) {
