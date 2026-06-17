@@ -387,8 +387,21 @@ class CollectionViewSet(ModelViewSet):
     serializer_class = CollectionSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
+    def _visible_recipe_q(self, recipe_lookup=''):
+        prefix = f'{recipe_lookup}__' if recipe_lookup else ''
+        q = Q(**{f'{prefix}is_public': True})
+        user = self.request.user
+        if user.is_authenticated:
+            q |= Q(**{f'{prefix}owner': user})
+        return q
+
     def _annotate_recipe_count_and_contains(self, qs):
-        qs = qs.annotate(recipe_count=Count('entries'))
+        qs = qs.annotate(
+            recipe_count=Count(
+                'entries',
+                filter=self._visible_recipe_q('entries__recipe'),
+            )
+        )
         rid = self.request.query_params.get('recipe_id')
         if rid:
             try:
@@ -398,7 +411,7 @@ class CollectionViewSet(ModelViewSet):
                         CollectionRecipe.objects.filter(
                             collection_id=OuterRef('pk'),
                             recipe_id=rid_int,
-                        )
+                        ).filter(self._visible_recipe_q('recipe'))
                     )
                 )
             except (ValueError, TypeError):
@@ -559,7 +572,10 @@ class CollectionViewSet(ModelViewSet):
                 {'detail': 'Invalid recipe_id.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        recipe = get_object_or_404(Recipe, pk=recipe_id)
+        recipe = get_object_or_404(
+            Recipe.objects.filter(self._visible_recipe_q()),
+            pk=recipe_id,
+        )
         cr, created = CollectionRecipe.objects.get_or_create(
             collection=collection,
             recipe=recipe,

@@ -326,13 +326,6 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
                     'recipe_id': r.id,
                     'recipe': RecipeSerializer(r, context=read_ctx).data,
                 })
-            else:
-                out.append({
-                    'added_at': entry.added_at,
-                    'is_available': False,
-                    'recipe_id': r.id,
-                    'recipe': None,
-                })
         return out
 
 
