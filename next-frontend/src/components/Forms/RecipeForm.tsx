@@ -43,6 +43,19 @@ const isIngredientOption = (
   v: string | IngredientOption,
 ): v is IngredientOption => typeof v === "object" && v !== null && "name" in v;
 
+const isBlankIngredientRow = (row: FormIngredientRow): boolean => {
+  const ingredientBlank =
+    typeof row.ingredient === "string" && row.ingredient.trim() === "";
+  const unitBlank = typeof row.unit === "string" && row.unit.trim() === "";
+  return ingredientBlank && row.quantity.trim() === "" && unitBlank;
+};
+
+const isCompleteIngredientRow = (row: FormIngredientRow): boolean =>
+  isIngredientOption(row.ingredient) &&
+  row.ingredient.id != null &&
+  row.quantity.trim() !== "" &&
+  isIngredientOption(row.unit);
+
 const rowIngredientToCombo = (
   v: string | IngredientOption,
 ): ComboboxOptionItem | null => {
@@ -598,6 +611,16 @@ function RecipeForm({
       ...formFieldsForApi
     } = formData;
 
+    const hasIncompleteIngredient = recipe_ingredients.some(
+      (ing) => !isBlankIngredientRow(ing) && !isCompleteIngredientRow(ing),
+    );
+    if (hasIncompleteIngredient) {
+      console.error(
+        "All ingredient rows must have ingredient, quantity, and unit.",
+      );
+      return;
+    }
+
     const submissionData = {
       ...formFieldsForApi,
       prep_time: hourMinuteFieldsToMinutes(
@@ -614,12 +637,7 @@ function RecipeForm({
         text: ins.text.trim(),
       })),
       recipe_ingredients: recipe_ingredients.flatMap((ing) => {
-        if (
-          !isIngredientOption(ing.ingredient) ||
-          ing.ingredient.id == null ||
-          !Boolean(ing.quantity) ||
-          !isIngredientOption(ing.unit)
-        ) {
+        if (!isCompleteIngredientRow(ing)) {
           return [];
         }
         return [
