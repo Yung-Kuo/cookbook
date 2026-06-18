@@ -4,6 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   type ReactNode,
 } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -38,18 +40,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
     retry: false,
   })
 
+  const removeViewerScopedQueries = useCallback(() => {
+    queryClient.removeQueries({ queryKey: queryKeys.recipes.all() })
+    queryClient.removeQueries({ queryKey: queryKeys.pinned.all() })
+    queryClient.removeQueries({ queryKey: queryKeys.collections.all() })
+  }, [queryClient])
+
+  const viewerKey = user ? `user:${user.pk}` : "anon"
+  const previousViewerKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (loading) return
+    if (previousViewerKey.current === viewerKey) return
+    const hadPreviousViewer = previousViewerKey.current !== null
+    previousViewerKey.current = viewerKey
+    if (hadPreviousViewer || user) {
+      removeViewerScopedQueries()
+    }
+  }, [loading, removeViewerScopedQueries, user, viewerKey])
+
   const socialLogin = useCallback(
     async (provider: string, code: string) => {
       await apiSocialLogin(provider, code)
+      removeViewerScopedQueries()
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() })
     },
-    [queryClient],
+    [queryClient, removeViewerScopedQueries],
   )
 
   const logout = useCallback(async () => {
     await apiLogout()
+    removeViewerScopedQueries()
     queryClient.setQueryData(queryKeys.auth.me(), null)
-  }, [queryClient])
+  }, [queryClient, removeViewerScopedQueries])
 
   const value: AuthContextValue = {
     user,
