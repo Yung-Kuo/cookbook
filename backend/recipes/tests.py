@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Like, Recipe, RecipeImage, Tag
 
 User = get_user_model()
 
@@ -84,3 +85,75 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeMutationAuthorizationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_private_recipe_create_returns_created_recipe(self):
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private draft",
+                "is_public": False,
+                "recipe_instructions": [{"text": "Mix.", "order": 1}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "Private draft")
+        self.assertFalse(res.data["is_public"])
+        recipe = Recipe.objects.get(pk=res.data["id"])
+        self.assertEqual(recipe.owner, self.user)
+        self.assertFalse(recipe.is_public)
+
+    def test_ownerless_recipe_cannot_be_updated_or_deleted_by_authenticated_user(self):
+        recipe = Recipe.objects.create(title="Template", owner=None, is_public=True)
+
+        patch_res = self.client.patch(
+            f"/api/recipes/{recipe.id}/",
+            {"title": "Hijacked"},
+            format="json",
+        )
+        delete_res = self.client.delete(f"/api/recipes/{recipe.id}/")
+
+        self.assertEqual(patch_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(delete_res.status_code, status.HTTP_403_FORBIDDEN)
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, "Template")
+
+    def test_ownerless_recipe_images_cannot_be_mutated_by_authenticated_user(self):
+        recipe = Recipe.objects.create(title="Template", owner=None, is_public=True)
+        image = RecipeImage.objects.create(
+            recipe=recipe,
+            image="cookbook/recipes/template.jpg",
+            is_cover=True,
+            order=1,
+        )
+
+        upload_res = self.client.post(
+            f"/api/recipes/{recipe.id}/images/",
+            {
+                "image": SimpleUploadedFile(
+                    "new.jpg",
+                    b"fake image bytes",
+                    content_type="image/jpeg",
+                )
+            },
+            format="multipart",
+        )
+        cover_res = self.client.patch(
+            f"/api/recipes/{recipe.id}/images/{image.id}/set-cover/"
+        )
+        delete_res = self.client.delete(
+            f"/api/recipes/{recipe.id}/images/{image.id}/"
+        )
+
+        self.assertEqual(upload_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(cover_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(delete_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(RecipeImage.objects.filter(pk=image.pk).exists())
