@@ -50,7 +50,12 @@ const isBlankIngredientRow = (row: FormIngredientRow): boolean => {
   return ingredientBlank && row.quantity.trim() === "" && unitBlank;
 };
 
-const isCompleteIngredientRow = (row: FormIngredientRow): boolean =>
+const isCompleteIngredientRow = (
+  row: FormIngredientRow,
+): row is FormIngredientRow & {
+  ingredient: IngredientOption & { id: number };
+  unit: IngredientOption;
+} =>
   isIngredientOption(row.ingredient) &&
   row.ingredient.id != null &&
   row.quantity.trim() !== "" &&
