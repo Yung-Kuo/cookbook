@@ -84,3 +84,34 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class OwnerlessRecipeWritePermissionTests(APITestCase):
+    """Public template recipes have no owner and must not be user-editable."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="editor", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.recipe = Recipe.objects.create(
+            title="Template soup",
+            owner=None,
+            is_public=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_authenticated_user_cannot_patch_ownerless_recipe(self):
+        res = self.client.patch(
+            f"/api/recipes/{self.recipe.id}/",
+            {"title": "Hijacked template"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.recipe.refresh_from_db()
+        self.assertEqual(self.recipe.title, "Template soup")
+
+    def test_authenticated_user_cannot_delete_ownerless_recipe(self):
+        res = self.client.delete(f"/api/recipes/{self.recipe.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.recipe.pk).exists())
