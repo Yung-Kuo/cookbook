@@ -49,6 +49,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(async () => {
     await apiLogout()
     queryClient.setQueryData(queryKeys.auth.me(), null)
+    await Promise.all([
+      queryClient.resetQueries({ queryKey: queryKeys.recipes.all() }),
+      queryClient.resetQueries({ queryKey: queryKeys.collections.all() }),
+      queryClient.resetQueries({ queryKey: queryKeys.pinned.all() }),
+    ])
   }, [queryClient])
 
   const value: AuthContextValue = {
