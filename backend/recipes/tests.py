@@ -84,3 +84,63 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipePrivateCreateTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="privatechef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+
+    def test_private_recipe_create_returns_created_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private draft",
+                "is_public": False,
+                "recipe_instructions": [
+                    {"text": "Keep this private.", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "Private draft")
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.user.id)
+        self.assertEqual(Recipe.objects.filter(title="Private draft").count(), 1)
+
+
+class OwnerlessRecipeMutationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="editor", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.recipe = Recipe.objects.create(title="Shared template", is_public=True)
+
+    def test_authenticated_user_cannot_edit_ownerless_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.patch(
+            f"/api/recipes/{self.recipe.id}/",
+            {
+                "title": "Hijacked",
+                "recipe_instructions": [
+                    {"text": "Overwrite shared content.", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.recipe.refresh_from_db()
+        self.assertEqual(self.recipe.title, "Shared template")
+
+    def test_authenticated_user_cannot_delete_ownerless_recipe(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        res = self.client.delete(f"/api/recipes/{self.recipe.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.recipe.id).exists())
