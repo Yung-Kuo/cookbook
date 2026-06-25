@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Like, Recipe, RecipeImage, Tag
 
 User = get_user_model()
 
@@ -84,3 +84,102 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeMutationPermissionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.other_user = User.objects.create_user(username="other", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.other_token = Token.objects.create(user=self.other_user)
+        self.ownerless_recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+        self.private_recipe = Recipe.objects.create(
+            title="Private",
+            owner=self.user,
+            is_public=False,
+        )
+
+    def authenticate(self, token):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_ownerless_recipe_cannot_be_patched_by_authenticated_user(self):
+        self.authenticate(self.other_token)
+
+        res = self.client.patch(
+            f"/api/recipes/{self.ownerless_recipe.id}/",
+            {"title": "Vandalized"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.ownerless_recipe.refresh_from_db()
+        self.assertEqual(self.ownerless_recipe.title, "Template")
+
+    def test_ownerless_recipe_cannot_be_deleted_by_authenticated_user(self):
+        self.authenticate(self.other_token)
+
+        res = self.client.delete(f"/api/recipes/{self.ownerless_recipe.id}/")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Recipe.objects.filter(pk=self.ownerless_recipe.pk).exists())
+
+    def test_ownerless_recipe_image_mutation_is_forbidden(self):
+        self.authenticate(self.other_token)
+
+        res = self.client.post(
+            f"/api/recipes/{self.ownerless_recipe.id}/images/",
+            {},
+            format="multipart",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_private_recipe_create_returns_created_recipe(self):
+        self.authenticate(self.token)
+
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "New Private",
+                "is_public": False,
+                "recipe_instructions": [{"text": "Mix", "order": 1}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "New Private")
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.user.pk)
+
+    def test_private_recipe_owner_reaches_image_upload_action(self):
+        self.authenticate(self.token)
+
+        res = self.client.post(
+            f"/api/recipes/{self.private_recipe.id}/images/",
+            {},
+            format="multipart",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["detail"], "No image file provided.")
+
+    def test_private_recipe_owner_can_delete_image(self):
+        self.authenticate(self.token)
+        image = RecipeImage.objects.create(
+            recipe=self.private_recipe,
+            image="recipes/test.jpg",
+            is_cover=True,
+            order=1,
+        )
+
+        res = self.client.delete(
+            f"/api/recipes/{self.private_recipe.id}/images/{image.id}/"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(RecipeImage.objects.filter(pk=image.pk).exists())
