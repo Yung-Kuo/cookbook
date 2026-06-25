@@ -1,5 +1,4 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import { fetchRecipeById } from "@/api/recipes"
 import { fetchProfileByUserId } from "@/api/profiles"
 import { queryKeys } from "@/lib/queryKeys"
 import RecipeDetailPageClient from "@/app/users/[userId]/recipes/[id]/RecipeDetailPageClient"
@@ -17,12 +16,7 @@ export default async function RecipeDetailPage({
   const queryClient = new QueryClient()
 
   if (recipeId) {
-    const tasks = [
-      queryClient.prefetchQuery({
-        queryKey: queryKeys.recipes.detail(recipeId),
-        queryFn: () => fetchRecipeById(recipeId),
-      }),
-    ]
+    const tasks: Promise<unknown>[] = []
     const uidNum = Number(uidRaw)
     if (Number.isFinite(uidNum)) {
       tasks.push(
@@ -33,6 +27,7 @@ export default async function RecipeDetailPage({
       )
     }
     try {
+      // Recipe detail includes viewer-specific flags; the server has no auth token.
       await Promise.all(tasks)
     } catch {
       /* client will retry / show error */

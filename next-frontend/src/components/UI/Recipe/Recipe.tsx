@@ -13,6 +13,7 @@ import RecipeNavBackButton from "@/components/UI/Recipe/RecipeNavBackButton";
 import RecipeShareButton from "@/components/UI/Recipe/RecipeShareButton";
 import RecipePrintButton from "@/components/UI/Recipe/RecipePrintButton";
 import { useAppNav } from "@/hooks/useAppNav";
+import { OWNERLESS_RECIPE_USER_SEGMENT } from "@/lib/recipeRoutes";
 import type { Recipe as RecipeEntity } from "@/types";
 
 const RECIPE_EDIT_BUTTON_CLASSES =
@@ -160,7 +161,7 @@ function Recipe({
             </h1>
           ) : (
             <Link
-              href={`/users/${selectedRecipe.owner_id ?? 0}/recipes/${selectedRecipe.id}`}
+              href={`/users/${selectedRecipe.owner_id ?? OWNERLESS_RECIPE_USER_SEGMENT}/recipes/${selectedRecipe.id}`}
             >
               <h1 className="text-6xl break-words whitespace-pre-wrap transition-colors hover:text-red-300 lg:text-8xl">
                 {selectedRecipe.title}
