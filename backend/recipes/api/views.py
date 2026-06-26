@@ -160,6 +160,16 @@ class RecipeViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filterset_class = RecipeFilter
     search_fields = ['title', 'description']
+    owner_visible_detail_actions = (
+        'retrieve',
+        'update',
+        'partial_update',
+        'destroy',
+        'like',
+        'upload_image',
+        'delete_image',
+        'set_cover_image',
+    )
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -198,9 +208,9 @@ class RecipeViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Retrieve / update / delete by id: must allow the owner to load their private recipes.
+        # Detail actions must allow the owner to load their private recipes.
         # Do not use queryset | queryset here — union breaks annotations + select_related on some DBs.
-        if self.action in ('retrieve', 'update', 'partial_update', 'destroy'):
+        if self.action in self.owner_visible_detail_actions:
             if user.is_authenticated:
                 qs = Recipe.objects.filter(Q(is_public=True) | Q(owner=user))
             else:
@@ -247,6 +257,19 @@ class RecipeViewSet(ModelViewSet):
         qs = self._annotate_likes(qs)
         return qs.select_related('owner', 'owner__profile').prefetch_related('images', 'tags')
 
+    def _recipe_for_response(self, pk):
+        qs = self._annotate_likes(Recipe.objects.filter(pk=pk))
+        return qs.select_related('owner', 'owner__profile').prefetch_related('images', 'tags').get()
+
+    def _can_mutate_recipe(self, recipe):
+        return self.request.user.is_authenticated and recipe.owner_id == self.request.user.pk
+
+    def _forbidden_recipe_mutation_response(self):
+        return Response(
+            {"detail": "You do not have permission to edit this recipe."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     @action(
         detail=True,
         methods=['post'],
@@ -275,7 +298,7 @@ class RecipeViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        recipe = self.get_queryset().get(pk=serializer.instance.pk)
+        recipe = self._recipe_for_response(serializer.instance.pk)
         read_serializer = RecipeSerializer(recipe, context={'request': request})
         headers = self.get_success_headers(read_serializer.data)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -283,23 +306,20 @@ class RecipeViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-        if instance.owner and instance.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        if not self._can_mutate_recipe(instance):
+            return self._forbidden_recipe_mutation_response()
         serializer = self.get_serializer(
             instance, data=request.data, partial=partial
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        recipe = self.get_queryset().get(pk=instance.pk)
+        recipe = self._recipe_for_response(instance.pk)
         read_serializer = RecipeSerializer(recipe, context={"request": request})
         return Response(read_serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.owner and instance.owner != request.user:
+        if not self._can_mutate_recipe(instance):
             return Response(
                 {"detail": "You do not have permission to delete this recipe."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -315,11 +335,8 @@ class RecipeViewSet(ModelViewSet):
     def upload_image(self, request, pk=None):
         """POST multipart with field 'image' and optional 'is_cover' (true/false)."""
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        if not self._can_mutate_recipe(recipe):
+            return self._forbidden_recipe_mutation_response()
         image_file = request.FILES.get('image')
         if not image_file:
             return Response(
@@ -348,11 +365,8 @@ class RecipeViewSet(ModelViewSet):
     )
     def delete_image(self, request, pk=None, image_id=None):
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        if not self._can_mutate_recipe(recipe):
+            return self._forbidden_recipe_mutation_response()
         ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
         was_cover = ri.is_cover
         ri.delete()
@@ -370,11 +384,8 @@ class RecipeViewSet(ModelViewSet):
     )
     def set_cover_image(self, request, pk=None, image_id=None):
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        if not self._can_mutate_recipe(recipe):
+            return self._forbidden_recipe_mutation_response()
         ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
         recipe.images.update(is_cover=False)
         ri.is_cover = True

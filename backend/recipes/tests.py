@@ -84,3 +84,100 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeMutationPermissionTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_create_private_recipe_returns_created_recipe(self):
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Private stew",
+                "description": "Family recipe",
+                "is_public": False,
+                "recipe_instructions": [
+                    {"text": "Simmer gently.", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], "Private stew")
+        self.assertFalse(res.data["is_public"])
+        self.assertEqual(res.data["owner_id"], self.user.id)
+        self.assertEqual(
+            Recipe.objects.filter(
+                owner=self.user,
+                title="Private stew",
+                is_public=False,
+            ).count(),
+            1,
+        )
+
+    def test_owner_can_reach_private_recipe_image_mutation_endpoint(self):
+        recipe = Recipe.objects.create(
+            title="Private with photos",
+            owner=self.user,
+            is_public=False,
+        )
+
+        res = self.client.post(f"/api/recipes/{recipe.id}/images/", {})
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["detail"], "No image file provided.")
+
+    def test_authenticated_user_cannot_mutate_ownerless_recipe(self):
+        recipe = Recipe.objects.create(
+            title="Template",
+            owner=None,
+            is_public=True,
+        )
+
+        requests = (
+            (
+                self.client.patch,
+                f"/api/recipes/{recipe.id}/",
+                {"title": "Tampered"},
+                "edit",
+            ),
+            (
+                self.client.delete,
+                f"/api/recipes/{recipe.id}/",
+                None,
+                "delete",
+            ),
+            (
+                self.client.post,
+                f"/api/recipes/{recipe.id}/images/",
+                {},
+                "upload image",
+            ),
+            (
+                self.client.delete,
+                f"/api/recipes/{recipe.id}/images/999/",
+                None,
+                "delete image",
+            ),
+            (
+                self.client.patch,
+                f"/api/recipes/{recipe.id}/images/999/set-cover/",
+                {},
+                "set cover image",
+            ),
+        )
+
+        for method, url, data, label in requests:
+            with self.subTest(label=label):
+                if data is None:
+                    res = method(url)
+                else:
+                    res = method(url, data, format="json")
+                self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, "Template")
