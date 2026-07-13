@@ -330,7 +330,7 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
                 out.append({
                     'added_at': entry.added_at,
                     'is_available': False,
-                    'recipe_id': r.id,
+                    'recipe_id': None,
                     'recipe': None,
                 })
         return out

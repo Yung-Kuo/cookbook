@@ -49,6 +49,8 @@ class TagViewSet(ModelViewSet):
 class IngredientViewSet(ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    http_method_names = ['get', 'post', 'head', 'options']
 
 
 class UserProfileViewSet(GenericViewSet):
@@ -271,6 +273,14 @@ class RecipeViewSet(ModelViewSet):
         else:
             serializer.save()
 
+    def _reject_unowned_mutation(self, recipe, verb):
+        if recipe.owner_id != self.request.user.pk:
+            return Response(
+                {"detail": f"You do not have permission to {verb} this recipe."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return None
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -283,11 +293,9 @@ class RecipeViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-        if instance.owner and instance.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        denied = self._reject_unowned_mutation(instance, "edit")
+        if denied:
+            return denied
         serializer = self.get_serializer(
             instance, data=request.data, partial=partial
         )
@@ -299,11 +307,9 @@ class RecipeViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.owner and instance.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to delete this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        denied = self._reject_unowned_mutation(instance, "delete")
+        if denied:
+            return denied
         return super().destroy(request, *args, **kwargs)
 
     @action(
@@ -315,11 +321,9 @@ class RecipeViewSet(ModelViewSet):
     def upload_image(self, request, pk=None):
         """POST multipart with field 'image' and optional 'is_cover' (true/false)."""
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        denied = self._reject_unowned_mutation(recipe, "edit")
+        if denied:
+            return denied
         image_file = request.FILES.get('image')
         if not image_file:
             return Response(
@@ -348,11 +352,9 @@ class RecipeViewSet(ModelViewSet):
     )
     def delete_image(self, request, pk=None, image_id=None):
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        denied = self._reject_unowned_mutation(recipe, "edit")
+        if denied:
+            return denied
         ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
         was_cover = ri.is_cover
         ri.delete()
@@ -370,11 +372,9 @@ class RecipeViewSet(ModelViewSet):
     )
     def set_cover_image(self, request, pk=None, image_id=None):
         recipe = self.get_object()
-        if recipe.owner and recipe.owner != request.user:
-            return Response(
-                {"detail": "You do not have permission to edit this recipe."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        denied = self._reject_unowned_mutation(recipe, "edit")
+        if denied:
+            return denied
         ri = get_object_or_404(RecipeImage, pk=image_id, recipe=recipe)
         recipe.images.update(is_cover=False)
         ri.is_cover = True
@@ -559,7 +559,10 @@ class CollectionViewSet(ModelViewSet):
                 {'detail': 'Invalid recipe_id.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        recipe = get_object_or_404(Recipe, pk=recipe_id)
+        recipe = get_object_or_404(
+            Recipe.objects.filter(Q(is_public=True) | Q(owner=request.user)),
+            pk=recipe_id,
+        )
         cr, created = CollectionRecipe.objects.get_or_create(
             collection=collection,
             recipe=recipe,
