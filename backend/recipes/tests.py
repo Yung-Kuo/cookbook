@@ -10,6 +10,7 @@ from recipes.models import (
     Like,
     Recipe,
     RecipeIngredient,
+    RecipeInstruction,
     Tag,
 )
 
@@ -237,3 +238,72 @@ class CollectionRecipePermissionTests(APITestCase):
                 recipe=self.public_recipe,
             ).exists()
         )
+
+
+class RecipeNestedWriteValidationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.recipe = Recipe.objects.create(
+            title="Pasta",
+            owner=self.user,
+            is_public=True,
+        )
+        self.ingredient = Ingredient.objects.create(name="Tomato")
+        self.other_ingredient = Ingredient.objects.create(name="Basil")
+        self.recipe_ingredient = RecipeIngredient.objects.create(
+            recipe=self.recipe,
+            ingredient=self.ingredient,
+            quantity=2,
+            unit="cup",
+        )
+        self.instruction = RecipeInstruction.objects.create(
+            recipe=self.recipe,
+            text="Cook pasta",
+            order=1,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+    def test_duplicate_ingredients_return_400_without_deleting_existing_rows(self):
+        res = self.client.patch(
+            f"/api/recipes/{self.recipe.id}/",
+            {
+                "recipe_ingredients": [
+                    {
+                        "ingredient": self.other_ingredient.id,
+                        "quantity": 1,
+                        "unit": "tbsp",
+                    },
+                    {
+                        "ingredient": self.other_ingredient.id,
+                        "quantity": 2,
+                        "unit": "tbsp",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            RecipeIngredient.objects.filter(pk=self.recipe_ingredient.pk).exists()
+        )
+        self.assertEqual(self.recipe.recipeingredient_set.count(), 1)
+
+    def test_duplicate_instruction_orders_return_400_without_deleting_existing_rows(self):
+        res = self.client.patch(
+            f"/api/recipes/{self.recipe.id}/",
+            {
+                "recipe_instructions": [
+                    {"text": "First duplicate", "order": 1},
+                    {"text": "Second duplicate", "order": 1},
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            RecipeInstruction.objects.filter(pk=self.instruction.pk).exists()
+        )
+        self.assertEqual(self.recipe.recipeinstruction_set.count(), 1)
