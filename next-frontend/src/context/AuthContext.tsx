@@ -48,6 +48,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(async () => {
     await apiLogout()
+    await queryClient.cancelQueries()
+    queryClient.clear()
     queryClient.setQueryData(queryKeys.auth.me(), null)
   }, [queryClient])
 
