@@ -165,7 +165,7 @@ class IngredientPermissionTests(APITestCase):
     def test_anonymous_user_cannot_delete_shared_ingredient(self):
         res = self.client.delete(f"/api/ingredients/{self.ingredient.id}/")
 
-        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertTrue(Ingredient.objects.filter(pk=self.ingredient.pk).exists())
         self.assertTrue(
             RecipeIngredient.objects.filter(pk=self.recipe_ingredient.pk).exists()
