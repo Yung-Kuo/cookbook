@@ -47,7 +47,7 @@ export default function RecipeDetailPageClient() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const uid = Array.isArray(userId) ? userId[0] : userId
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { isAuthenticated, loginHref } = useAppNav()
   const [recipeToEdit, setRecipeToEdit] = useState<RecipeEntity | null>(null)
 
@@ -60,7 +60,7 @@ export default function RecipeDetailPageClient() {
   } = useQuery({
     queryKey: queryKeys.recipes.detail(rawId),
     queryFn: () => fetchRecipeById(rawId!),
-    enabled: Boolean(rawId),
+    enabled: !authLoading && Boolean(rawId),
   })
 
   const patchRecipe = useCallback(
