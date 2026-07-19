@@ -187,12 +187,12 @@ export const useRecipeList = ({
     }
   }, [isAuthenticated, selectedRecipe?.is_public, selectedRecipe?.id])
 
-  /** Overlay is desktop-only; below lg redirect to detail page and clear selection (resize / edge cases). */
+  /** Overlay is desktop-only; below lg redirect after any open form closes. */
   useLayoutEffect(() => {
     if (typeof window === "undefined") return
     const mq = window.matchMedia("(min-width: 1024px)")
     const redirectOverlayIfMobile = () => {
-      if (mq.matches) return
+      if (mq.matches || isFormOpen || recipeToEdit) return
       setSelectedRecipe((current) => {
         if (!current?.id) return current
         const ownerFromRecipe =
@@ -208,7 +208,7 @@ export const useRecipeList = ({
     redirectOverlayIfMobile()
     mq.addEventListener("change", redirectOverlayIfMobile)
     return () => mq.removeEventListener("change", redirectOverlayIfMobile)
-  }, [router, ownerUserId])
+  }, [router, ownerUserId, isFormOpen, recipeToEdit])
 
   const patchListCache = useCallback(
     (
