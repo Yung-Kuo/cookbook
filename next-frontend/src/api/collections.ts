@@ -137,12 +137,17 @@ export const deleteCollection = async (
 
 export const toggleCollectionVisibility = async (
   collectionId: number | string,
+  isPublic: boolean,
 ): Promise<CollectionListItem> => {
   const response = await apiFetch(
     `${API_URL}/collections/${collectionId}/visibility/`,
     {
       method: "PATCH",
-      headers: { ...getAuthHeaders() },
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ is_public: isPublic }),
     },
   )
   if (!response.ok) {
