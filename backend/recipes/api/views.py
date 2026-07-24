@@ -502,9 +502,40 @@ class CollectionViewSet(ModelViewSet):
         url_path='visibility',
     )
     def toggle_visibility(self, request, pk=None):
+        """Set collection visibility to an explicit target (idempotent).
+
+        The UI presents Public/Private as absolute choices. A blind toggle
+        re-exposes private collections when a stale client retries "make
+        private" after another tab already flipped the bit.
+        """
         collection = self.get_object()
-        collection.is_public = not collection.is_public
-        collection.save(update_fields=['is_public'])
+        if 'is_public' not in request.data:
+            return Response(
+                {'is_public': 'This field is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        raw = request.data.get('is_public')
+        if isinstance(raw, str):
+            normalized = raw.strip().lower()
+            if normalized in ('true', '1'):
+                want_public = True
+            elif normalized in ('false', '0'):
+                want_public = False
+            else:
+                return Response(
+                    {'is_public': 'Must be a boolean.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif isinstance(raw, bool):
+            want_public = raw
+        else:
+            return Response(
+                {'is_public': 'Must be a boolean.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if collection.is_public != want_public:
+            collection.is_public = want_public
+            collection.save(update_fields=['is_public'])
         serializer = CollectionSerializer(collection, context={'request': request})
         return Response(serializer.data)
 

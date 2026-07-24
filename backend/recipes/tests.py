@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Collection, Like, Recipe, Tag
 
 User = get_user_model()
 
@@ -84,3 +84,54 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class CollectionVisibilitySetTests(APITestCase):
+    """Visibility PATCH sets an absolute target; stale retries must not flip."""
+
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass")
+        self.token = Token.objects.create(user=self.owner)
+        self.collection = Collection.objects.create(
+            user=self.owner,
+            name="Dinner",
+            is_public=True,
+        )
+
+    def test_set_private_is_idempotent(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        url = f"/api/collections/{self.collection.id}/visibility/"
+
+        first = self.client.patch(url, {"is_public": False}, format="json")
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertFalse(first.data["is_public"])
+        self.collection.refresh_from_db()
+        self.assertFalse(self.collection.is_public)
+
+        # Stale client still thinks the collection is public and retries
+        # "make private"; must stay private, not flip back to public.
+        second = self.client.patch(url, {"is_public": False}, format="json")
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertFalse(second.data["is_public"])
+        self.collection.refresh_from_db()
+        self.assertFalse(self.collection.is_public)
+
+    def test_set_public_from_private(self):
+        self.collection.is_public = False
+        self.collection.save(update_fields=["is_public"])
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        url = f"/api/collections/{self.collection.id}/visibility/"
+
+        res = self.client.patch(url, {"is_public": True}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["is_public"])
+        self.collection.refresh_from_db()
+        self.assertTrue(self.collection.is_public)
+
+    def test_missing_is_public_rejected(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        url = f"/api/collections/{self.collection.id}/visibility/"
+        res = self.client.patch(url, {}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.collection.refresh_from_db()
+        self.assertTrue(self.collection.is_public)

@@ -55,7 +55,9 @@ export default function CollectionsSection({
     const c = collections.find((x) => x.id === collectionId)
     if (!c || c.is_public === wantPublic) return
     try {
-      const updated = await toggleCollectionVisibility(collectionId)
+      // Always send the desired target. Blind toggles can re-publicize a
+      // collection after another tab already made it private.
+      const updated = await toggleCollectionVisibility(collectionId, wantPublic)
       queryClient.setQueryData(
         queryKeys.collections.byUserId(profileUserId),
         (prev: CollectionListItem[] | undefined) =>
