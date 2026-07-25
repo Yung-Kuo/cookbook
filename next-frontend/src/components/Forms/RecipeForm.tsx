@@ -634,6 +634,11 @@ function RecipeForm({
       is_public: formData.is_public,
     };
 
+    if (submissionData.recipe_instructions.length === 0) {
+      console.error("At least one instruction step is required");
+      return;
+    }
+
     const hasEmptyInstruction = submissionData.recipe_instructions.some(
       (ins) => !ins.text || ins.text.trim() === "",
     );
