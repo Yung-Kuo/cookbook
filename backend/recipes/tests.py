@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from recipes.models import Like, Recipe, Tag
+from recipes.models import Like, Recipe, RecipeInstruction, Tag
 
 User = get_user_model()
 
@@ -84,3 +84,63 @@ class RecipeTagFilterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {r["id"] for r in res.data}
         self.assertEqual(ids, {self.only_a.id, self.both.id})
+
+
+class RecipeEmptyInstructionsTests(APITestCase):
+    """Empty instruction lists must not wipe existing steps on update."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="chef", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.recipe = Recipe.objects.create(
+            title="Pasta",
+            owner=self.user,
+            is_public=True,
+        )
+        RecipeInstruction.objects.create(
+            recipe=self.recipe,
+            text="Boil water",
+            order=1,
+        )
+        RecipeInstruction.objects.create(
+            recipe=self.recipe,
+            text="Cook pasta",
+            order=2,
+        )
+
+    def test_update_with_empty_instructions_is_rejected_and_preserves_steps(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        res = self.client.put(
+            f"/api/recipes/{self.recipe.id}/",
+            {
+                "title": "Pasta",
+                "recipe_instructions": [],
+                "is_public": True,
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("recipe_instructions", res.data)
+        self.assertEqual(
+            list(
+                self.recipe.recipeinstruction_set.order_by("order").values_list(
+                    "text", flat=True
+                )
+            ),
+            ["Boil water", "Cook pasta"],
+        )
+
+    def test_create_with_empty_instructions_is_rejected(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        res = self.client.post(
+            "/api/recipes/",
+            {
+                "title": "Empty steps",
+                "recipe_instructions": [],
+                "is_public": True,
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("recipe_instructions", res.data)
+        self.assertFalse(Recipe.objects.filter(title="Empty steps").exists())

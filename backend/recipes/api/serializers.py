@@ -166,6 +166,15 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'tags', 'recipe_ingredients', 'is_public',
         ]
 
+    def validate_recipe_instructions(self, value):
+        # Nested updates delete-and-recreate instructions; an empty list would
+        # permanently wipe every step. Reject it for create and update alike.
+        if not value:
+            raise serializers.ValidationError(
+                "At least one instruction step is required."
+            )
+        return value
+
     def _parse_json_field(self, data, field_name):
         """Parse a field that may arrive as a JSON string (from FormData) or as a list."""
         value = data.get(field_name)
