@@ -145,6 +145,11 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+# OAuth-only product: close password signup, keep social signup open.
+ACCOUNT_ADAPTER = 'core.adapters.AccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'core.adapters.SocialAccountAdapter'
+# Link social login to an existing user when emails match (GitHub/Google).
+# SocialAccountAdapter further requires the local EmailAddress to be verified.
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 
